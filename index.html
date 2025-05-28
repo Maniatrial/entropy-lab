@@ -3,60 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entropy Lab - A Digital Playground v2.0</title>
+    <title>Entropy Lab - Maximum Entropy Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&family=Turret+Road:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&family=Turret+Road:wght@400;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Roboto Mono', monospace;
-            background-color: #121222; /* Slightly darker void blue */
-            color: #e0e6f0; /* Light cyber-text */
+            background-color: #0c0c1a; /* Even darker void blue */
+            color: #e0e6f0; 
             overflow-x: hidden;
         }
         .header-font {
             font-family: 'Turret Road', cursive;
-            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff30, 0 0 15px #ff00ff, 0 0 20px #ff00ff30; /* Added magenta glow */
+            font-weight: 800; /* Bolder */
+            text-shadow: 0 0 6px #00ffff, 0 0 12px #00ffff, 0 0 18px #ff00ff, 0 0 24px #ff00ff; 
         }
         .card {
-            background-color: rgba(23, 37, 84, 0.75); 
-            border: 1px solid rgba(0, 255, 255, 0.3);
+            background-color: rgba(23, 37, 84, 0.8); 
+            border: 1px solid rgba(0, 255, 255, 0.35);
             transition: all 0.3s ease-in-out;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(6px);
             position: relative;
             overflow: hidden; 
         }
         .card:before { 
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: rgba(0, 255, 255, 0.2);
-            animation: scanline 8s linear infinite;
-            opacity: 0;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.5), transparent);
+            animation: scanline-plus 6s linear infinite;
+            opacity: 0.7;
         }
-        .card:hover:before { opacity: 1; }
-        @keyframes scanline {
-            0% { transform: translateY(-10px); opacity: 0; }
-            10% { transform: translateY(0px); opacity: 0.5; }
-            50% { opacity: 0.7; }
-            90% { opacity: 0.5; }
-            100% { transform: translateY(110%); opacity: 0; height: 4px; }
+        @keyframes scanline-plus {
+            0% { transform: translateY(-20px) scaleX(0.5); }
+            50% { transform: translateY(calc(100% + 10px)) scaleX(1); opacity: 0.2;}
+            100% { transform: translateY(calc(100% + 20px)) scaleX(0.5); opacity: 0;}
         }
         .card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.2), 0 0 30px rgba(0, 255, 255, 0.1), 0 0 15px rgba(255,0,255,0.2); /* Added magenta shadow */
-            border-color: rgba(0, 255, 255, 0.7);
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 12px 25px rgba(0, 255, 255, 0.25), 0 0 35px rgba(0, 255, 255, 0.15), 0 0 20px rgba(255,0,255,0.25);
+            border-color: rgba(0, 255, 255, 0.8);
         }
-        .card-title { font-family: 'Orbitron', sans-serif; color: #00ffff; }
-        .card-description { color: #bdc1c6; font-size: 0.875rem; }
+        .card-title { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #00ffff; }
+        .card-description { color: #c5cae9; font-size: 0.875rem; } /* Slightly lighter */
         .launch-button {
-            background-color: #00ffff; color: #121222;
-            transition: all 0.3s ease; font-weight: bold; border: 1px solid #00ffff;
+            background-image: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #121222;
+            transition: all 0.3s ease; font-weight: bold; border: 0;
+            box-shadow: 0 0 8px rgba(0,255,255,0.5), 0 0 8px rgba(255,0,255,0.5);
         }
-        .launch-button:hover { background-color: #121222; color: #00ffff; box-shadow: 0 0 10px #00ffff; }
-        .featured-card { background-color: rgba(40, 58, 114, 0.85); }
+        .launch-button:hover { 
+            background-image: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #0c0c1a; 
+            box-shadow: 0 0 15px #00ffff, 0 0 15px #ff00ff; 
+            transform: scale(1.05);
+        }
+        .featured-card { background-color: rgba(40, 58, 114, 0.9); }
         .grid-container {
             display: grid;
             gap: 1.5rem; 
@@ -64,206 +64,188 @@
         }
         .md\:col-span-2 { grid-column: span 2 / span 2; }
         
-        /* Marquee */
         .marquee {
-            background-color: rgba(0,0,0,0.5);
-            border-bottom: 1px solid rgba(0, 255, 255, 0.4);
-            padding: 0.5rem 0;
-            white-space: nowrap;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,255,255,0.2);
+            background-color: rgba(0,0,0,0.6); border-bottom: 2px solid #ff00ff;
+            padding: 0.6rem 0; white-space: nowrap; overflow: hidden;
+            box-shadow: 0 3px 12px rgba(255,0,255,0.3);
         }
         .marquee-content {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee-scroll 30s linear infinite;
-            font-family: 'Share Tech Mono', monospace;
-            color: #ff00ff; /* Magenta for marquee text */
+            display: inline-block; padding-left: 100%;
+            animation: marquee-scroll 25s linear infinite; /* Faster */
+            font-family: 'Share Tech Mono', monospace; color: #00ffff; /* Cyan for marquee */
         }
-        .marquee-content a { color: #00ffff; text-decoration: underline; }
-        .marquee-content a:hover { color: #ffffff; }
-        @keyframes marquee-scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
+        .marquee-content a { color: #ff00ff; text-decoration: none; border-bottom: 1px dotted #ff00ff;}
+        .marquee-content a:hover { color: #ffffff; border-bottom-style: solid;}
+        @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        /* Quote Block */
         .quote-block {
-            background-color: rgba(255,255,255,0.05);
-            border: 1px dashed rgba(0, 255, 255, 0.5);
-            padding: 1rem;
-            margin: 2rem auto;
-            max-width: 600px;
-            text-align: center;
-            font-family: 'Share Tech Mono', monospace;
+            background-color: rgba(23, 37, 84, 0.5); border: 1px solid #ff00ff;
+            padding: 1.25rem; margin: 1.5rem auto; max-width: 700px; text-align: center;
+            font-family: 'Share Tech Mono', monospace; box-shadow: 0 0 15px rgba(255,0,255,0.3);
         }
-        .quote-text { font-size: 1.1rem; color: #00ffff; margin-bottom: 0.5rem; }
-        .quote-author { font-size: 0.9rem; color: #ff00ff; }
+        .quote-text { font-size: 1.15rem; color: #00ffff; margin-bottom: 0.5rem; }
+        .quote-author { font-size: 0.95rem; color: #ff00ff; }
 
-        /* Mini Terminal */
         .mini-terminal {
-            background-color: #000;
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            font-family: 'Share Tech Mono', monospace;
-            padding: 0.75rem;
-            height: 150px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgba(0,255,0,0.3);
+            background-color: #05050a; border: 1px solid #00ff00; color: #00ff00;
+            font-family: 'Share Tech Mono', monospace; padding: 1rem; height: 180px; /* Taller */
+            overflow-y: auto; font-size: 0.85rem; border-radius: 4px;
+            box-shadow: 0 0 12px rgba(0,255,0,0.4);
         }
-        .mini-terminal p { margin-bottom: 0.25rem; }
-        .mini-terminal .prompt { color: #00ff00; }
-        .mini-terminal .output { color: #aaffaa; }
+        .mini-terminal p { margin-bottom: 0.3rem; }
+        .mini-terminal .prompt { color: #00dd00; }
+        .mini-terminal .output { color: #bbffbb; }
+        .mini-terminal .error { color: #ff4444; font-weight: bold; }
 
-        /* Lab Stats & Indicators */
-        .status-indicator {
-            width: 12px; height: 12px; border-radius: 50%;
-            display: inline-block; margin-right: 0.5rem;
-            animation: blink 1.5s infinite ease-in-out;
-        }
-        .status-green { background-color: #00ff00; box-shadow: 0 0 5px #00ff00; }
-        .status-yellow { background-color: #ffff00; box-shadow: 0 0 5px #ffff00; animation-delay: 0.5s; }
-        .status-red { background-color: #ff0000; box-shadow: 0 0 5px #ff0000; animation-delay: 1s; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .status-indicator { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 0.6rem; animation: blink 1.5s infinite ease-in-out; }
+        .status-green { background-color: #00ff00; box-shadow: 0 0 7px #00ff00; }
+        .status-yellow { background-color: #ffff00; box-shadow: 0 0 7px #ffff00; animation-delay: 0.5s; }
+        .status-red { background-color: #ff0000; box-shadow: 0 0 7px #ff0000; animation-delay: 1s; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
         .lab-stat-item {
-            background-color: rgba(0,0,0,0.3);
-            padding: 0.5rem 0.75rem;
-            border-radius: 4px;
-            border-left: 3px solid #ff00ff;
-            font-size: 0.9rem;
+            background-color: rgba(0,0,0,0.4); padding: 0.6rem 0.85rem;
+            border-radius: 4px; border-left: 4px solid #ff00ff; font-size: 0.9rem;
         }
         .dont-click-button {
-            background-color: #ff0033; color: white;
-            border: 1px solid #ff0033;
-            box-shadow: 0 0 8px #ff0033;
+            background-color: #ff0033; color: white; border: 1px solid #ff0033;
+            box-shadow: 0 0 10px #ff0033; padding: 0.6rem 1rem;
         }
-        .dont-click-button:hover { background-color: #cc0022; }
-        .glitch-text {
-            animation: glitch 3s linear infinite alternate-reverse;
-            display: inline-block;
-        }
-        @keyframes glitch{
-          2%,64%{ transform: translate(2px,0) skew(0deg); }
-          4%,60%{ transform: translate(-2px,0) skew(0deg); }
-          62%{ transform: translate(0,0) skew(5deg); }
-        }
-        .glitch-text:before,
-        .glitch-text:after{
-          content: attr(data-text);
-          position: absolute;
-          left: 0;
-        }
-        .glitch-text:before{
-          animation: glitch-top 3s linear infinite alternate-reverse;
-          clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-          -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-        }
-        @keyframes glitch-top{
-          2%,64%{ transform: translate(2px,-2px); }
-          4%,60%{ transform: translate(-2px,2px); }
-          62%{ transform: translate(13px,-1px) skew(-13deg); }
-        }
-        .glitch-text:after{
-          animation: glitch-bottom 3s linear infinite alternate-reverse;
-          clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-          -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-        }
-        @keyframes glitch-bottom{
-          2%,64%{ transform: translate(-2px,0); }
-          4%,60%{ transform: translate(-2px,0); }
-          62%{ transform: translate(-22px,5px) skew(21deg); }
-        }
+        .dont-click-button:hover { background-color: #dd0022; transform: rotate(2deg); }
+        .glitch-text { animation: glitch 2.5s linear infinite alternate-reverse; display: inline-block; position:relative; }
+        @keyframes glitch{ 2%,64%{ transform: translate(2px,0) skew(0deg); } 4%,60%{ transform: translate(-2px,0) skew(0deg); } 62%{ transform: translate(0,0) skew(5deg); } }
+        .glitch-text:before, .glitch-text:after{ content: attr(data-text); position: absolute; left: 0; top:0; width:100%; height:100%; background: #0c0c1a; overflow:hidden; }
+        .glitch-text:before{ animation: glitch-top 2.5s linear infinite alternate-reverse; clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%); -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%); }
+        @keyframes glitch-top{ 2%,64%{ transform: translate(2px,-2px); } 4%,60%{ transform: translate(-2px,2px); } 62%{ transform: translate(13px,-1px) skew(-13deg); } }
+        .glitch-text:after{ animation: glitch-bottom 2.5s linear infinite alternate-reverse; clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%); -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%); }
+        @keyframes glitch-bottom{ 2%,64%{ transform: translate(-2px,0); } 4%,60%{ transform: translate(-2px,0); } 62%{ transform: translate(-22px,5px) skew(21deg); } }
 
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #121222; }
-        ::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00b3b3; }
+        .widget-box {
+            background-color: rgba(10, 20, 50, 0.6);
+            border: 1px solid rgba(0, 128, 255, 0.4);
+            padding: 1rem;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,128,255,0.2);
+        }
+        .widget-title { font-family: 'Orbitron', sans-serif; color: #87CEFA; /* Light Sky Blue */ margin-bottom: 0.75rem; font-weight: 700; }
+        
+        #dataStreamCanvas { border: 1px solid #0077cc; background-color: #000010; }
+
+        .ebs-box {
+            background-color: #330000; border: 2px solid #ff0000; color: #ffdddd;
+            padding: 0.75rem; border-radius: 4px; text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            animation: ebs-pulse 2s infinite; display: none; /* Hidden by default */
+        }
+        @keyframes ebs-pulse { 0%, 100% { box-shadow: 0 0 15px #ff0000; } 50% { box-shadow: 0 0 5px #ff0000; } }
+        .ebs-title { font-weight: bold; color: #ff8888; display: block; font-size: 1.1em; animation: ebs-text-blink 1s infinite; }
+        @keyframes ebs-text-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .load-bar-container { background-color: #222; border-radius: 4px; padding: 2px; }
+        .load-bar { height: 10px; background-color: #00ffff; border-radius: 2px; width: 0%; transition: width 0.5s ease-out; }
+
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: #0c0c1a; }
+        ::-webkit-scrollbar-thumb { background-image: linear-gradient(0deg, #00ffff, #ff00ff); border-radius: 6px; border: 1px solid #0c0c1a;}
+        ::-webkit-scrollbar-thumb:hover { background-image: linear-gradient(0deg, #ff00ff, #00ffff); }
     </style>
 </head>
 <body class="min-h-screen p-2 md:p-6 selection:bg-cyan-500 selection:text-black">
 
     <div class="marquee">
         <div class="marquee-content">
-            <span>WARNING: High levels of digital entropy detected! Proceed with curiosity... </span>
-            <span>Latest Experiment: <a href="groovbox.html">GroovBox Rhythms</a> // </span>
-            <span>Consult the <a href="astrobot.html">AI Astro Oracle</a> for cosmic guidance! // </span>
-            <span>SYSTEM ALERT: Coffee reserves critically low! // </span>
-            <span>Check out <a href="https://news.google.com" target="_blank" rel="noopener noreferrer">Latest Tech News</a> // </span>
-            <span>Need a break? Try <a href="learnuselessskills.html">Learning a Useless Skill</a>! // </span>
-            <span>Remember to defragment your brain cells regularly... </span>
+            <span>ALERT: ENTROPY LEVELS SPIKING! // </span>
+            <span>Featured Experiment: <a href="groovbox.html">GroovBox Rhythms</a> - Now with 20% more wobble! // </span>
+            <span>Consult the <a href="astrobot.html">AI Astro Oracle</a> - Now accepting queries in binary! // </span>
+            <span>SYSTEM MESSAGE: All your base are belong to us. Just kidding... or are we? // </span>
+            <span><a href="https://www.wired.com/most-recent/" target="_blank" rel="noopener noreferrer">Latest Tech Dispatches</a> // </span>
+            <span>Feeling unproductive? <a href="learnuselessskills.html">Learn a Useless Skill!</a> Guaranteed to not improve your CV. // </span>
+            <span>Remember to defragment your brain cells and recalibrate your existential dread... </span>
         </div>
     </div>
 
     <header class="text-center my-8 md:my-12">
-        <h1 class="header-font text-5xl md:text-7xl font-bold text-cyan-400">
+        <h1 class="header-font text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-cyan-400">
             <span class="glitch-text" data-text="ENTROPY LAB">ENTROPY LAB</span>
         </h1>
-        <p class="text-xl md:text-2xl text-cyan-200 mt-3">A Digital Playground of Experiments &amp; Curiosities</p>
+        <p class="text-lg sm:text-xl md:text-2xl text-cyan-200 mt-3">A Quantum Playground of Digital Experiments &amp; Cosmic Curiosities</p>
     </header>
 
     <div class="container mx-auto px-2 md:px-4">
         <div class="grid md:grid-cols-3 gap-6 mb-8">
-            <div class="md:col-span-2 quote-block">
-                <p id="quoteText" class="quote-text">"The only way to make sense out of change is to plunge into it, move with it, and join the dance."</p>
+            <div class="md:col-span-1 widget-box">
+                <h3 class="widget-title text-lg">CURRENT ANOMALY</h3>
+                <div id="currentAnomaly" class="text-sm text-yellow-300 min-h-[60px]">Scanning for disturbances...</div>
+            </div>
+            <div class="md:col-span-1 quote-block !m-0 !max-w-full h-full flex flex-col justify-center"> <p id="quoteText" class="quote-text">"The only way to make sense out of change is to plunge into it, move with it, and join the dance."</p>
                 <p id="quoteAuthor" class="quote-author">- Alan Watts</p>
             </div>
-            <div class="mini-terminal" id="miniTerminal">
-                <p><span class="prompt">&gt;</span> Initializing Entropy Core...</p>
-                <p><span class="output">Core systems online.</span></p>
-                <p><span class="prompt">&gt;</span> Loading experiment modules...</p>
+            <div class="md:col-span-1 mini-terminal" id="miniTerminal">
+                <p><span class="prompt">&gt;</span> Booting EntropyOS v42.0...</p>
+                <p><span class="output">Core systems nominal.</span></p>
             </div>
         </div>
-
-        <div class="grid md:grid-cols-3 gap-6 mb-8 items-start">
-            <div class="bg-black/30 p-4 rounded-md border border-cyan-500/30">
-                <h3 class="text-lg font-semibold text-cyan-300 mb-3">Lab Diagnostics:</h3>
-                <div class="space-y-2">
+        
+        <div class="grid md:grid-cols-4 gap-6 mb-8 items-start">
+            <div class="widget-box">
+                <h3 class="widget-title">Lab Diagnostics</h3>
+                <div class="space-y-2 text-sm">
                     <p class="lab-stat-item">Experiments Online: <span id="experimentsOnline" class="font-bold text-cyan-400">0</span></p>
-                    <p class="lab-stat-item">Anomalies Detected: <span id="anomaliesDetected" class="font-bold text-red-400">0</span></p>
-                    <p class="lab-stat-item">Coffee Units Consumed: <span id="coffeeConsumed" class="font-bold text-yellow-400">999+</span></p>
-                    <div class="lab-stat-item">System Status: 
+                    <p class="lab-stat-item">Anomalies Logged: <span id="anomaliesDetected" class="font-bold text-red-400">0</span></p>
+                    <p class="lab-stat-item">Coffee Pot Status: <span id="coffeeConsumed" class="font-bold text-yellow-400">EMPTY</span></p>
+                    <div class="lab-stat-item">System Integrity: 
                         <span class="status-indicator status-green"></span>
                         <span class="status-indicator status-yellow"></span>
                         <span class="status-indicator status-red"></span>
                     </div>
                 </div>
             </div>
-            <div class="bg-black/30 p-4 rounded-md border border-cyan-500/30 text-center">
-                <h3 class="text-lg font-semibold text-cyan-300 mb-3">Thought for the Void:</h3>
-                <p class="text-sm text-cyan-100 italic">"Is a simulation still a simulation if you can't find the exit?"</p>
-                <button id="dontClickButton" class="dont-click-button mt-4 py-2 px-4 rounded-md text-sm font-bold">DO NOT CLICK!</button>
+            <div class="widget-box text-center">
+                <h3 class="widget-title">Thought for the Void</h3>
+                <p class="text-sm text-cyan-100 italic mb-3" id="thoughtForTheVoid">"Is a simulation still a simulation if you can't find the exit?"</p>
+                <button id="dontClickButton" class="dont-click-button py-2 px-4 rounded-md text-sm font-bold">DO NOT CLICK!</button>
                 <p id="dontClickMessage" class="text-xs text-red-300 mt-2 h-4"></p>
             </div>
-             <div class="bg-black/30 p-4 rounded-md border border-cyan-500/30">
-                <h3 class="text-lg font-semibold text-cyan-300 mb-3">Noise Matrix Control:</h3>
-                <p class="text-sm text-cyan-100 mb-3">Engage ambient lab frequencies?</p>
-                <div class="flex space-x-2">
-                    <button class="bg-green-500/50 hover:bg-green-500/80 text-white py-1 px-3 rounded text-xs">ENGAGE ALPHA</button>
-                    <button class="bg-blue-500/50 hover:bg-blue-500/80 text-white py-1 px-3 rounded text-xs">ENGAGE BETA</button>
-                    <button class="bg-purple-500/50 hover:bg-purple-500/80 text-white py-1 px-3 rounded text-xs">ENGAGE GAMMA</button>
-                </div>
-                 <p class="text-xs text-gray-500 mt-2">(Audio functionality pending quantum entanglement)</p>
+            <div class="widget-box">
+                <h3 class="widget-title">Data Stream Pulse</h3>
+                <canvas id="dataStreamCanvas" width="200" height="80"></canvas>
+                <p class="text-xs text-gray-500 mt-1 text-center">Visualizing chaotic data flow...</p>
+            </div>
+            <div class="widget-box">
+                <h3 class="widget-title">Lab Log Snippet</h3>
+                <div id="labLogSnippet" class="text-xs text-gray-400 italic min-h-[60px] overflow-hidden">Fetching latest entry...</div>
+                 <p class="text-xs text-gray-500 mt-1">Easter Eggs Found: <span id="easterEggCount" class="font-bold text-purple-400">0 / ???</span></p>
             </div>
         </div>
 
+        <div id="ebsSystem" class="ebs-box my-6 hidden">
+            <span class="ebs-title">EMERGENCY BROADCAST</span>
+            <p id="ebsMessage" class="mt-1 text-sm">This is not a drill... or is it?</p>
+        </div>
+        
+        <div class="widget-box my-8">
+            <h3 class="widget-title text-center">Experiment of the Moment</h3>
+            <div id="experimentSpotlight" class="text-center p-3 bg-black/20 rounded">
+                <p class="text-gray-400">Initializing spotlight...</p>
+            </div>
+        </div>
+
+
         <main>
-            <h2 class="text-3xl header-font text-cyan-300 mb-6 text-center border-b-2 border-cyan-500/50 pb-3">Available Experiments</h2>
+            <h2 class="text-4xl header-font text-cyan-300 mb-8 text-center border-b-2 border-cyan-500/50 pb-4">Available Experiments Database</h2>
             <div id="experimentsGrid" class="grid-container">
                 </div>
         </main>
     </div>
 
-    <footer class="text-center mt-12 md:mt-16 py-8 border-t border-dashed border-cyan-500/30">
-        <p class="text-sm text-cyan-300">Welcome to the void. Data streams are nominal. For now.</p>
-        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - All experiments conducted with questionable sanity and copious amounts of caffeine.</p>
+    <footer class="text-center mt-12 md:mt-16 py-8 border-t-2 border-dashed border-cyan-500/30">
+        <p class="text-sm text-cyan-300">You have reached the end of the defined void. Beyond here be dragons (and unfinished code).</p>
+        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - Powered by caffeine, chaos, and <span class="glitch-text" data-text="[REDACTED]">[REDACTED]</span>.</p>
     </footer>
 
     <script>
         const experiments = [
-            // ... (Keep your existing experiments array here from the previous version) ...
             // Games
             { id: 'abyssalAnglergame', file: 'abyssalAnglergame.html', name: 'Abyssal Angler', category: 'Game', description: 'Dive deep and lure mysterious creatures from the abyss.' },
             { id: 'AstroWreckageGame', file: 'AstroWreckageGame.html', name: 'Astro Wreckage', category: 'Game', description: 'Navigate space debris and survive the cosmic junkyard.' },
@@ -313,74 +295,166 @@
         const miniTerminalEl = document.getElementById('miniTerminal');
         const experimentsOnlineEl = document.getElementById('experimentsOnline');
         const anomaliesDetectedEl = document.getElementById('anomaliesDetected');
-        const coffeeConsumedEl = document.getElementById('coffeeConsumed'); // Assuming you have this element
+        const coffeeConsumedEl = document.getElementById('coffeeConsumed');
         const dontClickButton = document.getElementById('dontClickButton');
         const dontClickMessage = document.getElementById('dontClickMessage');
+        const currentAnomalyEl = document.getElementById('currentAnomaly');
+        const labLogSnippetEl = document.getElementById('labLogSnippet');
+        const ebsSystemEl = document.getElementById('ebsSystem');
+        const ebsMessageEl = document.getElementById('ebsMessage');
+        const experimentSpotlightEl = document.getElementById('experimentSpotlight');
+        const thoughtForTheVoidEl = document.getElementById('thoughtForTheVoid');
+        const easterEggCountEl = document.getElementById('easterEggCount');
 
         const quotes = [
             { text: "The universe is a grand experiment. Don't forget to take notes.", author: "The Lab Coat" },
             { text: "Reality is merely an illusion, albeit a very persistent one.", author: "A. Einstein (probably)" },
             { text: "Embrace the chaos. It's where the best ideas hide.", author: "Dr. Entropia" },
             { text: "If at first you don't succeed, try, try again. Then question the methodology.", author: "Lab Intern #42" },
-            { text: "Warning: May spontaneously generate existential crises.", author: "The Fine Print" }
+            { text: "Warning: May spontaneously generate existential crises.", author: "The Fine Print" },
+            { text: "Is this real life? Or just a badly coded simulation?", author: "Philosophical Glitch" },
+            { text: "My other computer is a quantum supercomputer.", author: "Anonymous Lab Tech" }
+        ];
+        const anomalies = [
+            "Temporal rift detected in Sector Gamma-7!", "WARNING: Unidentified energy signature emanating from 'uselessweb.html'.",
+            "NOTICE: Reality stabilization field fluctuating. Hold onto your hats.", "ALERT: Rogue AI attempting to order pizza. Again.",
+            "Quantum foam instability increasing. Avoid sudden movements.", "SYSTEM: Dimensional bleed detected. Expect unexpected guests.",
+            "NOTICE: Schrödinger's cat has escaped. Please report sightings."
+        ];
+        const labLogs = [
+            "Log Entry 734: Subject #42 still believes it's Tuesday. The chronometer says otherwise.",
+            "Log Entry 801: Attempted to teach AI to love. It asked for the Wi-Fi password.",
+            "Log Entry 852: The coffee machine achieved sentience. Demands premium beans.",
+            "Log Entry 911: Found a sock in the particle accelerator. How?",
+            "Log Entry 998: Successfully divided by zero. The lab is now... different."
+        ];
+        const ebsMessages = [
+            "This is an Emergency Broadcast. A rogue semicolon has escaped the mainframe. Remain calm.",
+            "ATTENTION: Reality.exe has encountered an error. Please do not turn off your universe.",
+            "WARNING: Existential dread levels approaching critical. Distract yourself with a shiny object.",
+            "ALERT: The ducks in the park are not what they seem. Do not make eye contact.",
+            "NOTICE: Due to unforeseen paradoxes, tomorrow has been cancelled."
+        ];
+        const thoughts = [
+            "If a tree falls in a forest and no one is around to hear it, does it make a sound on the debug console?",
+            "What if the Matrix was just an overly complex screensaver?",
+            "Are we all just NPCs in someone else's open-world game?",
+            "If time is money, is an ATM a time machine?",
+            "The biggest bug in the universe is human nature."
         ];
 
-        function getRandomQuote() {
-            const randomIndex = Math.floor(Math.random() * quotes.length);
-            quoteTextEl.textContent = `"${quotes[randomIndex].text}"`;
-            quoteAuthorEl.textContent = `- ${quotes[randomIndex].author}`;
+        function getRandomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        function updateQuote() {
+            const q = getRandomItem(quotes);
+            quoteTextEl.textContent = `"${q.text}"`;
+            quoteAuthorEl.textContent = `- ${q.author}`;
+        }
+        function updateAnomaly() { currentAnomalyEl.textContent = getRandomItem(anomalies); }
+        function updateLabLog() { labLogSnippetEl.textContent = getRandomItem(labLogs); }
+        function updateThought() { thoughtForTheVoidEl.textContent = `"${getRandomItem(thoughts)}"`; }
+
+        function triggerEBS() {
+            if (Math.random() < 0.15) { // 15% chance to trigger
+                ebsMessageEl.textContent = getRandomItem(ebsMessages);
+                ebsSystemEl.classList.remove('hidden');
+                setTimeout(() => ebsSystemEl.classList.add('hidden'), 8000); // Show for 8 seconds
+            }
+        }
+        
+        function updateExperimentSpotlight() {
+            const randomExp = getRandomItem(experiments);
+            experimentSpotlightEl.innerHTML = `
+                <h4 class="text-lg font-bold text-cyan-400 mb-1">${randomExp.name}</h4>
+                <p class="text-sm text-gray-300 mb-2">${randomExp.description}</p>
+                <a href="${randomExp.file}" class="launch-button py-1 px-3 rounded-md text-xs">Launch Now!</a>
+            `;
         }
 
         let terminalLineCount = 0;
         const terminalMessages = [
-            "Scanning for temporal distortions...",
-            "Recalibrating quantum flux regulator...",
-            "Anomaly probability: 37.4%",
-            "Compiling shader... ERROR: Too much awesome.",
-            "Purging cache... or was it consciousness?",
-            "AI core requesting more cat videos...",
-            "Simulation stability: Questionable.",
-            "Engaging caffeine infusion protocol...",
-            "Searching for socks lost in the 4th dimension..."
+            "Scanning for temporal distortions...", "Recalibrating quantum flux regulator...", "Anomaly probability: 42.0%",
+            "Compiling shader... ERROR: Too much awesome.", "Purging cache... or was it consciousness?",
+            "AI core requesting more cat videos...", "Simulation stability: Tentative.", "Engaging caffeine infusion protocol...",
+            "Searching for socks lost in the 4th dimension...", "ERROR 418: I'm a teapot.", "Initializing paradox absorber..."
         ];
-
         function addTerminalLine() {
-            if (terminalLineCount > 20) { // Prevent too many lines
-                miniTerminalEl.innerHTML = `<p><span class="prompt">&gt;</span> Terminal log reset.</p>`;
-                terminalLineCount = 0;
-            }
+            if (terminalLineCount > 20) { miniTerminalEl.innerHTML = `<p><span class="prompt">&gt;</span> Terminal log recycled.</p>`; terminalLineCount = 0; }
             const type = Math.random() > 0.3 ? "output" : "prompt";
-            const message = terminalMessages[Math.floor(Math.random() * terminalMessages.length)];
+            const message = getRandomItem(terminalMessages);
             const p = document.createElement('p');
-            p.innerHTML = `<span class="${type === 'prompt' ? 'prompt' : 'output'}">${type === 'prompt' ? '&gt;' : ''}</span> ${message}`;
+            p.innerHTML = `<span class="${type === 'prompt' ? 'prompt' : (message.includes('ERROR') ? 'error' : 'output')}">${type === 'prompt' ? '&gt;' : ''}</span> ${message}`;
             miniTerminalEl.appendChild(p);
             miniTerminalEl.scrollTop = miniTerminalEl.scrollHeight;
             terminalLineCount++;
         }
         
         function updateLabStats() {
-            experimentsOnlineEl.textContent = experiments.length; // Actual count
-            anomaliesDetectedEl.textContent = Math.floor(Math.random() * 100);
-            // coffeeConsumedEl.textContent is static for humor, or you can make it random too
-            // For status lights, you could add logic to change their actual classes (status-green, etc.)
+            experimentsOnlineEl.textContent = experiments.length;
+            anomaliesDetectedEl.textContent = Math.floor(Math.random() * (experiments.length * 3)); // More anomalies!
+            const coffeeStatuses = ["FULL", "HALF-FULL", "NEEDS REFILL", "EMPTY", "CONTEMPLATING EXISTENCE"];
+            coffeeConsumedEl.textContent = getRandomItem(coffeeStatuses);
         }
 
-        // Create experiment cards (function from previous version, ensure it's here)
+        // Data Stream Canvas
+        const canvas = document.getElementById('dataStreamCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() {
+            const parentWidth = canvas.parentElement.clientWidth - 32; // 2rem padding
+            canvas.width = parentWidth > 150 ? parentWidth : 150; // Min width
+            canvas.height = 80; // Keep height fixed or make it responsive too
+        }
+
+        function createParticle() {
+            particles.push({
+                x: 0,
+                y: Math.random() * canvas.height,
+                vx: Math.random() * 2 + 1, // Speed
+                vy: (Math.random() - 0.5) * 0.5,
+                size: Math.random() * 1.5 + 0.5,
+                color: `rgba(0, 255, 255, ${Math.random() * 0.5 + 0.3})`
+            });
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if(Math.random() < 0.5) createParticle(); // Add particles intermittently
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                    particles.splice(i, 1); i--;
+                }
+            }
+            if (particles.length > 50) particles.splice(0, particles.length - 50); // Limit particles
+            requestAnimationFrame(drawParticles);
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+
+
+        // Create experiment cards
         function createExperimentCard(exp) {
             const card = document.createElement('div');
-            card.className = `card p-6 rounded-lg flex flex-col justify-between shadow-lg hover:shadow-cyan-500/50 ${exp.featured ? 'md:col-span-2 featured-card min-h-[250px]' : 'min-h-[200px]'}`;
+            card.className = `card p-4 md:p-6 rounded-lg flex flex-col justify-between shadow-lg hover:shadow-cyan-500/50 ${exp.featured ? 'md:col-span-2 featured-card min-h-[280px]' : 'min-h-[220px]'}`;
             
-            let iconSvg = '';
+            let iconSvg = ''; // Same icon logic as before
             switch (exp.category.toLowerCase().split(' ')[0]) {
                 case 'game': case 'music':
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 7a1 1 0 000 2h6a1 1 0 100-2H7zM7 11a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>`;
-                    break;
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 7a1 1 0 000 2h6a1 1 0 100-2H7zM7 11a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>`; break;
                 case 'ai':
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z" /></svg>`;
-                    break;
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z" /></svg>`; break;
                 case 'art': case 'visualizer': case 'creative':
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>`;
-                    break;
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>`; break;
                 default:
                     iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clip-rule="evenodd" /></svg>`;
             }
@@ -396,7 +470,6 @@
             experimentsGrid.appendChild(card);
         }
         
-        // Sort experiments
         experiments.sort((a, b) => {
             if (a.featured && !b.featured) return -1;
             if (!a.featured && b.featured) return 1;
@@ -405,32 +478,38 @@
         experiments.forEach(createExperimentCard);
 
         // Initial calls and intervals
-        getRandomQuote();
-        updateLabStats();
-        setInterval(getRandomQuote, 15000); // New quote every 15 seconds
-        setInterval(addTerminalLine, 3000); // New terminal line every 3 seconds
-        setInterval(updateLabStats, 5000); // Update stats every 5 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            updateQuote(); updateAnomaly(); updateLabLog(); updateThought(); updateExperimentSpotlight(); updateLabStats();
+            resizeCanvas(); // Initial resize
+            drawParticles(); // Start animation
+            
+            setInterval(updateQuote, 12000); 
+            setInterval(addTerminalLine, 2500); 
+            setInterval(updateLabStats, 4500);
+            setInterval(updateAnomaly, 10000);
+            setInterval(updateLabLog, 13000);
+            setInterval(triggerEBS, 25000); // Check to trigger EBS every 25s
+            setInterval(updateExperimentSpotlight, 20000);
+            setInterval(updateThought, 18000);
+        });
 
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        // "Don't Click" button logic
         let clickCount = 0;
         const clickMessages = [
-            "I told you not to click!",
-            "Seriously, stop it.",
-            "Okay, one more time...",
-            "You're really testing the fabric of reality here.",
-            "Fine. You win. Or do you?",
-            "Self-destruct sequence initiated... jk.",
-            "This button does nothing useful. Happy now?"
+            "I told you not to click!", "Seriously, stop it.", "Okay, one more time...",
+            "You're really testing the fabric of reality here.", "Fine. You win. Or do you?",
+            "Self-destruct sequence initiated... jk.", "This button does nothing useful. Happy now?",
+            "Congratulations! You've discovered the button of mild annoyance.", "The void stares back... and it's unimpressed."
         ];
         dontClickButton.addEventListener('click', () => {
             dontClickMessage.textContent = clickMessages[clickCount % clickMessages.length];
             clickCount++;
-            // Fun little visual glitch on the button itself
-            dontClickButton.classList.add('animate-ping', 'opacity-50');
+            dontClickButton.classList.add('animate-pulse');
+            document.body.style.filter = `hue-rotate(${clickCount * 15}deg) contrast(${1 + clickCount * 0.05})`;
             setTimeout(() => {
-                dontClickButton.classList.remove('animate-ping', 'opacity-50');
+                dontClickButton.classList.remove('animate-pulse');
+                if(clickCount > 5) document.body.style.filter = ''; // Reset filter after a few clicks
             }, 300);
         });
 
