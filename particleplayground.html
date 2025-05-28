@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Particle Playground</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            overflow: hidden; 
+        }
+        #particle-canvas {
+            display: block; 
+            background-color: #111827; /* Tailwind gray-900 */
+            cursor: crosshair;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .control-button {
+            padding: 0.65rem 1.3rem;
+            font-size: 0.95rem;
+            border-radius: 0.375rem; /* rounded-md */
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .control-button:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+        .control-button:active:not(:disabled) {
+            transform: translateY(0px);
+        }
+        .select-field {
+            padding: 0.6rem 1rem;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: #fff;
+            color: #374151; /* Tailwind gray-700 */
+            min-width: 160px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .input-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4b5563; /* Tailwind gray-600 */
+        }
+        .main-app-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; 
+            min-height: 100vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-200">
+
+    <div class="main-app-container p-4 sm:p-6">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-2xl w-full max-w-4xl">
+            <h1 class="text-3xl sm:text-4xl font-bold text-center text-sky-600 mb-6">Particle Playground</h1>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 rounded-lg items-end">
+                <div>
+                    <label for="effect-type-select" class="input-label block mb-1">Effect Type:</label>
+                    <select id="effect-type-select" class="select-field w-full">
+                        <option value="fountain">Fountain</option>
+                        <option value="explosion">Explosion</option>
+                        <option value="trail">Sparkle Trail</option>
+                        <option value="swirl">Swirl</option>
+                        <option value="rain">Rain</option>
+                        <option value="pulse">Pulse</option>
+                        <option value="fireworks">Fireworks</option>
+                        <option value="confetti">Confetti</option>
+                        <option value="gravity_point">Gravity Point</option>
+                        <option value="repeller_point">Repeller Point</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="color-mode-select" class="input-label block mb-1">Color Mode:</label>
+                    <select id="color-mode-select" class="select-field w-full">
+                        <option value="rainbow">Rainbow</option>
+                        <option value="blues">Blues</option>
+                        <option value="greens">Greens</option>
+                        <option value="reds">Reds/Oranges</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="fire">Fire</option>
+                        <option value="ice">Ice</option>
+                        <option value="neon">Neon</option>
+                        <option value="forest">Forest</option>
+                        <option value="randomAll">Random (All)</option>
+                    </select>
+                </div>
+                <div class="flex justify-center sm:justify-start lg:justify-end mt-4 sm:mt-0">
+                     <button id="clear-button" class="control-button bg-red-500 hover:bg-red-600 text-white font-semibold w-full sm:w-auto">
+                        Clear Canvas
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <canvas id="particle-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        const effectSelect = document.getElementById('effect-type-select');
+        const colorSelect = document.getElementById('color-mode-select');
+        const clearButton = document.getElementById('clear-button');
+
+        let particles = [];
+        let hue = 0; 
+        let currentEffect = 'fountain';
+        let currentColorMode = 'rainbow';
+        let mouse = { x: undefined, y: undefined, isDown: false, clickX: undefined, clickY: undefined };
+        let effectCenter = { x: undefined, y: undefined }; 
+
+        // For throttling drag effects
+        let lastDragEmitTime = 0;
+        const DRAG_EMIT_INTERVAL_BURST = 150; // ms for explosion, fireworks, pulse on drag
+        const DRAG_EMIT_INTERVAL_SWIRL_CONFETTI = 80; // ms for confetti on drag (swirl drag is different)
+
+
+        const colorPalettes = {
+            rainbow: () => `hsl(${hue}, 100%, 60%)`,
+            blues: () => `hsl(${getRandomInt(180, 240)}, ${getRandomInt(70, 100)}%, ${getRandomInt(50, 70)}%)`,
+            greens: () => `hsl(${getRandomInt(80, 160)}, ${getRandomInt(60, 100)}%, ${getRandomInt(40, 60)}%)`,
+            reds: () => `hsl(${getRandomInt(0, 40)}, ${getRandomInt(70, 100)}%, ${getRandomInt(50, 70)}%)`,
+            grayscale: () => { const l = getRandomInt(20, 80); return `hsl(0, 0%, ${l}%)`; },
+            fire: () => `hsl(${getRandomInt(0, 60)}, 100%, ${getRandomInt(45, 65)}%)`,
+            ice: () => `hsl(${getRandomInt(180, 220)}, ${getRandomInt(60, 100)}%, ${getRandomInt(70, 95)}%)`,
+            neon: () => `hsl(${Math.random() * 360}, 100%, 60%)`, // Changed to use static hue for neon, shifted by hue variable
+            forest: () => {
+                const type = Math.random();
+                if (type < 0.7) return `hsl(${getRandomInt(80, 140)}, ${getRandomInt(30, 60)}%, ${getRandomInt(20, 50)}%)`; 
+                return `hsl(${getRandomInt(20, 40)}, ${getRandomInt(40, 70)}%, ${getRandomInt(25, 45)}%)`; 
+            },
+            randomAll: () => `hsl(${Math.random() * 360}, 100%, 60%)`
+        };
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const padding = 10; 
+            let newWidth = container.offsetWidth - padding;
+            let newHeight = newWidth * (3 / 4); 
+
+            const maxHeight = Math.min(550, window.innerHeight * 0.65); 
+             if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                newWidth = newHeight * (4 / 3);
+            }
+            if (newWidth > container.offsetWidth - padding) {
+                newWidth = container.offsetWidth - padding;
+            }
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 2;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+                this.color = color;
+                this.life = 100; 
+                this.gravity = 0.05;
+                this.bounceFactor = -0.5; 
+                this.bounces = 0;
+                this.maxBounces = 2;
+                this.settled = false;
+                this.isConfetti = false; 
+                this.confettiAngle = Math.random() * Math.PI * 2;
+                this.confettiSpin = Math.random() * 0.2 - 0.1;
+            }
+
+            update() {
+                if (this.settled) {
+                    this.life -= 0.3; // Slower fade rate when settled
+                    if (this.size > 0.1) this.size -= 0.015; // Slower shrink rate
+                    if (this.isConfetti) {
+                        this.confettiAngle += this.confettiSpin * 0.3; // Slower spin
+                    }
+                    return; 
+                }
+
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity; // Apply gravity only if not settled
+                
+                // Ground interaction
+                if (this.y + this.size > canvas.height) {
+                    this.y = canvas.height - this.size;
+                    if (this.bounces < this.maxBounces && Math.abs(this.speedY) > 0.5) { 
+                        this.speedY *= this.bounceFactor;
+                        this.speedX *= 0.7; // Friction on bounce
+                        this.bounces++;
+                        if (this.life < 30) this.life = 30; // Ensure some life after bounce
+                    } else {
+                        this.settled = true;
+                        this.speedY = 0;
+                        this.speedX = 0;
+                        this.gravity = 0;
+                        // Ensure a minimum linger time when first settled
+                        if (this.life < 120) { 
+                            this.life = 120 + Math.random() * 60; // Linger for ~2-3 seconds
+                        }
+                    }
+                }
+                // Wall interaction (wrap around)
+                if (this.x + this.size < 0) this.x = canvas.width + this.size;
+                else if (this.x - this.size > canvas.width) this.x = 0 - this.size;
+                // Top boundary wrap for some effects like rain if needed, or just let them fly off
+                // if (this.y + this.size < 0) this.y = canvas.height + this.size;
+
+
+                // Normal life and size reduction when not settled
+                this.life -= 1;
+                if (this.size > 0.1) this.size -= 0.05;
+
+                if (this.isConfetti) {
+                    this.confettiAngle += this.confettiSpin;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                if (this.isConfetti) {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.confettiAngle);
+                    ctx.fillRect(-this.size / 2, -this.size / 4, this.size, this.size / 2);
+                    ctx.restore();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function createParticles(x, y, count = 1) {
+            // For gravity/repeller points, the 'x, y' are the center of the effect, not emission point.
+            if (currentEffect === 'gravity_point' || currentEffect === 'repeller_point') {
+                // effectCenter is already set by handleInteractionStart/Move
+                // Emit a small visual cue at the effect center
+                for (let i = 0; i < 3; i++) {
+                    let p = new Particle(effectCenter.x, effectCenter.y, colorPalettes[currentColorMode]());
+                    p.life = 30; p.speedX = Math.random()*1-0.5; p.speedY = Math.random()*1-0.5; p.gravity=0;
+                    particles.push(p);
+                }
+                return;
+            }
+
+            for (let i = 0; i < count; i++) {
+                const particleColor = colorPalettes[currentColorMode]();
+                let p = new Particle(x, y, particleColor);
+                p.life = getRandomInt(80, 250);
+
+                switch (currentEffect) {
+                    case 'explosion':
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = Math.random() * 6 + 2;
+                        p.speedX = Math.cos(angle) * speed;
+                        p.speedY = Math.sin(angle) * speed;
+                        p.gravity = 0.03;
+                        p.maxBounces = 1;
+                        break;
+                    case 'fountain':
+                        p.speedX = Math.random() * 2.5 - 1.25;
+                        p.speedY = Math.random() * -7 - 3;
+                        p.gravity = 0.15;
+                        break;
+                    case 'trail':
+                        p.speedX = Math.random() * 0.6 - 0.3;
+                        p.speedY = Math.random() * 0.6 - 0.3;
+                        p.gravity = 0.01;
+                        p.size = Math.random() * 3 + 1;
+                        p.life = getRandomInt(30, 70);
+                        p.maxBounces = 0;
+                        break;
+                    case 'swirl':
+                        const swirlAngle = i * (Math.PI * 2 / count);
+                        p.initialX = 0; // Relative to effectCenter
+                        p.initialY = 0;
+                        p.x = effectCenter.x + p.initialX;
+                        p.y = effectCenter.y + p.initialY;
+                        p.speedX = 0; 
+                        p.speedY = 0;
+                        p.gravity = 0;
+                        p.life = getRandomInt(120, 200);
+                        
+                        p.currentAngle = swirlAngle;
+                        p.radius = 5 + Math.random() * 15; // Start closer
+                        p.spinSpeed = 0.02 + Math.random() * 0.03;
+                        p.radiusGrowth = 0.3 + Math.random() * 0.3;
+
+                        p.update = function() { // Swirl-specific update
+                            if (this.settled) { // Swirl particles don't really "settle" in the same way
+                                this.life -= 0.5; if (this.size > 0.1) this.size -= 0.02; return;
+                            }
+                            this.currentAngle += this.spinSpeed;
+                            this.radius += this.radiusGrowth; 
+
+                            if (effectCenter.x === undefined) { // Fallback
+                                effectCenter.x = canvas.width / 2; effectCenter.y = canvas.height / 2;
+                            }
+                            this.x = effectCenter.x + Math.cos(this.currentAngle) * this.radius;
+                            this.y = effectCenter.y + Math.sin(this.currentAngle) * this.radius;
+                            
+                            this.life--; 
+                            if (this.size > 0.1) this.size -= 0.03;
+                            // No ground interaction for swirl, they just fade
+                            if (this.y + this.size > canvas.height || this.y - this.size < 0 || this.x + this.size < 0 || this.x - this.size > canvas.width) {
+                                // Optional: remove if they go too far off screen
+                                // this.life = 0; 
+                            }
+                        };
+                        break;
+                    case 'rain':
+                        p.x = Math.random() * canvas.width;
+                        p.y = -Math.random() * canvas.height * 0.3 - 5; // Start further above
+                        p.speedX = 0;
+                        p.speedY = Math.random() * 4 + 3; // Faster rain
+                        p.gravity = 0.1; // Slightly more gravity for rain
+                        p.size = Math.random() * 2 + 1;
+                        p.life = getRandomInt(100, 200); // Raindrops don't live too long after hitting ground
+                        break;
+                    case 'pulse':
+                        const pulseAngle = i * (Math.PI * 2 / count); // Evenly distribute pulse particles
+                        const pulseSpeed = 2.5 + Math.random() * 0.5; 
+                        p.speedX = Math.cos(pulseAngle) * pulseSpeed;
+                        p.speedY = Math.sin(pulseAngle) * pulseSpeed;
+                        p.gravity = 0;
+                        p.life = getRandomInt(50, 80); // Shorter life for distinct pulse
+                        p.update = function() {
+                            this.x += this.speedX; this.y += this.speedY;
+                            this.speedX *= 0.97; this.speedY *= 0.97; // Slow down a bit
+                            this.life--; if (this.size > 0.1) this.size -= 0.1; // Fade faster
+                        };
+                        break;
+                    case 'fireworks':
+                        p.speedY = Math.random() * -9 - 6; 
+                        p.speedX = Math.random() * 3 - 1.5;
+                        p.gravity = 0.12;
+                        p.life = getRandomInt(30, 70); 
+                        p.isRocket = true; 
+                        p.maxBounces = 0;
+                        break;
+                    case 'confetti':
+                        p.isConfetti = true;
+                        p.speedX = Math.random() * 4 - 2;
+                        p.speedY = Math.random() * -4 - 1.5; 
+                        p.gravity = 0.08;
+                        p.size = getRandomInt(6, 12); // Slightly smaller confetti
+                        p.life = getRandomInt(150, 280);
+                        p.bounceFactor = -0.25;
+                        p.maxBounces = 3;
+                        break;
+                }
+                particles.push(p);
+            }
+        }
+
+        function handleParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                
+                if (currentEffect === 'gravity_point' && effectCenter.x !== undefined && !p.settled) {
+                    const dx = effectCenter.x - p.x;
+                    const dy = effectCenter.y - p.y;
+                    const distSq = dx * dx + dy * dy; // Use squared distance for performance
+                    if (distSq > 1) { 
+                        const dist = Math.sqrt(distSq);
+                        const force = 300 / (distSq * 0.5 + 100); // Adjusted force calculation
+                        p.speedX += (dx / dist) * force * 0.2; 
+                        p.speedY += (dy / dist) * force * 0.2;
+                    }
+                } else if (currentEffect === 'repeller_point' && effectCenter.x !== undefined && !p.settled) {
+                     const dx = p.x - effectCenter.x;
+                     const dy = p.y - effectCenter.y;
+                     const distSq = dx * dx + dy * dy;
+                     if (distSq < 10000 && distSq > 1) { // Repel if within 100px radius
+                        const dist = Math.sqrt(distSq);
+                        const force = 200 / (distSq * 0.1 + 50); 
+                        p.speedX += (dx / dist) * force * 0.15;
+                        p.speedY += (dy / dist) * force * 0.15;
+                     }
+                }
+
+                p.update(); // Call particle's own update method
+                p.draw();
+
+                if (p.isRocket && p.speedY >= -0.2 && p.life > 0) { // Rocket at apex
+                    p.life = 0; 
+                    for (let j = 0; j < 35 + Math.random() * 25; j++) { 
+                        let burstP = new Particle(p.x, p.y, colorPalettes[currentColorMode]());
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = Math.random() * 4.5 + 1.5;
+                        burstP.speedX = Math.cos(angle) * speed;
+                        burstP.speedY = Math.sin(angle) * speed;
+                        burstP.gravity = 0.06;
+                        burstP.life = getRandomInt(60, 120);
+                        burstP.size = Math.random() * 2.5 + 1;
+                        burstP.maxBounces = 1;
+                        particles.push(burstP);
+                    }
+                }
+
+                if (p.life <= 0 || p.size <= 0.1) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.15)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            handleParticles();
+            
+            if (currentColorMode === 'rainbow' || currentColorMode === 'neon') {
+                hue = (hue + (currentColorMode === 'neon' ? 2 : 1)) % 360; // Neon shifts hue faster
+                if(currentColorMode === 'neon') colorPalettes.neon = () => `hsl(${hue}, 100%, 60%)`;
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function handleInteractionStart(clientX, clientY) {
+            mouse.isDown = true;
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = clientX - rect.left;
+            mouse.y = clientY - rect.top;
+            mouse.clickX = mouse.x; 
+            mouse.clickY = mouse.y;
+            
+            // Always update effectCenter on new interaction start
+            effectCenter.x = mouse.x;
+            effectCenter.y = mouse.y;
+
+            let particleCount = 1;
+            // Determine particle count based on effect for initial click
+            switch (currentEffect) {
+                case 'explosion': particleCount = 40 + Math.random() * 30; break;
+                case 'fireworks': particleCount = 1; break; // Only 1 rocket
+                case 'pulse': particleCount = 30 + Math.random() * 20; break;
+                case 'fountain': particleCount = 5 + Math.random() * 3; break;
+                case 'swirl': particleCount = 25 + Math.random() * 15; break;
+                case 'rain': particleCount = 60 + Math.random() * 40; break;
+                case 'confetti': particleCount = 20 + Math.random() * 15; break;
+                case 'gravity_point': case 'repeller_point': particleCount = 3; break; // Visual cue
+                case 'trail': particleCount = 0; break; // Trail only on move
+                default: particleCount = 5;
+            }
+            if (particleCount > 0) createParticles(mouse.x, mouse.y, particleCount);
+            lastDragEmitTime = Date.now();
+        }
+
+        function handleInteractionMove(clientX, clientY) {
+            if (!mouse.isDown) return;
+
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = clientX - rect.left;
+            mouse.y = clientY - rect.top;
+            const now = Date.now();
+
+            if (currentEffect === 'gravity_point' || currentEffect === 'repeller_point' || currentEffect === 'swirl') {
+                effectCenter.x = mouse.x;
+                effectCenter.y = mouse.y;
+            }
+
+            switch (currentEffect) {
+                case 'trail': createParticles(mouse.x, mouse.y, 2); break;
+                case 'fountain': if (Math.random() < 0.7) createParticles(mouse.x, mouse.y, 1); break; // More responsive
+                case 'confetti':
+                     if (now - lastDragEmitTime > DRAG_EMIT_INTERVAL_SWIRL_CONFETTI) {
+                        createParticles(mouse.x, mouse.y, 2 + Math.floor(Math.random()*2)); // 2 or 3
+                        lastDragEmitTime = now;
+                    }
+                    break;
+                case 'explosion': case 'pulse': case 'fireworks':
+                    if (now - lastDragEmitTime > DRAG_EMIT_INTERVAL_BURST) {
+                        let count = (currentEffect === 'fireworks') ? 1 : 10; // Fewer for drag
+                        if (currentEffect === 'fireworks' && Math.random() < 0.1) count = 1; // Low chance of rocket on drag
+                        else if (currentEffect === 'fireworks') count = 5 + Math.random()*5; // Small burst for drag fireworks
+                        
+                        createParticles(mouse.x, mouse.y, count);
+                        lastDragEmitTime = now;
+                    }
+                    break;
+                // Swirl is handled by moving effectCenter, no new particles on drag unless desired
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => handleInteractionStart(e.clientX, e.clientY));
+        canvas.addEventListener('mouseup', () => { mouse.isDown = false; });
+        canvas.addEventListener('mouseleave', () => { mouse.isDown = false; });
+        canvas.addEventListener('mousemove', (e) => handleInteractionMove(e.clientX, e.clientY));
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); handleInteractionStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault(); mouse.isDown = false;
+        }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); handleInteractionMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+
+        effectSelect.addEventListener('change', (e) => {
+            currentEffect = e.target.value;
+            effectCenter.x = undefined; effectCenter.y = undefined; 
+        });
+        colorSelect.addEventListener('change', (e) => { currentColorMode = e.target.value; });
+        clearButton.addEventListener('click', () => {
+            particles = []; 
+            ctx.fillStyle = '#111827'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            effectCenter.x = undefined; effectCenter.y = undefined; 
+        });
+        
+        window.addEventListener('resize', resizeCanvas);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            resizeCanvas(); 
+            animate();
+        });
+    </script>
+</body>
+</html>

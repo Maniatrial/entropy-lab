@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Block Stacker - Speed Inc.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none;
+            overscroll-behavior: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        #gameCanvas {
+            border: 5px solid #4b5563; /* Tailwind gray-600 */
+            background-color: #111827; /* Tailwind gray-900 */
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 0 15px rgba(75, 85, 99, 0.5);
+        }
+         .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.75);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #1f2937; /* Tailwind gray-800 */
+            color: #e5e7eb; /* Tailwind gray-200 */
+            margin: auto;
+            padding: 30px;
+            border: 2px solid #374151; /* Tailwind gray-700 */
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        .modal-button {
+            background-color: #ef4444; /* Tailwind red-500 */
+            border: none;
+            color: white;
+            padding: 12px 28px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .modal-button:hover {
+            background-color: #dc2626; /* Tailwind red-600 */
+        }
+        #backButton {
+            font-size: 0.8rem;
+        }
+        .touch-controls-stacker {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 300px; /* Max width for touch buttons */
+            margin-top: 15px;
+        }
+        .touch-button-stacker {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.5rem; /* Larger for easier tapping */
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.15s ease;
+        }
+        .touch-button-stacker:active {
+            background-color: #2563eb; /* Darker blue */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 select-none">
+
+    <a href="https://maniatrial.github.io/entropy-lab/" id="backButton" class="fixed top-4 left-4 p-2 bg-gray-700 hover:bg-gray-600 rounded shadow-md z-50">&lt; Back</a>
+
+    <div class="text-center mb-5 mt-12 md:mt-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-cyan-400">Block Stacker</h1>
+        <div class="mt-3 text-lg md:text-xl">
+            Height: <span id="heightDisplay" class="text-yellow-400">0</span>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="touchControlsStacker" class="touch-controls-stacker md:hidden">
+        <button id="touchLeft" class="touch-button-stacker">←</button>
+        <button id="touchDrop" class="touch-button-stacker">↓</button>
+        <button id="touchRight" class="touch-button-stacker">→</button>
+    </div>
+    <p class="mt-2 text-xs text-gray-400 md:hidden">Use buttons to move & drop.</p>
+    <p class="mt-2 text-xs text-gray-400 hidden md:block">Arrows: Move, Space/Down: Drop.</p>
+
+
+    <div id="gameOverModalStacker" class="modal">
+        <div class="modal-content">
+            <h2 id="gameOverTitleStacker" class="text-3xl font-bold mb-4">Game Over!</h2>
+            <p id="finalHeightStacker" class="text-lg mb-5">Final Height: 0</p>
+            <button id="restartButtonStacker" class="modal-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvasStacker = document.getElementById('gameCanvas');
+        const contextStacker = canvasStacker.getContext('2d');
+        const heightDisplayElement = document.getElementById('heightDisplay');
+
+        const gameOverModalStacker = document.getElementById('gameOverModalStacker');
+        const finalHeightStackerElement = document.getElementById('finalHeightStacker');
+        const restartButtonStacker = document.getElementById('restartButtonStacker');
+
+        // Game variables
+        let blockWidth, blockHeight;
+        let currentBlock;
+        let stackedBlocks = [];
+        let scoreHeight = 0; 
+        let gameOverStacker = false;
+        let animationFrameIdStacker;
+        // gameSpeedStacker is effectively controlled by requestAnimationFrame
+        let dropSpeedStacker; 
+        
+        const gridWidth = 10; 
+        let TILE_SIZE_X, TILE_SIZE_Y; 
+
+        const blockColorsStacker = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
+        let baseHorizontalSpeed; // Base speed for block movement
+
+        // --- Initialization and Setup ---
+        function resizeCanvasStacker() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            const aspectRatio = 0.5; 
+            const canvasMaxHeight = screenHeight * 0.65;
+            const canvasMaxWidth = Math.min(screenWidth * 0.9, canvasMaxHeight * aspectRatio, 400);
+            
+            canvasStacker.width = canvasMaxWidth;
+            canvasStacker.height = canvasMaxHeight;
+
+            TILE_SIZE_X = canvasStacker.width / gridWidth;
+            TILE_SIZE_Y = TILE_SIZE_X * 0.6; 
+            blockHeight = TILE_SIZE_Y;
+            baseHorizontalSpeed = TILE_SIZE_X / 25; // Adjusted base speed
+        }
+
+        function spawnNewBlock() {
+            blockWidth = TILE_SIZE_X * (Math.floor(Math.random() * 2) + 2); 
+            // Calculate speed based on scoreHeight
+            // Increase speed by 5% of base speed for every 5 blocks stacked, cap at 2.5x base speed
+            const speedMultiplier = 1 + Math.min(1.5, (Math.floor(scoreHeight / 5) * 0.05));
+            const currentHorizontalSpeed = baseHorizontalSpeed * speedMultiplier;
+
+            currentBlock = {
+                x: Math.floor(gridWidth / 2) * TILE_SIZE_X - blockWidth / 2, 
+                y: 0,
+                width: blockWidth,
+                height: blockHeight,
+                color: blockColorsStacker[Math.floor(Math.random() * blockColorsStacker.length)],
+                isMoving: true,
+                isDropping: false,
+                vx: currentHorizontalSpeed 
+            };
+            if (Math.random() < 0.5) currentBlock.vx *= -1; 
+        }
+
+        function initGameStacker() {
+            resizeCanvasStacker();
+            scoreHeight = 0;
+            stackedBlocks = [{ x: 0, y: canvasStacker.height - blockHeight, width: canvasStacker.width, height: blockHeight, color: '#4b5563' }]; 
+            gameOverStacker = false;
+            dropSpeedStacker = TILE_SIZE_Y / 4; // Slightly faster drop
+            updateUIDisplayStacker();
+            spawnNewBlock();
+            
+            gameOverModalStacker.style.display = 'none';
+            if (animationFrameIdStacker) cancelAnimationFrame(animationFrameIdStacker);
+            gameLoopStacker();
+        }
+        
+        // --- Drawing Functions ---
+        function clearCanvasStacker() {
+            contextStacker.fillStyle = '#111827'; 
+            contextStacker.fillRect(0, 0, canvasStacker.width, canvasStacker.height);
+        }
+
+        function drawBlock(block) {
+            contextStacker.fillStyle = block.color;
+            contextStacker.fillRect(block.x, block.y, block.width, block.height);
+            contextStacker.strokeStyle = '#000';
+            contextStacker.lineWidth = 1;
+            contextStacker.strokeRect(block.x, block.y, block.width, block.height);
+        }
+
+        // --- Game Logic ---
+        function updateCurrentBlock() {
+            if (!currentBlock || gameOverStacker) return;
+
+            if (currentBlock.isDropping) {
+                currentBlock.y += dropSpeedStacker;
+                const topOfStack = stackedBlocks[stackedBlocks.length - 1];
+                if (currentBlock.y + currentBlock.height >= topOfStack.y) {
+                    const overlap = Math.max(0, Math.min(currentBlock.x + currentBlock.width, topOfStack.x + topOfStack.width) - Math.max(currentBlock.x, topOfStack.x));
+                    
+                    if (overlap > TILE_SIZE_X * 0.15) { // Need at least 15% overlap
+                        currentBlock.y = topOfStack.y - currentBlock.height;
+                        currentBlock.width = overlap; 
+                        currentBlock.x = Math.max(currentBlock.x, topOfStack.x); 
+                        
+                        stackedBlocks.push({...currentBlock});
+                        scoreHeight++;
+                        updateUIDisplayStacker();
+                        
+                        if (topOfStack.y < blockHeight * 4) { 
+                           shiftCanvasDown();
+                        }
+                        spawnNewBlock();
+
+                    } else { 
+                        gameOverStacker = true;
+                    }
+                    currentBlock.isDropping = false; // Reset dropping state
+                }
+            } else if (currentBlock.isMoving) {
+                currentBlock.x += currentBlock.vx;
+                if (currentBlock.x < 0 || currentBlock.x + currentBlock.width > canvasStacker.width) {
+                    currentBlock.vx *= -1; 
+                    currentBlock.x = Math.max(0, Math.min(currentBlock.x, canvasStacker.width - currentBlock.width)); 
+                }
+            }
+        }
+        
+        function shiftCanvasDown() {
+            stackedBlocks.forEach(block => {
+                block.y += blockHeight;
+            });
+            stackedBlocks = stackedBlocks.filter(block => block.y < canvasStacker.height + blockHeight * 2); // Keep a couple offscreen for smoother look
+        }
+
+        function updateUIDisplayStacker() {
+            heightDisplayElement.textContent = scoreHeight;
+        }
+        
+        function showGameOverScreenStacker() {
+            gameOverStacker = true; 
+            finalHeightStackerElement.textContent = "Final Height: " + scoreHeight;
+            gameOverModalStacker.style.display = 'flex';
+            if (animationFrameIdStacker) cancelAnimationFrame(animationFrameIdStacker);
+            animationFrameIdStacker = null;
+        }
+
+        // --- Main Game Loop ---
+        function gameLoopStacker() {
+            if (gameOverStacker) {
+                showGameOverScreenStacker();
+                return;
+            }
+
+            clearCanvasStacker();
+            stackedBlocks.forEach(block => drawBlock(block));
+            if (currentBlock) drawBlock(currentBlock);
+            updateCurrentBlock();
+            
+            animationFrameIdStacker = requestAnimationFrame(gameLoopStacker);
+        }
+
+        // --- Event Listeners ---
+        function handleKeyDownStacker(e) {
+            if (gameOverStacker || !currentBlock || currentBlock.isDropping) return;
+
+            const moveAmount = TILE_SIZE_X * 0.75; // More responsive manual move
+
+            switch(e.key.toLowerCase()) { // Use toLowerCase for wasd
+                case 'arrowleft':
+                case 'a':
+                    currentBlock.x -= moveAmount;
+                    currentBlock.x = Math.max(0, currentBlock.x);
+                    break;
+                case 'arrowright':
+                case 'd':
+                    currentBlock.x += moveAmount;
+                    currentBlock.x = Math.min(canvasStacker.width - currentBlock.width, currentBlock.x);
+                    break;
+                case ' ': 
+                case 'arrowdown':
+                case 's':
+                    currentBlock.isDropping = true;
+                    currentBlock.isMoving = false; 
+                    break;
+            }
+        }
+        
+        const touchLeftStacker = document.getElementById('touchLeft');
+        const touchRightStacker = document.getElementById('touchRight');
+        const touchDropStacker = document.getElementById('touchDrop');
+        const moveAmountTouch = TILE_SIZE_X * 0.75;
+
+        if(touchLeftStacker) touchLeftStacker.addEventListener('click', () => {
+            if (currentBlock && !currentBlock.isDropping && !gameOverStacker) {
+                currentBlock.x -= moveAmountTouch;
+                currentBlock.x = Math.max(0, currentBlock.x);
+            }
+        });
+        if(touchRightStacker) touchRightStacker.addEventListener('click', () => {
+             if (currentBlock && !currentBlock.isDropping && !gameOverStacker) {
+                currentBlock.x += moveAmountTouch;
+                currentBlock.x = Math.min(canvasStacker.width - currentBlock.width, currentBlock.x);
+            }
+        });
+        if(touchDropStacker) touchDropStacker.addEventListener('click', () => {
+            if (currentBlock && !currentBlock.isDropping && !gameOverStacker) {
+                currentBlock.isDropping = true;
+                currentBlock.isMoving = false;
+            }
+        });
+
+        document.addEventListener("keydown", handleKeyDownStacker, false);
+        restartButtonStacker.addEventListener('click', initGameStacker);
+        
+        window.addEventListener('resize', () => {
+            if (animationFrameIdStacker) cancelAnimationFrame(animationFrameIdStacker);
+            const oldHeight = scoreHeight;
+            const gameWasOver = gameOverStacker; // Check if game was already over
+
+            initGameStacker();
+            scoreHeight = oldHeight; 
+            updateUIDisplayStacker();
+
+            if (gameWasOver) { // If game was over, show the modal again
+                showGameOverScreenStacker();
+            } else if (!gameOverStacker) { // Only restart loop if not game over
+                 animationFrameIdStacker = requestAnimationFrame(gameLoopStacker);
+            }
+        });
+
+        window.onload = () => {
+            initGameStacker();
+            const touchControlsDiv = document.getElementById('touchControlsStacker');
+            if (window.innerWidth < 768) { 
+                if(touchControlsDiv) touchControlsDiv.style.display = 'flex';
+            } else {
+                 if(touchControlsDiv) touchControlsDiv.style.display = 'none';
+            }
+        };
+         window.addEventListener('resize', () => {
+            const touchControlsDiv = document.getElementById('touchControlsStacker');
+            if (window.innerWidth < 768) {
+                if(touchControlsDiv) touchControlsDiv.style.display = 'flex';
+            } else {
+                if(touchControlsDiv) touchControlsDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

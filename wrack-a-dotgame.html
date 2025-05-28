@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Dot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation; /* Prevents double-tap zoom on mobile */
+        }
+        .hole {
+            width: 80px; /* Adjusted for better fit on smaller screens */
+            height: 80px;
+            background-color: #a0aec0; /* Tailwind gray-500 */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.3);
+        }
+        .hole.active .mole {
+            display: block;
+        }
+        .mole {
+            width: 60px; /* Adjusted */
+            height: 60px;
+            background-color: #f56565; /* Tailwind red-500 */
+            border-radius: 50%;
+            display: none; /* Hidden by default */
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
+        .game-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+        }
+        .game-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .input-field {
+            padding: 0.5rem;
+            border: 1px solid #cbd5e0; /* Tailwind gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            width: 100%; /* Full width for mobile */
+        }
+        @media (min-width: 640px) { /* sm breakpoint */
+            .hole {
+                width: 100px;
+                height: 100px;
+            }
+            .mole {
+                width: 80px;
+                height: 80px;
+            }
+            .input-field {
+                width: auto; /* Auto width for larger screens */
+            }
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            width: 90%;
+            max-width: 350px;
+        }
+        .message-box button {
+            background-color: #4a5568; /* Tailwind gray-700 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .message-box button:hover {
+            background-color: #2d3748; /* Tailwind gray-800 */
+        }
+    </style>
+</head>
+<body class="bg-gray-200 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-lg">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-6">Whack-a-Dot!</h1>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Level:</label>
+                <select id="level-select" class="input-field focus:ring-indigo-500 focus:border-indigo-500">
+                    </select>
+            </div>
+            <div>
+                <label for="duration-input" class="block text-sm font-medium text-gray-700 mb-1">Duration (s):</label>
+                <input type="number" id="duration-input" value="20" min="5" max="120" step="5" class="input-field focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-6 text-lg sm:text-xl">
+            <div class="text-gray-700">
+                Score: <span id="score" class="font-semibold text-blue-600">0</span>
+            </div>
+            <div class="text-gray-700">
+                Time: <span id="time-left" class="font-semibold text-red-600">20</span>s
+            </div>
+        </div>
+
+        <div id="game-grid" class="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+            </div>
+
+        <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <button id="start-button" class="game-button bg-green-500 hover:bg-green-600 text-white font-semibold">Start Game</button>
+            <button id="reset-button" class="game-button bg-gray-500 hover:bg-gray-600 text-white font-semibold" disabled>Reset Game</button>
+        </div>
+
+        <p id="message-area" class="text-center text-gray-600 mt-6 min-h-[1.5em]"></p>
+    </div>
+
+    <div id="custom-message-box" class="message-box hidden">
+        <p id="message-box-text"></p>
+        <button id="message-box-ok">OK</button>
+    </div>
+
+    <script>
+        // Game elements
+        const gameGrid = document.getElementById('game-grid');
+        const scoreDisplay = document.getElementById('score');
+        const timeLeftDisplay = document.getElementById('time-left');
+        const startButton = document.getElementById('start-button');
+        const resetButton = document.getElementById('reset-button');
+        const messageArea = document.getElementById('message-area');
+        const customMessageBox = document.getElementById('custom-message-box');
+        const messageBoxText = document.getElementById('message-box-text');
+        const messageBoxOkButton = document.getElementById('message-box-ok');
+        const levelSelect = document.getElementById('level-select');
+        const durationInput = document.getElementById('duration-input');
+
+        // Game variables
+        const GRID_SIZE = 9; // 3x3 grid
+        let score = 0;
+        let timeLeft = parseInt(durationInput.value); // Initial time from input
+        let moleInterval;
+        let timerInterval;
+        let activeMoleIndex = -1;
+        let moleTimeout; 
+        let gameActive = false;
+
+        // Difficulty settings: [minDuration, maxDuration] for mole visibility and next mole delay
+        // Level 1: Slower, Level 10: Faster
+        const difficultyParams = {
+            moleVisibility: { // How long mole stays visible (ms)
+                level1: [900, 1600],
+                level10: [250, 600]
+            },
+            nextMoleDelay: { // Delay between moles appearing (ms)
+                level1: [1000, 1800],
+                level10: [350, 750]
+            }
+        };
+
+        // --- Utility Functions ---
+        function showCustomMessage(message) {
+            messageBoxText.textContent = message;
+            customMessageBox.classList.remove('hidden');
+        }
+
+        messageBoxOkButton.addEventListener('click', () => {
+            customMessageBox.classList.add('hidden');
+        });
+
+        /**
+         * Interpolates a value between start and end based on a fraction.
+         * @param {number} start - The start value.
+         * @param {number} end - The end value.
+         * @param {number} fraction - The fraction (0 to 1) for interpolation.
+         * @returns {number} The interpolated value.
+         */
+        function interpolate(start, end, fraction) {
+            return start + (end - start) * fraction;
+        }
+
+        /**
+         * Gets game settings based on the selected difficulty level.
+         * @param {number} level - The selected difficulty level (1-10).
+         * @returns {object} Object with { moleVisibleMin, moleVisibleMax, nextMoleMin, nextMoleMax }.
+         */
+        function getDifficultySettings(level) {
+            const fraction = (level - 1) / 9; // 0 for level 1, 1 for level 10
+
+            const moleVisibleMin = interpolate(difficultyParams.moleVisibility.level1[0], difficultyParams.moleVisibility.level10[0], fraction);
+            const moleVisibleMax = interpolate(difficultyParams.moleVisibility.level1[1], difficultyParams.moleVisibility.level10[1], fraction);
+            
+            const nextMoleMin = interpolate(difficultyParams.nextMoleDelay.level1[0], difficultyParams.nextMoleDelay.level10[0], fraction);
+            const nextMoleMax = interpolate(difficultyParams.nextMoleDelay.level1[1], difficultyParams.nextMoleDelay.level10[1], fraction);
+
+            return {
+                moleVisibleMin: Math.max(150, moleVisibleMin), // Ensure a minimum visibility
+                moleVisibleMax: Math.max(300, moleVisibleMax),
+                nextMoleMin: Math.max(200, nextMoleMin), // Ensure a minimum delay
+                nextMoleMax: Math.max(400, nextMoleMax)
+            };
+        }
+
+
+        // --- Game Initialization ---
+        function populateLevelSelect() {
+            for (let i = 1; i <= 10; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Level ${i}`;
+                levelSelect.appendChild(option);
+            }
+            levelSelect.value = '5'; // Default level
+        }
+
+        function createGrid() {
+            gameGrid.innerHTML = ''; 
+            for (let i = 0; i < GRID_SIZE; i++) {
+                const hole = document.createElement('div');
+                hole.classList.add('hole', 'flex', 'justify-center', 'items-center');
+                hole.dataset.index = i;
+
+                const mole = document.createElement('div');
+                mole.classList.add('mole');
+                hole.appendChild(mole);
+
+                hole.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (gameActive && parseInt(hole.dataset.index) === activeMoleIndex) {
+                        whackMole(hole);
+                    }
+                });
+                hole.addEventListener('touchend', (e) => {
+                    e.preventDefault(); 
+                     if (gameActive && parseInt(hole.dataset.index) === activeMoleIndex) {
+                        whackMole(hole);
+                    }
+                });
+                gameGrid.appendChild(hole);
+            }
+        }
+
+        // --- Game Logic ---
+        function popMole() {
+            if (!gameActive) return;
+
+            if (activeMoleIndex !== -1 && gameGrid.children[activeMoleIndex]) {
+                gameGrid.children[activeMoleIndex].classList.remove('active');
+            }
+            clearTimeout(moleTimeout); 
+
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * GRID_SIZE);
+            } while (randomIndex === activeMoleIndex); 
+
+            activeMoleIndex = randomIndex;
+            const currentHole = gameGrid.children[activeMoleIndex];
+            
+            const currentLevel = parseInt(levelSelect.value);
+            const settings = getDifficultySettings(currentLevel);
+
+            if (currentHole) {
+                currentHole.classList.add('active');
+            }
+
+            const moleVisibleDuration = Math.random() * (settings.moleVisibleMax - settings.moleVisibleMin) + settings.moleVisibleMin;
+            moleTimeout = setTimeout(() => {
+                if (gameActive && currentHole && currentHole.classList.contains('active')) {
+                    currentHole.classList.remove('active');
+                    activeMoleIndex = -1; 
+                }
+            }, moleVisibleDuration);
+        }
+
+        function whackMole(holeElement) {
+            if (!gameActive) return;
+
+            score++;
+            scoreDisplay.textContent = score;
+            holeElement.classList.remove('active');
+            activeMoleIndex = -1; 
+            clearTimeout(moleTimeout); 
+            
+            // Optional: Immediately pop another mole for faster pace on successful whack
+            // This could also be tied to difficulty
+            // setTimeout(popMole, 50); 
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timeLeftDisplay.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        // --- Game State Management ---
+        function startGame() {
+            if (gameActive) return; 
+
+            score = 0;
+            timeLeft = parseInt(durationInput.value) || 20; // Read from input, default 20
+            if (timeLeft < 5 || timeLeft > 120) timeLeft = 20; // Validate
+            durationInput.value = timeLeft; // Update input if validated
+            
+            scoreDisplay.textContent = score;
+            timeLeftDisplay.textContent = timeLeft;
+            messageArea.textContent = "Whack 'em fast!";
+            gameActive = true;
+
+            startButton.disabled = true;
+            resetButton.disabled = false;
+            levelSelect.disabled = true;
+            durationInput.disabled = true;
+            
+            resetButton.classList.replace('bg-gray-500', 'bg-blue-500');
+            resetButton.classList.replace('hover:bg-gray-600', 'hover:bg-blue-600');
+
+
+            if (activeMoleIndex !== -1 && gameGrid.children[activeMoleIndex]) {
+                gameGrid.children[activeMoleIndex].classList.remove('active');
+                activeMoleIndex = -1;
+            }
+            clearTimeout(moleTimeout);
+
+            const currentLevel = parseInt(levelSelect.value);
+            const settings = getDifficultySettings(currentLevel);
+
+            function moleLoop() {
+                if (!gameActive) return;
+                popMole();
+                const nextMoleDelay = Math.random() * (settings.nextMoleMax - settings.nextMoleMin) + settings.nextMoleMin;
+                moleInterval = setTimeout(moleLoop, nextMoleDelay);
+            }
+            moleLoop();
+
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            clearTimeout(moleInterval); 
+            clearTimeout(moleTimeout); 
+
+            if (activeMoleIndex !== -1 && gameGrid.children[activeMoleIndex]) {
+                gameGrid.children[activeMoleIndex].classList.remove('active');
+                activeMoleIndex = -1;
+            }
+
+            showCustomMessage(`Game Over! Your score: ${score}`);
+            messageArea.textContent = `Game Over! Final Score: ${score}. Adjust settings and press Start to play again.`;
+
+            startButton.disabled = false;
+            resetButton.disabled = true; // Reset should be disabled until game starts again
+            levelSelect.disabled = false;
+            durationInput.disabled = false;
+
+            resetButton.classList.replace('bg-blue-500', 'bg-gray-500');
+            resetButton.classList.replace('hover:bg-blue-600', 'hover:bg-gray-600');
+
+        }
+
+        function resetGame() {
+            if (gameActive) { 
+                endGame(); // Properly end the current game first
+            }
+            
+            score = 0;
+            timeLeft = parseInt(durationInput.value) || 20;
+            if (timeLeft < 5 || timeLeft > 120) timeLeft = 20;
+            durationInput.value = timeLeft;
+
+            scoreDisplay.textContent = score;
+            timeLeftDisplay.textContent = timeLeft;
+            messageArea.textContent = "Adjust settings and press Start to play!";
+
+            startButton.disabled = false;
+            resetButton.disabled = true; // Reset button is enabled only during game
+            levelSelect.disabled = false;
+            durationInput.disabled = false;
+            
+            // Ensure reset button is in its disabled style if it was active
+             if (resetButton.classList.contains('bg-blue-500')) {
+                resetButton.classList.replace('bg-blue-500', 'bg-gray-500');
+                resetButton.classList.replace('hover:bg-blue-600', 'hover:bg-gray-600');
+            }
+
+
+            const holes = gameGrid.children;
+            for (let i = 0; i < holes.length; i++) {
+                holes[i].classList.remove('active');
+            }
+            activeMoleIndex = -1;
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startGame);
+        resetButton.addEventListener('click', resetGame);
+        durationInput.addEventListener('change', () => {
+            if (!gameActive) {
+                let newTime = parseInt(durationInput.value);
+                if (isNaN(newTime) || newTime < 5) newTime = 5;
+                if (newTime > 120) newTime = 120;
+                durationInput.value = newTime;
+                timeLeftDisplay.textContent = newTime;
+            }
+        });
+
+        // --- Initial Setup ---
+        window.addEventListener('DOMContentLoaded', () => {
+            populateLevelSelect();
+            createGrid();
+            resetGame(); // Set initial state based on default inputs
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Void Gobbler - Enhanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none;
+            overscroll-behavior: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; 
+        }
+        #gameCanvas {
+            border: 5px solid #4b5563; 
+            background-color: #1f2937; 
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 0 15px rgba(75, 85, 99, 0.5);
+            cursor: none; 
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.75);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #1f2937; 
+            color: #e5e7eb; 
+            margin: auto;
+            padding: 30px;
+            border: 2px solid #374151; 
+            width: 85%;
+            max-width: 450px;
+            text-align: center;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        .modal-button {
+            background-color: #10b981; 
+            border: none;
+            color: white;
+            padding: 12px 28px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-top: 25px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .modal-button:hover {
+            background-color: #059669; 
+        }
+        .modal-button:active {
+            transform: scale(0.95);
+        }
+        #backButton {
+            font-size: 0.8rem;
+        }
+        .ui-icon {
+            font-size: 1.2em; /* Slightly larger for visibility */
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-4 select-none">
+
+    <a href="https://maniatrial.github.io/entropy-lab/" id="backButton" class="fixed top-4 left-4 p-2 bg-gray-700 hover:bg-gray-600 rounded shadow-md z-50">&lt; Back</a>
+
+    <div class="text-center mb-5 mt-12 md:mt-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-purple-400">Void Gobbler</h1>
+        <div class="mt-3 text-lg md:text-xl flex justify-center space-x-4 md:space-x-6">
+            <span>Score: <span id="score" class="text-yellow-400">0</span></span>
+            <span>Size: <span id="holeSizeDisplay" class="text-green-400">10</span></span>
+            <span>Lives: <span id="livesDisplay" class="text-red-400">❤️❤️❤️</span></span>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <p class="mt-4 text-xs text-gray-400">Move mouse or finger to control the void.</p>
+
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <h2 id="gameOverTitle" class="text-3xl font-bold mb-4">Game Over!</h2>
+            <p id="finalScore" class="text-lg mb-2">Final Score: <span id="modalFinalScore">0</span></p>
+            <p id="finalSize" class="text-lg mb-5">Final Size: <span id="modalFinalSize">0</span></p>
+            <button id="restartButton" class="modal-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const context = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const holeSizeDisplayElement = document.getElementById('holeSizeDisplay');
+        const livesDisplayElement = document.getElementById('livesDisplay');
+
+        const gameOverModal = document.getElementById('gameOverModal');
+        const gameOverTitleElement = document.getElementById('gameOverTitle');
+        const modalFinalScoreElement = document.getElementById('modalFinalScore');
+        const modalFinalSizeElement = document.getElementById('modalFinalSize');
+        const restartButton = document.getElementById('restartButton');
+
+        // Game variables
+        let hole = { x: 0, y: 0, radius: 10, baseRadius: 10, growthFactor: 0.15 }; // Slightly reduced growthFactor
+        let objects = [];
+        const maxObjects = 40; // Increased
+        const objectSpawnInterval = 400; // Decreased for faster spawning
+        let lastObjectSpawnTime = 0;
+        
+        let score = 0;
+        let lives = 3;
+        let gameOver = false;
+        let animationFrameId;
+
+        const objectColors = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#60a5fa', '#c084fc']; // Tailwind red-400, orange-400 etc.
+        const bombColor = '#b91c1c'; // Tailwind red-800
+        const coinColor = '#f59e0b'; // Tailwind amber-500
+        const magnetPerkColor = '#6366f1'; // Tailwind indigo-500
+
+        // Magnet Perk variables
+        let magnetActive = false;
+        let magnetEndTime = 0;
+        const MAGNET_DURATION = 7000; // 7 seconds
+        const MAGNET_PULL_RADIUS_FACTOR = 5; // Pulls objects within X times hole radius
+        const MAGNET_PULL_STRENGTH = 0.03; // How strongly objects are pulled
+
+        // --- Initialization and Setup ---
+        function resizeCanvas() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const availableSize = Math.min(screenWidth * 0.9, screenHeight * 0.65, 700); // Slightly larger max canvas
+            canvas.width = availableSize;
+            canvas.height = availableSize;
+
+            if (hole.x === 0 && hole.y === 0) {
+                 hole.x = canvas.width / 2;
+                 hole.y = canvas.height / 2;
+            }
+        }
+
+        function spawnObject() {
+            const objectTypeRoll = Math.random();
+            let type, specificColor, points, effect, icon, fixedSize;
+
+            if (objectTypeRoll < 0.07 && lives > 0) { // 7% chance for Bomb
+                type = 'bomb';
+                specificColor = bombColor;
+                points = 0; // No points for bombs
+                effect = 'loseLife';
+                icon = '💣';
+                fixedSize = hole.baseRadius * 0.6; // Bombs are small
+            } else if (objectTypeRoll < 0.15) { // 8% chance for Magnet Perk (total 15%)
+                type = 'magnetPerk';
+                specificColor = magnetPerkColor;
+                points = 10; // Small points for perk
+                effect = 'activateMagnet';
+                icon = '🧲';
+                fixedSize = hole.baseRadius * 0.7;
+            } else if (objectTypeRoll < 0.35) { // 20% chance for Coin (total 35%)
+                type = 'coin';
+                specificColor = coinColor;
+                points = 50;
+                effect = 'addScore';
+                icon = '💰';
+                fixedSize = hole.baseRadius * 0.5;
+            } else { // 65% regular objects
+                type = 'regular';
+                points = null; // Points based on size for regular
+                effect = null;
+                icon = null;
+            }
+            
+            const minSize = fixedSize ? fixedSize : hole.baseRadius * 0.2; // Min size for regular objects
+            const maxSize = fixedSize ? fixedSize : Math.max(minSize + 1, hole.radius * 0.7); // Regular objects up to 70%
+            const size = fixedSize || (Math.random() * (maxSize - minSize) + minSize);
+            
+            const shape = (type === 'bomb' || type === 'coin' || type === 'magnetPerk') ? 'circle' : (Math.random() < 0.6 ? 'circle' : 'square'); // Special items are circles
+
+            let x, y;
+            const edge = Math.floor(Math.random() * 4);
+            if (edge === 0) { x = Math.random() * canvas.width; y = -size; }
+            else if (edge === 1) { x = canvas.width + size; y = Math.random() * canvas.height; }
+            else if (edge === 2) { x = Math.random() * canvas.width; y = canvas.height + size; }
+            else { x = -size; y = Math.random() * canvas.height; }
+
+            objects.push({
+                x: x, y: y, radius: size, shape: shape,
+                type: type, icon: icon,
+                color: specificColor || objectColors[Math.floor(Math.random() * objectColors.length)],
+                points: points, effect: effect,
+                vx: (Math.random() - 0.5) * (canvas.width / 250), // Faster object movement
+                vy: (Math.random() - 0.5) * (canvas.width / 250)
+            });
+        }
+        
+        function initGame() {
+            resizeCanvas(); 
+            score = 0;
+            lives = 3;
+            hole.radius = hole.baseRadius;
+            hole.x = canvas.width / 2;
+            hole.y = canvas.height / 2;
+            objects = [];
+            gameOver = false;
+            magnetActive = false;
+            magnetEndTime = 0;
+            lastObjectSpawnTime = performance.now(); // Start spawn timer correctly
+            updateUIDisplay();
+            
+            for(let i=0; i < 15; i++) { // More initial objects
+                spawnObject();
+                if (objects[i]) {
+                    objects[i].x = Math.random() * canvas.width;
+                    objects[i].y = Math.random() * canvas.height;
+                    // Allow some initial movement for a more dynamic start
+                    objects[i].vx = (Math.random() - 0.5) * (canvas.width / 400);
+                    objects[i].vy = (Math.random() - 0.5) * (canvas.width / 400);
+                }
+            }
+
+            gameOverModal.style.display = 'none';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            gameLoop();
+        }
+        
+        // --- Drawing Functions ---
+        function clearCanvas() {
+            context.fillStyle = '#1f2937'; 
+            context.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawHole() {
+            context.beginPath();
+            context.arc(hole.x, hole.y, hole.radius, 0, Math.PI * 2);
+            context.fillStyle = 'black';
+            context.fill();
+            
+            if (magnetActive) { // Visual indicator for magnet perk
+                context.strokeStyle = magnetPerkColor;
+                context.lineWidth = 3;
+                context.stroke();
+            } else {
+                context.strokeStyle = '#374151'; 
+                context.lineWidth = 2;
+                context.stroke();
+            }
+            context.closePath();
+        }
+
+        function drawObjects() {
+            objects.forEach(obj => {
+                context.beginPath();
+                context.fillStyle = obj.color;
+                if (obj.shape === 'circle') {
+                    context.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                } else { // square
+                    context.rect(obj.x - obj.radius, obj.y - obj.radius, obj.radius * 2, obj.radius * 2);
+                }
+                context.fill();
+                context.closePath();
+
+                if (obj.icon) { // Draw icon on special items
+                    context.fillStyle = 'white';
+                    if (obj.type === 'bomb') context.fillStyle = '#fee2e2'; // Lighter red for bomb icon
+                    const fontSize = obj.radius * 1.2; // Adjust icon size based on object radius
+                    context.font = `${fontSize}px "Press Start 2P"`;
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    context.fillText(obj.icon, obj.x, obj.y + fontSize * 0.1); // Slight Y offset for better centering
+                }
+            });
+        }
+
+        // --- Game Logic ---
+        function updateObjects() {
+            if (magnetActive && performance.now() > magnetEndTime) {
+                magnetActive = false;
+            }
+
+            for (let i = objects.length - 1; i >= 0; i--) {
+                const obj = objects[i];
+
+                // Magnet effect
+                if (magnetActive && obj.type === 'regular' && obj.radius < hole.radius * 0.5) { // Magnet pulls small regular items
+                    const magnetDist = Math.sqrt((hole.x - obj.x)**2 + (hole.y - obj.y)**2);
+                    const magnetPullEffectRadius = hole.radius * MAGNET_PULL_RADIUS_FACTOR;
+                    if (magnetDist < magnetPullEffectRadius && magnetDist > obj.radius) { // If within pull radius and not already eaten
+                        const angle = Math.atan2(hole.y - obj.y, hole.x - obj.x);
+                        obj.vx += Math.cos(angle) * MAGNET_PULL_STRENGTH * (magnetPullEffectRadius / magnetDist); // Stronger pull closer
+                        obj.vy += Math.sin(angle) * MAGNET_PULL_STRENGTH * (magnetPullEffectRadius / magnetDist);
+                         // Speed cap for pulled objects
+                        const speed = Math.sqrt(obj.vx**2 + obj.vy**2);
+                        const maxSpeed = canvas.width / 150;
+                        if (speed > maxSpeed) {
+                            obj.vx = (obj.vx / speed) * maxSpeed;
+                            obj.vy = (obj.vy / speed) * maxSpeed;
+                        }
+                    }
+                }
+                
+                obj.x += obj.vx;
+                obj.y += obj.vy;
+
+                if(obj.x < -obj.radius * 3 || obj.x > canvas.width + obj.radius * 3 ||
+                   obj.y < -obj.radius * 3 || obj.y > canvas.height + obj.radius * 3) {
+                     objects.splice(i, 1); // Remove if way off screen
+                     continue;
+                }
+
+                const distToHoleCenter = Math.sqrt((hole.x - obj.x)**2 + (hole.y - obj.y)**2);
+                
+                // Check if object's center is within the hole's radius (simplified swallowing)
+                if (distToHoleCenter < hole.radius) { 
+                    if (obj.radius < hole.radius || obj.type === 'bomb' || obj.type === 'coin' || obj.type === 'magnetPerk') { // Special items can always be eaten if small enough
+                        
+                        if (obj.type === 'bomb') {
+                            lives--;
+                            updateUIDisplay();
+                            // Add a small visual effect for bomb, e.g., screen shake (optional)
+                            if (lives <= 0) {
+                                gameOver = true; // Set game over flag
+                            }
+                        } else if (obj.type === 'coin') {
+                            score += obj.points;
+                        } else if (obj.type === 'magnetPerk') {
+                            magnetActive = true;
+                            magnetEndTime = performance.now() + MAGNET_DURATION;
+                            score += obj.points; // Small score for perk
+                        } else { // Regular object
+                            score += Math.ceil(obj.radius);
+                            hole.radius += obj.radius * hole.growthFactor;
+                        }
+                        
+                        objects.splice(i, 1);
+                        updateUIDisplay();
+                        if (gameOver) break; // Stop processing if game over from bomb
+                    }
+                }
+            }
+
+            if (performance.now() - lastObjectSpawnTime > objectSpawnInterval && objects.length < maxObjects) {
+                spawnObject();
+                lastObjectSpawnTime = performance.now();
+            }
+        }
+        
+        function updateUIDisplay() {
+            scoreElement.textContent = score;
+            holeSizeDisplayElement.textContent = Math.floor(hole.radius);
+            let livesHtml = '';
+            for(let i=0; i < lives; i++) livesHtml += '❤️';
+            for(let i=lives; i < 3; i++) livesHtml += '🖤'; // Empty heart
+            livesDisplayElement.innerHTML = livesHtml;
+        }
+        
+        function showGameOverScreen() { 
+            gameOver = true; // Ensure flag is set
+            gameOverTitleElement.textContent = "Game Over!";
+            modalFinalScoreElement.textContent = score;
+            modalFinalSizeElement.textContent = Math.floor(hole.radius);
+            gameOverModal.style.display = 'flex';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        // --- Main Game Loop ---
+        function gameLoop() {
+            if (gameOver) {
+                showGameOverScreen(); // Call it here to ensure modal shows
+                return;
+            }
+
+            clearCanvas();
+            updateObjects(); // This can set gameOver if lives run out
+            
+            if (gameOver) { // Check again after updateObjects
+                showGameOverScreen();
+                return;
+            }
+
+            drawObjects();
+            drawHole(); 
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // --- Event Listeners ---
+        function mouseMoveHandler(e) {
+            if (gameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            hole.x = e.clientX - rect.left;
+            hole.y = e.clientY - rect.top;
+            hole.x = Math.max(0, Math.min(canvas.width, hole.x)); // Allow edge to touch border
+            hole.y = Math.max(0, Math.min(canvas.height, hole.y));
+        }
+
+        function touchMoveHandler(e) {
+            if (gameOver) return;
+            e.preventDefault(); 
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            hole.x = touch.clientX - rect.left;
+            hole.y = touch.clientY - rect.top;
+            hole.x = Math.max(0, Math.min(canvas.width, hole.x));
+            hole.y = Math.max(0, Math.min(canvas.height, hole.y));
+        }
+
+        canvas.addEventListener("mousemove", mouseMoveHandler, false);
+        canvas.addEventListener("touchmove", touchMoveHandler, { passive: false });
+        canvas.addEventListener("touchstart", touchMoveHandler, { passive: false }); 
+
+        restartButton.addEventListener('click', () => {
+            initGame();
+        });
+        
+        window.addEventListener('resize', () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            const oldCanvasWidth = canvas.width || 600; 
+            const oldHoleRadius = hole.radius;
+            const currentScore = score; // Preserve score
+            const currentLives = lives; // Preserve lives
+            
+            initGame(); 
+
+            score = currentScore;
+            lives = currentLives;
+            hole.radius = (oldHoleRadius / oldCanvasWidth) * canvas.width; 
+            hole.baseRadius = (hole.baseRadius / oldCanvasWidth) * canvas.width; // Also scale baseRadius
+            updateUIDisplay();
+
+            if (!gameOver) { 
+                 animationFrameId = requestAnimationFrame(gameLoop);
+            } else {
+                // If game was over, ensure modal is displayed with correct final stats
+                modalFinalScoreElement.textContent = score;
+                modalFinalSizeElement.textContent = Math.floor(hole.radius);
+                gameOverModal.style.display = 'flex';
+            }
+        });
+
+        // --- Start Game ---
+        window.onload = () => {
+            initGame();
+        };
+    </script>
+</body>
+</html>

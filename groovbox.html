@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -17,7 +18,7 @@
         .header-font {
             font-family: 'Orbitron', sans-serif;
         }
-        .control-panel, .pads-container, .sequencer-container, .visualizer-container {
+        .control-panel, .pads-container, .sequencer-container, .visualizer-container, .recording-container {
             background-color: #1f2937; /* Tailwind gray-800 */
             border: 1px solid #374151; /* Tailwind gray-700 */
         }
@@ -32,6 +33,12 @@
             transform: scale(0.95);
             border-color: #6366f1; /* Tailwind indigo-500 */
         }
+        .pad:disabled {
+            background-color: #2b3443;
+            border-color: #374151;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
         .sequencer-step {
             background-color: #374151; /* Tailwind gray-700 */
             border: 1px solid #4b5563; /* Tailwind gray-600 */
@@ -45,14 +52,14 @@
             background-color: #f59e0b !important; /* Tailwind amber-500, !important to override .active */
             box-shadow: 0 0 8px #f59e0b;
         }
-        .btn-control, .btn-action {
+        .btn-control, .btn-action, .btn-record {
             background-color: #4f46e5; /* Tailwind indigo-600 */
             transition: background-color 0.2s ease;
         }
-        .btn-control:hover, .btn-action:hover {
+        .btn-control:hover, .btn-action:hover, .btn-record:hover {
             background-color: #4338ca; /* Tailwind indigo-700 */
         }
-        .btn-control:disabled, .btn-action:disabled {
+        .btn-control:disabled, .btn-action:disabled, .btn-record:disabled {
             background-color: #374151; /* gray-700 */
             cursor: not-allowed;
             opacity: 0.7;
@@ -62,6 +69,12 @@
         }
         .btn-control.playing:hover {
             background-color: #15803d; /* Tailwind green-700 */
+        }
+        .btn-record.recording {
+            background-color: #dc2626; /* Tailwind red-600 */
+        }
+        .btn-record.recording:hover {
+            background-color: #b91c1c; /* Tailwind red-700 */
         }
         input[type="range"], input[type="number"].styled-input, select.styled-select {
             background-color: #374151;
@@ -114,6 +127,8 @@
             display: flex;
             align-items: center;
             gap: 0.5rem; /* space-x-2 */
+            flex-shrink: 0; /* Prevent controls from shrinking too much */
+            width: auto; 
         }
         .sequencer-track-label {
             width: 6rem; /* w-24 */
@@ -126,9 +141,55 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .track-volume-slider {
+            width: 5rem; 
+            height: 0.75rem;
+        }
+        .btn-delete-track {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem; /* rounded-sm */
+            line-height: 1;
+        }
+        .btn-delete-track:hover {
+            background-color: #dc2626; /* red-600 */
+        }
+        /* Back button style */
+        .back-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1001; 
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        .back-button:hover {
+            background-color: #4338ca; /* Tailwind indigo-700 */
+        }
+        #recordingsList li {
+            margin-bottom: 0.5rem;
+        }
+        #recordingsList a {
+            color: #818cf8; /* indigo-400 */
+            text-decoration: underline;
+        }
+        #recordingsList a:hover {
+            color: #6366f1; /* indigo-500 */
+        }
+
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4 selection:bg-indigo-500 selection:text-white">
+
+    <a href="https://maniatrial.github.io/entropy-lab" class="back-button" title="Back to Entropy Lab">
+        &larr; Back
+    </a>
 
     <div id="startAudioOverlay" class="start-overlay">
         <button id="startAudioButton" class="btn-control text-white font-bold py-4 px-8 rounded-lg text-2xl header-font">
@@ -150,7 +211,7 @@
                     <input type="range" id="tempoRange" min="40" max="240" value="120" class="w-full">
                 </div>
                 <div>
-                    <label for="volumeRange" class="block text-sm font-medium mb-1">Volume: <span id="volumeValue">0</span> dB</label>
+                    <label for="volumeRange" class="block text-sm font-medium mb-1">Master Vol: <span id="volumeValue">0</span> dB</label>
                     <input type="range" id="volumeRange" min="-40" max="6" value="0" step="0.5" class="w-full">
                 </div>
                 <div>
@@ -161,13 +222,18 @@
             </div>
         </section>
 
+        <section class="visualizer-container p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Audio Output</h2>
+            <canvas id="audioVisualizer"></canvas>
+        </section>
+
         <section class="pads-container p-4 rounded-lg shadow-lg">
-            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Sound Pads (Tracks 1-4)</h2>
+            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Sound Pads (First 4 Tracks)</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button data-track="0" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 1</button>
-                <button data-track="1" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 2</button>
-                <button data-track="2" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 3</button>
-                <button data-track="3" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 4</button>
+                <button data-track-pad="0" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 1</button>
+                <button data-track-pad="1" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 2</button>
+                <button data-track-pad="2" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 3</button>
+                <button data-track-pad="3" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 4</button>
             </div>
         </section>
 
@@ -180,10 +246,16 @@
                 </div>
         </section>
 
-        <section class="visualizer-container p-4 rounded-lg shadow-lg">
-            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Audio Output</h2>
-            <canvas id="audioVisualizer"></canvas>
+        <section class="recording-container p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Recording (Audio WebM)</h2>
+            <div class="flex space-x-4 items-center">
+                <button id="recordStartButton" class="btn-record text-white font-semibold py-2 px-4 rounded-md">Start Recording</button>
+                <button id="recordStopButton" class="btn-record text-white font-semibold py-2 px-4 rounded-md" disabled>Stop Recording</button>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">Recordings will be available below as .webm files.</p>
+            <ul id="recordingsList" class="mt-3 list-disc list-inside text-sm"></ul>
         </section>
+
     </main>
 
     <footer class="mt-10 mb-6 text-center text-gray-500 text-sm">
@@ -193,166 +265,314 @@
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
+        // DOM Element References
         const startAudioOverlay = document.getElementById('startAudioOverlay');
         const startAudioButton = document.getElementById('startAudioButton');
-
         const playStopButton = document.getElementById('playStopButton');
         const tempoRange = document.getElementById('tempoRange');
         const tempoValueDisplay = document.getElementById('tempoValue');
-        const volumeRange = document.getElementById('volumeRange');
+        const volumeRange = document.getElementById('volumeRange'); // Master volume
         const volumeValueDisplay = document.getElementById('volumeValue');
         const numStepsInput = document.getElementById('numStepsInput');
         const totalStepsDisplay = document.getElementById('totalStepsDisplay');
         const clearPatternButton = document.getElementById('clearPatternButton');
         const addTrackButton = document.getElementById('addTrackButton');
         const sequencerGridContainer = document.getElementById('sequencerGrid');
-        const pads = document.querySelectorAll('.pad');
+        const pads = document.querySelectorAll('.pad'); 
         const currentStepDisplay = document.getElementById('currentStepDisplay');
-
         const visualizerCanvas = document.getElementById('audioVisualizer');
         const vizCtx = visualizerCanvas.getContext('2d');
+        const recordStartButton = document.getElementById('recordStartButton');
+        const recordStopButton = document.getElementById('recordStopButton');
+        const recordingsList = document.getElementById('recordingsList');
 
-        let allInstruments = {}; 
-        let selectedInstrumentsForTrack = []; 
-        let sequence;
-        let sequencerSteps = []; 
+        // Audio State Variables
+        let tracks = []; 
+        let sequence;    
         let numSteps = 16; 
-        let numTracksGlobal = 4; 
-        const maxTracks = 8; 
-        let waveform;
+        let waveform;      
         let currentPlayingStepVisual = 0; 
 
+        // Recording State Variables
+        let mediaRecorder;
+        let recordedChunks = [];
+        let recordDestNode; 
+        let outputForRecording; 
+
+        // --- Instrument Configurations ---
         const availableInstrumentConfigs = [
             // Drums
             { name: "Kick", type: "MembraneSynth", options: { octaves: 4, pitchDecay: 0.08, envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.2 } }, note: "C1", defaultVolume: 0 },
             { name: "Deep Kick", type: "MembraneSynth", options: { octaves: 6, pitchDecay: 0.1, envelope: { attack: 0.001, decay: 0.5, sustain: 0.01, release: 0.3 } }, note: "A0", defaultVolume: -2 },
-            { name: "Snare", type: "NoiseSynth", options: { noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 } }, useFilter: true, filterFreq: 1000, defaultVolume: 0 },
-            { name: "Tight Snare", type: "NoiseSynth", options: { noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 } }, useFilter: true, filterFreq: 1200, defaultVolume: -3 },
+            { name: "Snare", type: "NoiseSynth", options: { noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 } }, duration: "8n", defaultVolume: 0 }, // Removed useFilter for simplicity, added duration
+            { name: "Tight Snare", type: "NoiseSynth", options: { noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 } }, duration: "16n", defaultVolume: -3 }, // Removed useFilter, added duration
             { name: "Hi-Hat C", type: "MetalSynth", options: { frequency: 250, envelope: { attack: 0.001, decay: 0.05, release: 0.01 }, harmonicity: 3.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }, defaultVolume: -12 },
             { name: "Hi-Hat O", type: "MetalSynth", options: { frequency: 300, envelope: { attack: 0.001, decay: 0.3, release: 0.1 }, harmonicity: 4.1, modulationIndex: 20, resonance: 3000, octaves: 1.5 }, defaultVolume: -10 },
             { name: "Shaker", type: "MetalSynth", options: { frequency: 400, envelope: { attack: 0.01, decay: 0.08, release: 0.05 }, harmonicity: 0.5, modulationIndex: 10, resonance: 2000, octaves: 1 }, defaultVolume: -15 },
             { name: "Tom Low", type: "MembraneSynth", options: { pitchDecay: 0.1, octaves: 2, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }, note: "G1", defaultVolume: -3 },
             { name: "Tom Mid", type: "MembraneSynth", options: { pitchDecay: 0.08, octaves: 2, envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.1 } }, note: "C2", defaultVolume: -4 },
-            { name: "Clap", type: "NoiseSynth", options: { noise: {type: "pink"}, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.1 } }, useFilter: true, filterFreq: 1500, defaultVolume: -6 },
+            { name: "Clap", type: "NoiseSynth", options: { noise: {type: "pink"}, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.1 } }, duration: "8n", defaultVolume: -6 },
             { name: "Rim Shot", type: "PluckSynth", options: { attackNoise: 2, dampening: 6000, resonance: 0.2 }, note: "C5", defaultVolume: -9 },
+            
             // Synths & Melodic
             { name: "Synth Lead", type: "Synth", options: { oscillator: { type: "sawtooth" }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.5 } }, note: "C4", defaultVolume: -10 },
             { name: "Square Lead", type: "Synth", options: { oscillator: { type: "square" }, envelope: { attack: 0.02, decay: 0.15, sustain: 0.2, release: 0.3 } }, note: "C4", defaultVolume: -12 },
             { name: "FM Bell", type: "FMSynth", options: { harmonicity: 3.01, modulationIndex: 10, envelope: { attack: 0.01, decay: 0.5, sustain: 0.01, release: 0.8 }, modulationEnvelope: { attack: 0.02, decay: 0.3, sustain: 0, release: 0.5 } }, note: "C5", defaultVolume: -9 },
-            { name: "Synth Pad", type: "PolySynth", options: { voice: Tone.Synth, options: { oscillator: {type: "triangle8"}, envelope: {attack: 0.2, decay: 0.1, sustain:0.8, release:0.5}}}, note: "C3", defaultVolume: -15 }, // PolySynth for pads
+            { name: "Synth Pad", type: "PolySynth", options: { voice: Tone.Synth, options: { oscillator: {type: "triangle8"}, envelope: {attack: 0.2, decay: 0.1, sustain:0.8, release:0.5}}}, note: "C3", defaultVolume: -15 },
             { name: "Bass Synth", type: "MonoSynth", options: { oscillator: { type: "square" }, filter: { Q: 2, type: "lowpass", rolloff: -24 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.4 }, filterEnvelope: { attack: 0.01, decay: 0.05, sustain: 0.1, baseFrequency: 200, octaves: 2.6 } }, note: "C2", defaultVolume: -6 },
             { name: "Sub Bass", type: "MonoSynth", options: { oscillator: { type: "sine" }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.2 }, filterEnvelope: { attack: 0.005, decay: 0.01, sustain: 1, baseFrequency: 50, octaves: 1 } }, note: "C1", defaultVolume: -3 },
             { name: "Pluck", type: "PluckSynth", options: { attackNoise: 1, dampening: 4000, resonance: 0.7 }, note: "C4", defaultVolume: -8 },
             { name: "Kalimba Plk", type: "PluckSynth", options: { attackNoise: 0.5, dampening: 2000, resonance: 0.9 }, note: "G4", defaultVolume: -10 },
-            // FX
-            { name: "FX Riser", type: "NoiseSynth", options: { noise: { type: "white" }, envelope: { attack: 0.5, decay: 1, sustain: 0.1, release: 0.2 } }, note: "C4", usePitchEnv: true, defaultVolume: -12 },
+            
+            // Vocal-like and FX Synths
+            { name: "Vocal Chop Synth", type: "FMSynth", options: { harmonicity: 1.5, modulationIndex: 5, portamento: 0.05, envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 }, modulationEnvelope: { attack: 0.02, decay: 0.05, sustain: 0, release: 0.1 }, oscillator: {type: "sine"}, modulation: {type: "square"} }, note: "C4", defaultVolume: -9, isVocalLike: true },
+            { name: "Short 'Ya'", type: "NoiseSynth", options: { noise: { type: "pink" }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.05 } }, useFilter: true, filterType: "bandpass", filterFreq: 1500, filterQ: 5, duration: "16n", defaultVolume: -6, isVocalLike: true },
+            { name: "Dub Wobble Bass", type: "MonoSynth", options: { oscillator: { type: "sawtooth" }, filter: { Q: 6, type: "lowpass", rolloff: -24 }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.5 }, filterEnvelope: { attack: 0.02, decay: 0.1, sustain: 0.8, baseFrequency: 50, octaves: 3, exponent: 2 } }, note: "C1", defaultVolume: -6, hasLFO: true, lfoTarget: "filterFreq", lfoFreq: "8n", lfoMin: 200, lfoMax: 2000 },
+            { name: "Growl Bass", type: "FMSynth", options: { harmonicity: 2, modulationIndex: 10, detune: 0, oscillator: {type: "sawtooth"}, envelope: {attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.3}, modulation: {type: "square"}, modulationEnvelope: {attack: 0.05, decay: 0.1, sustain: 0.8, release: 0.1}}, note: "G0", defaultVolume: -8, hasLFO: true, lfoTarget: "modulationIndex", lfoFreq: "16n", lfoMin: 5, lfoMax: 20 },
+            { name: "Metallic Hit", type: "MetalSynth", options: { frequency: 150, envelope: { attack: 0.002, decay: 0.4, release: 0.2 }, harmonicity: 5.1, modulationIndex: 22, resonance: 3500, octaves: 1.2 }, defaultVolume: -10 },
+            { name: "Spacey Pad", type: "PolySynth", options: { voice: Tone.AMSynth, options: { harmonicity: 1.2, detune: 0, oscillator: {type: "fatsine"}, envelope: {attack: 0.8, decay: 0.2, sustain: 1.0, release: 1.5}, modulation: {type: "triangle"}, modulationEnvelope: {attack: 1, decay: 0.1, sustain: 1, release: 1.5}}}, note: "C2", defaultVolume: -18 },
+            { name: "Chiptune Lead", type: "Synth", options: { oscillator: { type: "pulse", width: 0.2 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.2 } }, note: "C5", defaultVolume: -12 },
+
+            // Existing FX
+            { name: "FX Riser", type: "NoiseSynth", options: { noise: { type: "white" }, envelope: { attack: 0.5, decay: 1, sustain: 0.1, release: 0.2 } }, duration: "2n", usePitchEnv: true, defaultVolume: -12 },
             { name: "Zap FX", type: "MembraneSynth", options: { pitchDecay: 0.01, octaves: 8, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.1 } }, note: "C3", defaultVolume: -9 },
-            { name: "Laser FX", type: "Synth", options: { oscillator: {type: "sine"}, envelope: {attack: 0.001, decay:0.1, sustain:0, release:0.1}, pitchDecay: 0.05}, note: "C6", usePitchEnvShort: true, defaultVolume: -6 }
+            { name: "Laser FX", type: "Synth", options: { oscillator: {type: "sine"}, envelope: {attack: 0.001, decay:0.1, sustain:0, release:0.1}}, note: "C6", usePitchEnvShort: true, defaultVolume: -6 }
         ];
 
+        /**
+         * Creates a Tone.js instrument instance based on a configuration object.
+         * Handles LFO setup if specified in config.
+         */
+        function createInstrumentFromConfig(config) {
+            let instrument;
+            const options = JSON.parse(JSON.stringify(config.options)); 
+
+            if (config.type === "PolySynth") {
+                 instrument = new Tone.PolySynth(options.voice ? Tone[options.voice.name || 'Synth'] : Tone.Synth, options.options ? options.options : options);
+            }
+            else if (config.type === "MembraneSynth") instrument = new Tone.MembraneSynth(options);
+            else if (config.type === "NoiseSynth") instrument = new Tone.NoiseSynth(options);
+            else if (config.type === "MetalSynth") instrument = new Tone.MetalSynth(options);
+            else if (config.type === "Synth") instrument = new Tone.Synth(options);
+            else if (config.type === "FMSynth") instrument = new Tone.FMSynth(options);
+            else if (config.type === "MonoSynth") instrument = new Tone.MonoSynth(options);
+            else if (config.type === "PluckSynth") instrument = new Tone.PluckSynth(options);
+            
+            if (instrument) {
+                if (config.useFilter) { // General filter
+                    const filter = new Tone.Filter(config.filterFreq || 1000, config.filterType || "highpass", config.filterQ || 1);
+                    instrument.connect(filter); 
+                }
+                if (config.defaultVolume !== undefined) {
+                    instrument.volume.value = config.defaultVolume;
+                }
+                // Setup LFO if specified in config
+                if (config.hasLFO && instrument.filter && config.lfoTarget === "filterFreq") { // Common for wobble
+                    const lfo = new Tone.LFO(config.lfoFreq, config.lfoMin, config.lfoMax).start();
+                    lfo.connect(instrument.filter.frequency);
+                } else if (config.hasLFO && config.lfoTarget === "modulationIndex" && instrument.modulationIndex) { // For FMSynth growls
+                     const lfo = new Tone.LFO(config.lfoFreq, config.lfoMin, config.lfoMax).start();
+                     lfo.connect(instrument.modulationIndex);
+                }
+            }
+            return instrument;
+        }
 
         async function setupAudio() {
-            await Tone.start();
+            await Tone.start(); 
             console.log("Audio Context Started with Tone.js");
-            Tone.Destination.volume.value = parseFloat(volumeRange.value);
+            Tone.Destination.volume.value = parseFloat(volumeRange.value); 
 
-            availableInstrumentConfigs.forEach(config => {
-                let instrument;
-                // Handle PolySynth separately for its voice option
-                if (config.type === "PolySynth") {
-                    instrument = new Tone.PolySynth(config.options.voice ? config.options.voice : Tone.Synth, config.options.options ? config.options.options : config.options);
-                }
-                else if (config.type === "MembraneSynth") instrument = new Tone.MembraneSynth(config.options);
-                else if (config.type === "NoiseSynth") instrument = new Tone.NoiseSynth(config.options);
-                else if (config.type === "MetalSynth") instrument = new Tone.MetalSynth(config.options);
-                else if (config.type === "Synth") instrument = new Tone.Synth(config.options);
-                else if (config.type === "FMSynth") instrument = new Tone.FMSynth(config.options);
-                else if (config.type === "MonoSynth") instrument = new Tone.MonoSynth(config.options);
-                else if (config.type === "PluckSynth") instrument = new Tone.PluckSynth(config.options);
-                
-                if (instrument) {
-                    if (config.useFilter) {
-                        const filter = new Tone.Filter(config.filterFreq || 1000, "highpass").toDestination();
-                        instrument.connect(filter);
-                    } else {
-                        instrument.toDestination();
-                    }
-                    if (config.defaultVolume !== undefined) {
-                        instrument.volume.value = config.defaultVolume;
-                    }
-                    allInstruments[config.name] = instrument;
-                }
-            });
-            
-            selectedInstrumentsForTrack = [];
-            for (let i = 0; i < numTracksGlobal; i++) {
+            if (window.MediaRecorder && Tone.context.createMediaStreamDestination) {
+                recordDestNode = Tone.context.createMediaStreamDestination();
+                outputForRecording = new Tone.Gain().connect(recordDestNode); 
+                Tone.Destination.connect(outputForRecording); 
+            } else {
+                console.warn("MediaRecorder or MediaStreamDestinationNode not supported. Recording disabled.");
+                recordStartButton.disabled = true;
+                recordStopButton.disabled = true;
+            }
+
+            const initialNumTracks = 4;
+            for (let i = 0; i < initialNumTracks; i++) {
                 const defaultConfig = availableInstrumentConfigs[i % availableInstrumentConfigs.length];
-                selectedInstrumentsForTrack.push(allInstruments[defaultConfig.name]);
+                addNewTrack(defaultConfig.name, false); 
             }
             
-            updatePadLabels();
-
             waveform = new Tone.Analyser('waveform', 1024);
             Tone.Destination.connect(waveform);
 
             numSteps = parseInt(numStepsInput.value);
             totalStepsDisplay.textContent = numSteps;
-            initializeSequencerDataAndUI(); 
-            rebuildToneSequence();   
             
-            setupEventListeners();
-            startAudioOverlay.classList.add('hidden');
-            addTrackButton.disabled = (numTracksGlobal >= maxTracks);
-            drawVisualizer();
+            initializeSequencerDataAndUI(); 
+            rebuildToneSequence();          
+            updatePadLabels();              
+            
+            setupEventListeners(); 
+            startAudioOverlay.classList.add('hidden'); 
+            drawVisualizer(); 
         }
         
         startAudioButton.addEventListener('click', setupAudio);
 
-        function initializeSequencerDataAndUI() {
-            const oldSequencerSteps = JSON.parse(JSON.stringify(sequencerSteps)); 
-            sequencerGridContainer.innerHTML = ''; 
-            sequencerSteps = [];
+        function addNewTrack(instrumentName = null, triggerUIRefresh = true) {
+            const targetInstrumentName = instrumentName || availableInstrumentConfigs[tracks.length % availableInstrumentConfigs.length].name;
+            const config = availableInstrumentConfigs.find(c => c.name === targetInstrumentName);
+            if (!config) {
+                console.error(`Instrument config for "${targetInstrumentName}" not found.`);
+                return;
+            }
 
-            for (let i = 0; i < numTracksGlobal; i++) {
-                const newStepArray = new Array(numSteps).fill(false);
-                if (oldSequencerSteps[i]) {
-                    for (let j = 0; j < Math.min(numSteps, oldSequencerSteps[i].length); j++) {
-                        newStepArray[j] = oldSequencerSteps[i][j];
+            const instrument = createInstrumentFromConfig(config);
+            const channel = new Tone.Channel({volume: 0, pan: 0}).toDestination(); 
+            
+            if (instrument) {
+                 if (config.useFilter && instrument.connect && typeof instrument.connect === 'function') { 
+                    // If the instrument itself has a filter property (like MonoSynth), it's handled by createInstrumentFromConfig's LFO logic.
+                    // This 'useFilter' is for a general post-instrument filter if not already part of the synth's main chain.
+                    // However, most synths with internal filters (MonoSynth) should have their LFOs connected there.
+                    // This simpler connection is for synths that don't manage their own filter node explicitly for LFOs.
+                    const existingFilter = instrument.filter; // Check if instrument already has a filter (e.g. MonoSynth)
+                    if(!existingFilter || config.lfoTarget !== "filterFreq"){ // Avoid double-filtering or if LFO already targets internal filter
+                        const filterNode = new Tone.Filter(config.filterFreq || 1000, config.filterType || "highpass", config.filterQ || 1);
+                        instrument.chain(filterNode, channel);
+                    } else {
+                         instrument.connect(channel); // Already has filter, connect directly
                     }
+                } else if (instrument.connect && typeof instrument.connect === 'function') {
+                    instrument.connect(channel); 
+                } else {
+                    console.warn("Instrument created, but no connect method found or not suitable for standard chaining:", config.name);
                 }
-                sequencerSteps[i] = newStepArray;
+            }
+
+
+            const newTrack = {
+                instrument: instrument,
+                channel: channel, 
+                steps: new Array(numSteps).fill(false), 
+                config: config, 
+                id: `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+            };
+            tracks.push(newTrack);
+
+            if (triggerUIRefresh) {
+                const wasPlaying = Tone.Transport.state === "started";
+                if (wasPlaying) Tone.Transport.stop(); 
+                
+                initializeSequencerDataAndUI(); 
+                rebuildToneSequence();          
+                updatePadLabels();              
+                
+                if (wasPlaying) Tone.Transport.start(); 
+            }
+        }
+
+        function deleteTrack(trackIndex) {
+            if (trackIndex < 0 || trackIndex >= tracks.length) return;
+
+            const wasPlaying = Tone.Transport.state === "started";
+            if (wasPlaying) Tone.Transport.stop();
+
+            const trackToRemove = tracks[trackIndex];
+            if (trackToRemove.instrument && typeof trackToRemove.instrument.dispose === 'function') {
+                 // Dispose LFOs if they exist and are connected to this instrument
+                if (trackToRemove.config.hasLFO) {
+                    // This is a bit tricky as LFOs are created and connected in createInstrumentFromConfig
+                    // and not stored directly on the track object in a way that's easy to find and dispose here.
+                    // For now, we rely on the instrument's own dispose method to clean up its connections.
+                    // A more robust LFO management would store LFO instances on the track object.
+                }
+                trackToRemove.instrument.dispose(); 
+            }
+            if (trackToRemove.channel && typeof trackToRemove.channel.dispose === 'function') {
+                trackToRemove.channel.dispose();
+            }
+            
+            tracks.splice(trackIndex, 1); 
+
+            initializeSequencerDataAndUI();
+            rebuildToneSequence();
+            updatePadLabels();
+
+            if (wasPlaying && tracks.length > 0) Tone.Transport.start();
+            else if (tracks.length === 0 && wasPlaying) { 
+                 Tone.Transport.stop();
+                 playStopButton.textContent = "Play";
+                 playStopButton.classList.remove('playing');
+                 updateCurrentStepVisuals(-1); 
+                 currentStepDisplay.textContent = `-`;
+            }
+        }
+
+
+        function initializeSequencerDataAndUI() {
+            const oldTracksStepsData = tracks.map(t => ({ id: t.id, steps: t.steps.slice() }));
+            
+            sequencerGridContainer.innerHTML = ''; 
+
+            tracks.forEach((track, i) => {
+                const existingData = oldTracksStepsData.find(d => d.id === track.id);
+                const currentSteps = existingData ? existingData.steps : new Array(numSteps).fill(false);
+                track.steps = new Array(numSteps).fill(false); 
+                for(let j=0; j < Math.min(currentSteps.length, numSteps); j++) {
+                    track.steps[j] = currentSteps[j];
+                }
 
                 const trackRow = document.createElement('div');
                 trackRow.classList.add('flex', 'items-center', 'space-x-1', 'mb-1');
+                trackRow.id = `trackRow-${track.id}`; 
                 
                 const controlsDiv = document.createElement('div');
-                controlsDiv.classList.add('sequencer-track-controls');
+                controlsDiv.classList.add('sequencer-track-controls', 'flex-wrap');
 
                 const trackLabel = document.createElement('div');
-                trackLabel.id = `trackLabel-${i}`;
+                trackLabel.id = `trackLabel-${track.id}`;
                 trackLabel.classList.add('sequencer-track-label');
-                // Ensure selectedInstrumentsForTrack[i] exists before trying to find its config
-                const currentInstrument = selectedInstrumentsForTrack[i] || allInstruments[availableInstrumentConfigs[i % availableInstrumentConfigs.length].name];
-                if (!selectedInstrumentsForTrack[i]) selectedInstrumentsForTrack[i] = currentInstrument; // Assign if undefined
-
-                const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === currentInstrument);
-                trackLabel.textContent = instrumentConfig ? instrumentConfig.name : `Track ${i+1}`;
+                trackLabel.textContent = track.config.name;
                 controlsDiv.appendChild(trackLabel);
 
                 const selectInstrument = document.createElement('select');
-                selectInstrument.classList.add('styled-select', 'text-xs', 'py-1', 'px-1', 'flex-shrink-0');
-                selectInstrument.dataset.track = i;
+                selectInstrument.classList.add('styled-select', 'text-xs', 'py-1', 'px-1', 'flex-shrink-0', 'max-w-[100px]'); 
+                selectInstrument.dataset.trackIndex = i; 
                 availableInstrumentConfigs.forEach(config => {
                     const option = document.createElement('option');
                     option.value = config.name;
                     option.textContent = config.name;
-                    if (allInstruments[config.name] === currentInstrument) {
+                    if (config.name === track.config.name) {
                         option.selected = true;
                     }
                     selectInstrument.appendChild(option);
                 });
-                selectInstrument.addEventListener('change', handleInstrumentChange);
+                selectInstrument.addEventListener('change', (e) => handleInstrumentChange(e, i));
                 controlsDiv.appendChild(selectInstrument);
+
+                const volumeIcon = document.createElement('span');
+                volumeIcon.textContent = '🔊'; 
+                volumeIcon.classList.add('text-xs', 'cursor-default', 'ml-1');
+                controlsDiv.appendChild(volumeIcon);
+
+                const trackVolumeSlider = document.createElement('input');
+                trackVolumeSlider.type = 'range';
+                trackVolumeSlider.min = '-40'; 
+                trackVolumeSlider.max = '6';   
+                trackVolumeSlider.step = '0.5';
+                trackVolumeSlider.value = track.channel.volume.value; 
+                trackVolumeSlider.classList.add('track-volume-slider', 'h-4', 'mx-1');
+                trackVolumeSlider.title = "Track Volume";
+                trackVolumeSlider.addEventListener('input', (e) => {
+                    tracks[i].channel.volume.value = parseFloat(e.target.value);
+                });
+                controlsDiv.appendChild(trackVolumeSlider);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Del';
+                deleteBtn.classList.add('btn-delete-track', 'ml-1');
+                deleteBtn.title = "Delete Track";
+                deleteBtn.addEventListener('click', () => deleteTrack(i));
+                controlsDiv.appendChild(deleteBtn);
+                
                 trackRow.appendChild(controlsDiv);
 
                 const stepsContainer = document.createElement('div');
@@ -362,9 +582,9 @@
                 for (let j = 0; j < numSteps; j++) {
                     const stepButton = document.createElement('button');
                     stepButton.classList.add('sequencer-step', 'h-8', 'w-full', 'rounded-sm');
-                    stepButton.dataset.track = i;
+                    stepButton.dataset.trackIndex = i;
                     stepButton.dataset.step = j;
-                    if (sequencerSteps[i][j]) { 
+                    if (track.steps[j]) { 
                         stepButton.classList.add('active');
                     }
                     stepButton.addEventListener('click', toggleStep);
@@ -372,67 +592,95 @@
                 }
                 trackRow.appendChild(stepsContainer);
                 sequencerGridContainer.appendChild(trackRow);
-            }
+            });
         }
         
         function rebuildToneSequence() {
-            if (sequence) {
+            if (sequence) { 
                 sequence.stop();
                 sequence.dispose();
             }
             const sequenceEvents = Array.from({ length: numSteps }, (_, i) => i);
 
             sequence = new Tone.Sequence((time, step) => {
-                currentPlayingStepVisual = step;
+                currentPlayingStepVisual = step; 
                 Tone.Draw.schedule(() => { 
                     updateCurrentStepVisuals(step);
                 }, time);
 
-                for (let track = 0; track < numTracksGlobal; track++) { 
-                    if (sequencerSteps[track] && sequencerSteps[track][step] && selectedInstrumentsForTrack[track]) {
-                        const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === selectedInstrumentsForTrack[track]);
-                        if (instrumentConfig) {
-                            const instrument = selectedInstrumentsForTrack[track];
-                            if (instrumentConfig.type === "NoiseSynth" && instrumentConfig.usePitchEnv) {
-                                instrument.triggerAttackRelease("4n", time);
-                                instrument.frequency.linearRampToValueAtTime(8000, time + Tone.Time("4n").toSeconds() * 0.8);
-                                instrument.frequency.setValueAtTime(200, time);
-                            } else if (instrumentConfig.usePitchEnvShort) { // For Laser FX
-                                instrument.triggerAttackRelease(instrumentConfig.note || "C6", "16n", time);
-                                instrument.detune.setValueAtTime(0, time);
-                                instrument.detune.linearRampToValueAtTime(-2400, time + 0.08); // Quick pitch drop
-                            }else {
-                                instrument.triggerAttackRelease(instrumentConfig.note || "C4", "8n", time);
+                tracks.forEach(track => { 
+                    if (track.steps[step] && track.instrument) { 
+                        const instrumentConfig = track.config; 
+                        try {
+                            if (instrumentConfig.type === "NoiseSynth") {
+                                // For NoiseSynth, trigger with duration only.
+                                track.instrument.triggerAttackRelease(instrumentConfig.duration || "8n", time);
+                                if (instrumentConfig.usePitchEnv) { // Specific for FX Riser
+                                    track.instrument.frequency.setValueAtTime(200, time); // Start low
+                                    track.instrument.frequency.linearRampToValueAtTime(8000, time + Tone.Time(instrumentConfig.duration).toSeconds() * 0.8);
+                                }
+                            } else if (instrumentConfig.usePitchEnvShort) { 
+                                track.instrument.triggerAttackRelease(instrumentConfig.note || "C6", "16n", time);
+                                track.instrument.detune.setValueAtTime(0, time);
+                                track.instrument.detune.linearRampToValueAtTime(-2400, time + 0.08); 
+                            } else {
+                                track.instrument.triggerAttackRelease(instrumentConfig.note || "C4", "8n", time);
                             }
+                        } catch(e) {
+                            console.error(`Error triggering instrument ${instrumentConfig.name} in sequence:`, e);
                         }
                     }
-                }
-            }, sequenceEvents, "16n");
+                });
+            }, sequenceEvents, "16n"); 
             
-            sequence.loop = true;
-            if (Tone.Transport.state === "started") {
+            sequence.loop = true; 
+            if (Tone.Transport.state === "started") { 
                 sequence.start(0);
             }
-            Tone.Transport.bpm.value = parseInt(tempoRange.value);
+            Tone.Transport.bpm.value = parseInt(tempoRange.value); 
         }
 
-        function handleInstrumentChange(event) {
-            const trackIndex = parseInt(event.target.dataset.track);
-            const instrumentName = event.target.value;
-            selectedInstrumentsForTrack[trackIndex] = allInstruments[instrumentName];
+        function handleInstrumentChange(event, trackIndex) {
+            const newInstrumentName = event.target.value;
+            const track = tracks[trackIndex];
+            if (!track) return;
+
+            const newConfig = availableInstrumentConfigs.find(conf => conf.name === newInstrumentName);
+            if (!newConfig) return;
+
+            if (track.instrument && typeof track.instrument.dispose === 'function') {
+                track.instrument.dispose(); 
+            }
+
+            track.instrument = createInstrumentFromConfig(newConfig);
+            track.config = newConfig;
+
+            if (track.instrument) {
+                 if (newConfig.useFilter && track.instrument.connect && typeof track.instrument.connect === 'function') {
+                    const existingFilter = track.instrument.filter;
+                     if(!existingFilter || newConfig.lfoTarget !== "filterFreq"){
+                        const filterNode = new Tone.Filter(newConfig.filterFreq || 1000, newConfig.filterType || "highpass", newConfig.filterQ || 1);
+                        track.instrument.chain(filterNode, track.channel);
+                    } else {
+                         track.instrument.connect(track.channel);
+                    }
+                } else if (track.instrument.connect && typeof track.instrument.connect === 'function') {
+                    track.instrument.connect(track.channel); 
+                }
+            }
             
-            const trackLabel = document.getElementById(`trackLabel-${trackIndex}`);
-            if (trackLabel) trackLabel.textContent = instrumentName;
+            const trackLabel = document.getElementById(`trackLabel-${track.id}`);
+            if (trackLabel) trackLabel.textContent = newInstrumentName;
             
             updatePadLabels(); 
-            console.log(`Track ${trackIndex} instrument changed to ${instrumentName}`);
+            console.log(`Track ${trackIndex} instrument changed to ${newInstrumentName}`);
         }
 
         function updatePadLabels() {
             pads.forEach((pad, index) => {
-                if (index < numTracksGlobal && selectedInstrumentsForTrack[index]) { 
-                    const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === selectedInstrumentsForTrack[index]);
-                    pad.textContent = instrumentConfig ? instrumentConfig.name : `Track ${index + 1}`;
+                const track = tracks[index]; 
+                if (track) { 
+                    pad.textContent = track.config.name;
                     pad.disabled = false;
                 } else { 
                     pad.textContent = `Track ${index + 1}`; 
@@ -441,16 +689,15 @@
             });
         }
 
-
         function toggleStep(event) {
-            const track = parseInt(event.target.dataset.track);
+            const trackIndex = parseInt(event.target.dataset.trackIndex);
             const step = parseInt(event.target.dataset.step);
-            sequencerSteps[track][step] = !sequencerSteps[track][step];
-            event.target.classList.toggle('active', sequencerSteps[track][step]);
+            tracks[trackIndex].steps[step] = !tracks[trackIndex].steps[step]; 
+            event.target.classList.toggle('active', tracks[trackIndex].steps[step]); 
         }
         
         function updateCurrentStepVisuals(step) {
-            currentStepDisplay.textContent = `${step + 1}`;
+            currentStepDisplay.textContent = (step === -1) ? `-` : `${step + 1}`; 
             document.querySelectorAll('.sequencer-step').forEach(btn => {
                 btn.classList.remove('current-playing-step');
                 if (parseInt(btn.dataset.step) === step) {
@@ -460,61 +707,15 @@
         }
 
         function clearPattern() {
-            for (let i = 0; i < numTracksGlobal; i++) {
-                for (let j = 0; j < numSteps; j++) {
-                    sequencerSteps[i][j] = false;
-                }
-            }
+            tracks.forEach(track => {
+                track.steps.fill(false);
+            });
             document.querySelectorAll('.sequencer-step.active').forEach(btn => {
                 btn.classList.remove('active');
             });
             console.log("Pattern cleared");
         }
         
-
-        numStepsInput.addEventListener('change', (e) => {
-            const newNumSteps = parseInt(e.target.value);
-            if (newNumSteps >= 8 && newNumSteps <= 64 && newNumSteps % 4 === 0) { 
-                const wasPlaying = Tone.Transport.state === "started";
-                if (wasPlaying) Tone.Transport.stop();
-                
-                numSteps = newNumSteps;
-                totalStepsDisplay.textContent = numSteps;
-                
-                initializeSequencerDataAndUI(); 
-                rebuildToneSequence();   
-                
-                if (wasPlaying) Tone.Transport.start();
-            } else {
-                alert("Number of steps must be between 8 and 64, and a multiple of 4.");
-                e.target.value = numSteps; 
-            }
-        });
-
-        addTrackButton.addEventListener('click', () => {
-            if (numTracksGlobal < maxTracks) {
-                const wasPlaying = Tone.Transport.state === "started";
-                if (wasPlaying) Tone.Transport.stop();
-
-                numTracksGlobal++;
-                const defaultConfig = availableInstrumentConfigs[ (numTracksGlobal - 1) % availableInstrumentConfigs.length]; 
-                selectedInstrumentsForTrack.push(allInstruments[defaultConfig.name]);
-                
-                // Add a new empty step array for the new track
-                const newStepArray = new Array(numSteps).fill(false);
-                sequencerSteps.push(newStepArray);
-
-
-                initializeSequencerDataAndUI(); // This will redraw everything
-                rebuildToneSequence();
-                updatePadLabels(); 
-
-                if (wasPlaying) Tone.Transport.start();
-                addTrackButton.disabled = (numTracksGlobal >= maxTracks);
-            }
-        });
-
-
         function setupEventListeners() {
             playStopButton.addEventListener('click', () => {
                 if (Tone.Transport.state === "started") {
@@ -522,8 +723,11 @@
                     playStopButton.textContent = "Play";
                     playStopButton.classList.remove('playing');
                     updateCurrentStepVisuals(-1); 
-                    currentStepDisplay.textContent = `-`;
                 } else {
+                    if (tracks.length === 0) { 
+                        console.warn("Please add a track before playing.");
+                        return;
+                    }
                     Tone.Transport.start();
                     if (sequence) sequence.start(0); 
                     playStopButton.textContent = "Stop";
@@ -537,7 +741,7 @@
                 tempoValueDisplay.textContent = newTempo;
             });
 
-            volumeRange.addEventListener('input', (e) => {
+            volumeRange.addEventListener('input', (e) => { 
                 const newVolume = parseFloat(e.target.value);
                 Tone.Destination.volume.value = newVolume;
                 volumeValueDisplay.textContent = newVolume.toFixed(1);
@@ -545,55 +749,137 @@
             
             clearPatternButton.addEventListener('click', clearPattern);
 
+            numStepsInput.addEventListener('change', (e) => {
+                const newNumSteps = parseInt(e.target.value);
+                if (newNumSteps >= 8 && newNumSteps <= 64 && newNumSteps % 4 === 0) { 
+                    const wasPlaying = Tone.Transport.state === "started";
+                    if (wasPlaying) Tone.Transport.stop();
+                    
+                    numSteps = newNumSteps;
+                    totalStepsDisplay.textContent = numSteps;
+                    
+                    initializeSequencerDataAndUI(); 
+                    rebuildToneSequence();          
+                    
+                    if (wasPlaying && tracks.length > 0) Tone.Transport.start();
+                } else {
+                    console.warn("Number of steps must be between 8 and 64, and a multiple of 4.");
+                    e.target.value = numSteps; 
+                }
+            });
+
+            addTrackButton.addEventListener('click', () => {
+                addNewTrack(null, true); 
+            });
 
             pads.forEach(pad => {
                 pad.addEventListener('mousedown', (e) => { 
                     if (Tone.context.state !== 'running' || pad.disabled) return;
                     
-                    const trackIndex = parseInt(e.target.dataset.track);
-                    // This check is now redundant due to pad.disabled but good for safety
-                    if (trackIndex >= numTracksGlobal) return; 
+                    const padIndex = parseInt(e.target.dataset.trackPad);
+                    const track = tracks[padIndex]; 
 
-                    const instrument = selectedInstrumentsForTrack[trackIndex];
-                    const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === instrument);
-
-                    if (instrument && instrumentConfig) {
-                        e.target.classList.add('active-visual');
-                        try {
-                             const currentInstrument = selectedInstrumentsForTrack[trackIndex]; // Use the specific instrument for this track
-                             if (instrumentConfig.type === "NoiseSynth" && instrumentConfig.usePitchEnv) {
-                                currentInstrument.triggerAttackRelease("4n", Tone.now());
-                                currentInstrument.frequency.linearRampToValueAtTime(8000, Tone.now() + Tone.Time("4n").toSeconds() * 0.8);
-                                currentInstrument.frequency.setValueAtTime(200, Tone.now());
+                    if (track && track.instrument) {
+                        e.target.classList.add('active-visual'); 
+                        const instrumentConfig = track.config;
+                        try { 
+                            const now = Tone.now(); // Ensure 'now' is defined for pad triggers
+                            if (instrumentConfig.type === "NoiseSynth") {
+                                track.instrument.triggerAttackRelease(instrumentConfig.duration || "8n", now);
+                                 if (instrumentConfig.usePitchEnv) { 
+                                    track.instrument.frequency.setValueAtTime(200, now); 
+                                    track.instrument.frequency.linearRampToValueAtTime(8000, now + Tone.Time(instrumentConfig.duration).toSeconds() * 0.8);
+                                }
                             } else if (instrumentConfig.usePitchEnvShort) {
-                                currentInstrument.triggerAttackRelease(instrumentConfig.note || "C6", "16n", Tone.now());
-                                currentInstrument.detune.setValueAtTime(0, Tone.now());
-                                currentInstrument.detune.linearRampToValueAtTime(-2400, Tone.now() + 0.08);
+                                track.instrument.triggerAttackRelease(instrumentConfig.note || "C6", "16n", now);
+                                track.instrument.detune.setValueAtTime(0, now);
+                                track.instrument.detune.linearRampToValueAtTime(-2400, now + 0.08);
                             } else {
-                                currentInstrument.triggerAttackRelease(instrumentConfig.note || "C4", "4n", Tone.now());
+                                track.instrument.triggerAttackRelease(instrumentConfig.note || "C4", "4n", now);
                             }
                         } catch (error) {
-                            console.error("Error playing sound from pad:", instrumentConfig.name, error);
+                            console.error(`Error playing sound from pad for ${instrumentConfig.name}:`, error);
                         }
                     }
                 });
                 pad.addEventListener('mouseup', (e) => e.target.classList.remove('active-visual'));
                 pad.addEventListener('mouseleave', (e) => e.target.classList.remove('active-visual'));
             });
+
+            recordStartButton.addEventListener('click', () => {
+                if (!recordDestNode) { 
+                    console.error("Recording system not initialized or not supported.");
+                    return;
+                }
+                
+                recordedChunks = []; 
+                
+                if (recordDestNode.stream.active === false) {
+                     console.warn("MediaStream for recording was inactive.");
+                }
+
+                try {
+                    mediaRecorder = new MediaRecorder(recordDestNode.stream, { mimeType: 'audio/webm;codecs=opus' });
+
+                    mediaRecorder.ondataavailable = event => { 
+                        if (event.data.size > 0) {
+                            recordedChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => { 
+                        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                        const url = URL.createObjectURL(blob); 
+                        
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.href = url;
+                        const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); 
+                        a.download = `groovebox-recording-${timestamp}.webm`;
+                        a.textContent = a.download;
+                        li.appendChild(a);
+                        recordingsList.appendChild(li); 
+
+                        recordStartButton.disabled = false;
+                        recordStopButton.disabled = true;
+                        recordStartButton.classList.remove('recording');
+                        playStopButton.disabled = false; 
+                    };
+                
+                    mediaRecorder.start(); 
+                    recordStartButton.disabled = true;
+                    recordStopButton.disabled = false;
+                    recordStartButton.classList.add('recording');
+                    playStopButton.disabled = true; 
+                    console.log("Recording started.");
+                } catch (e) {
+                    console.error("Error starting media recorder:", e);
+                    recordStartButton.disabled = false;
+                    recordStopButton.disabled = true;
+                    playStopButton.disabled = false;
+                }
+            });
+
+            recordStopButton.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state === "recording") {
+                    mediaRecorder.stop(); 
+                    console.log("Recording stopped.");
+                }
+            });
         }
 
         function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
-            if (!waveform || (Tone.Transport.state !== "started" && !document.querySelector('.pad.active-visual'))) {
-                vizCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
-                vizCtx.fillStyle = '#000000';
+            requestAnimationFrame(drawVisualizer); 
+
+            if (!waveform || (Tone.Transport.state !== "started" && !document.querySelector('.pad.active-visual') && (!mediaRecorder || mediaRecorder.state !== 'recording'))) {
+                if (vizCtx.fillStyle !== '#000000') vizCtx.fillStyle = '#000000';
                 vizCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
                 return;
             }
 
-            const waveformValues = waveform.getValue();
-            vizCtx.fillStyle = '#000000'; 
-            vizCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+            const waveformValues = waveform.getValue(); 
+            if (vizCtx.fillStyle !== '#000000') vizCtx.fillStyle = '#000000';
+            vizCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); 
 
             vizCtx.lineWidth = 2;
             vizCtx.strokeStyle = '#4f46e5'; 
@@ -604,13 +890,13 @@
 
             for (let i = 0; i < waveformValues.length; i++) {
                 const v = waveformValues[i] / 2 + 0.5; 
-                const y = v * visualizerCanvas.height;
+                const y = v * visualizerCanvas.height; 
 
                 if (i === 0) vizCtx.moveTo(x, y);
                 else vizCtx.lineTo(x, y);
                 x += sliceWidth;
             }
-            vizCtx.lineTo(visualizerCanvas.width, visualizerCanvas.height / 2);
+            vizCtx.lineTo(visualizerCanvas.width, visualizerCanvas.height / 2); 
             vizCtx.stroke();
         }
 
@@ -622,4 +908,4 @@
 
     </script>
 </body>
-</ht
+</html>

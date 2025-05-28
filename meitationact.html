@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Breathing Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            overflow: hidden; /* Prevent all scrollbars for full-screen feel */
+            transition: background 2.5s ease-in-out; /* For background gradient transition */
+        }
+        /* Default background state */
+        body.bg-state-default {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6); /* Calming Blue */
+        }
+        /* Background states for breathing phases */
+        body.bg-state-inhale {
+            background: linear-gradient(135deg, #5eead4, #14b8a6); /* Teal/Emerald */
+        }
+        body.bg-state-hold-inhale {
+            background: linear-gradient(135deg, #fde047, #facc15); /* Warm Yellow/Amber */
+        }
+        body.bg-state-exhale {
+            background: linear-gradient(135deg, #f9a8d4, #ec4899); /* Soft Pink/Magenta */
+        }
+        body.bg-state-hold-exhale {
+            background: linear-gradient(135deg, #c4b5fd, #a78bfa); /* Gentle Violet */
+        }
+
+
+        .breathing-shape {
+            width: 150px;
+            height: 150px;
+            border-radius: 1.5rem; /* Default rounded square */
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+            backdrop-filter: blur(5px); /* Kept for the main shape */
+            transform: scale(1);
+            /* Transition for scale, border-radius, and background-color */
+            transition: transform 1.8s cubic-bezier(0.42, 0, 0.08, 1), 
+                        border-radius 1.8s cubic-bezier(0.42, 0, 0.08, 1),
+                        background-color 0.8s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* State-specific classes for the shape */
+        .breathing-shape.state-inhale {
+            transform: scale(1.7); 
+            border-radius: 3rem; /* Softer, more rounded */
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .breathing-shape.state-hold-inhale {
+            transform: scale(1.7); 
+            border-radius: 3rem; /* Maintain inhale shape & roundness */
+            background-color: rgba(255, 255, 255, 0.25); /* Only color changes */
+        }
+        .breathing-shape.state-exhale {
+            transform: scale(0.65); 
+            border-radius: 0.75rem; /* Sharper, less rounded */
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .breathing-shape.state-hold-exhale {
+            transform: scale(0.65); 
+            border-radius: 0.75rem; /* Maintain exhale shape & roundness */
+            background-color: rgba(255, 255, 255, 0.2); /* Only color changes */
+        }
+
+        .instruction-text-container {
+            min-height: 80px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .instruction-text {
+            font-size: 2rem; 
+            font-weight: 300; 
+            color: rgba(255, 255, 255, 0.9);
+            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .instruction-text.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .cycle-counter-text {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.25rem;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* Updated Button Styling */
+        .control-button {
+            padding: 0.75rem 1.75rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.25); /* Darker semi-transparent background */
+            color: white; /* Solid white text */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Light border for definition */
+            /* backdrop-filter: blur(5px); -- Removed backdrop-filter from buttons */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            min-width: 120px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Subtle shadow for depth */
+        }
+        .control-button:hover:not(:disabled) {
+            background-color: rgba(0, 0, 0, 0.35); /* Darken further on hover */
+            transform: translateY(-2px);
+        }
+        .control-button:disabled {
+            opacity: 0.6; /* Keep opacity for disabled state */
+            cursor: not-allowed;
+            transform: translateY(0);
+            background-color: rgba(0, 0, 0, 0.2); /* Slightly different disabled bg */
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 1rem; 
+        }
+        .input-field { 
+            padding: 0.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.375rem; 
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .input-field:disabled {
+            background-color: rgba(255, 255, 255, 0.05);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-state-default">
+
+    <div class="main-container">
+        <div id="title-area" class="mb-6 sm:mb-8">
+            <h1 class="text-4xl sm:text-5xl font-bold text-white shadow-sm">Zenith Breathing</h1>
+        </div>
+
+        <div id="settings-area" class="mb-6 sm:mb-8 grid grid-cols-3 gap-3 sm:gap-4 w-full max-w-lg px-2">
+            <div>
+                <label for="inhale-duration" class="block text-xs sm:text-sm font-medium mb-1">Inhale (s)</label>
+                <input type="number" id="inhale-duration" value="4" min="2" max="10" class="input-field">
+            </div>
+            <div>
+                <label for="exhale-duration" class="block text-xs sm:text-sm font-medium mb-1">Exhale (s)</label>
+                <input type="number" id="exhale-duration" value="4" min="2" max="10" class="input-field">
+            </div>
+            <div>
+                <label for="total-cycles" class="block text-xs sm:text-sm font-medium mb-1">Cycles</label>
+                <input type="number" id="total-cycles" value="10" min="1" max="100" class="input-field">
+            </div>
+        </div>
+
+        <div id="visualizer-area" class="mb-6 sm:mb-8 w-[260px] h-[260px] flex justify-center items-center">
+            <div id="breathing-shape" class="breathing-shape"></div>
+        </div>
+
+        <div id="instruction-area" class="mb-6 sm:mb-8 instruction-text-container">
+            <p id="instruction-text" class="instruction-text">Press Start</p>
+            <p id="cycle-counter-text" class="cycle-counter-text opacity-0"></p>
+        </div>
+
+        <div id="controls-area" class="flex space-x-4">
+            <button id="start-button" class="control-button">Start</button>
+            <button id="stop-button" class="control-button" disabled>Stop</button>
+        </div>
+    </div>
+
+    <script>
+        const breathingShape = document.getElementById('breathing-shape');
+        const instructionTextElement = document.getElementById('instruction-text');
+        const cycleCounterTextElement = document.getElementById('cycle-counter-text');
+        const startButton = document.getElementById('start-button');
+        const stopButton = document.getElementById('stop-button');
+        const bodyElement = document.body;
+
+        const inhaleDurationInput = document.getElementById('inhale-duration');
+        const exhaleDurationInput = document.getElementById('exhale-duration');
+        const totalCyclesInput = document.getElementById('total-cycles');
+        const durationInputs = [inhaleDurationInput, exhaleDurationInput, totalCyclesInput];
+
+        let timeoutId;
+        let currentPhase = 0; // 0: Inhale, 1: Hold 1, 2: Exhale, 3: Hold 2
+        const phaseInstructions = ["Inhale...", "Hold...", "Exhale...", "Hold..."];
+        const shapeStateClasses = ["state-inhale", "state-hold-inhale", "state-exhale", "state-hold-exhale"];
+        const backgroundStateClasses = ["bg-state-inhale", "bg-state-hold-inhale", "bg-state-exhale", "bg-state-hold-exhale"];
+        
+        let phaseDurations = [4000, 1500, 4000, 1500]; // Default with fixed holds
+        const FIXED_HOLD_DURATION = 1500; // 1.5 seconds for hold phases
+
+        let targetCycles = 10;
+        let currentCycleCount = 0;
+        let isRunning = false;
+
+        let synth;
+        try {
+            synth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.005, decay: 0.1, sustain: 0.01, release: 0.1 } 
+            }).toDestination();
+        } catch (e) {
+            console.error("Tone.js synth could not be initialized.", e);
+            synth = null;
+        }
+        const phaseSounds = ['C4', 'E4', 'G3', 'D4']; 
+
+        function updateInstructionText(newText, show) {
+            if (show) {
+                instructionTextElement.textContent = newText;
+                instructionTextElement.classList.add('visible');
+            } else {
+                instructionTextElement.classList.remove('visible');
+            }
+        }
+        
+        function updateCycleCounterText() {
+            if (isRunning && targetCycles > 0) {
+                cycleCounterTextElement.textContent = `Cycle: ${currentCycleCount} / ${targetCycles}`;
+                cycleCounterTextElement.classList.remove('opacity-0');
+            } else {
+                cycleCounterTextElement.classList.add('opacity-0');
+            }
+        }
+
+        function playSoundForPhase(phase) {
+            if (synth && Tone.context.state === 'running' && phaseSounds[phase]) {
+                try {
+                    synth.triggerAttackRelease(phaseSounds[phase], "16n", Tone.now());
+                } catch (e) { console.warn("Sound play failed for phase:", phase, e); }
+            }
+        }
+        
+        function getAndValidateDurations() {
+            const getClampedValue = (inputEl, min, max, defaultVal) => {
+                let value = parseInt(inputEl.value);
+                if (isNaN(value)) value = defaultVal;
+                value = Math.max(min, Math.min(max, value));
+                inputEl.value = value;
+                return value;
+            };
+            phaseDurations[0] = getClampedValue(inhaleDurationInput, 2, 10, 4) * 1000;
+            phaseDurations[2] = getClampedValue(exhaleDurationInput, 2, 10, 4) * 1000;
+            
+            phaseDurations[1] = FIXED_HOLD_DURATION;
+            phaseDurations[3] = FIXED_HOLD_DURATION;
+            
+            targetCycles = getClampedValue(totalCyclesInput, 1, 100, 10);
+        }
+
+        function runNextPhase() {
+            if (!isRunning) return;
+
+            if (currentPhase === 0) { 
+                currentCycleCount++;
+                if (currentCycleCount > targetCycles) {
+                    sessionComplete();
+                    return;
+                }
+                updateCycleCounterText();
+            }
+            
+            updateInstructionText(phaseInstructions[currentPhase], true);
+            
+            breathingShape.className = 'breathing-shape'; 
+            bodyElement.className = ''; 
+            setTimeout(() => { 
+                 if (isRunning) { 
+                    breathingShape.classList.add(shapeStateClasses[currentPhase]);
+                    bodyElement.classList.add(backgroundStateClasses[currentPhase]);
+                 }
+            }, 20); 
+
+            playSoundForPhase(currentPhase);
+            
+            const durationForThisPhase = phaseDurations[currentPhase];
+            currentPhase = (currentPhase + 1) % 4; 
+            timeoutId = setTimeout(runNextPhase, durationForThisPhase);
+        }
+
+        function startExercise() {
+            if (isRunning) return;
+            
+            if (synth && Tone.context.state !== 'running') {
+                Tone.start().catch(e => console.warn("Tone.start() failed.", e));
+            }
+
+            isRunning = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            durationInputs.forEach(input => input.disabled = true);
+            
+            getAndValidateDurations(); 
+            currentPhase = 0; 
+            currentCycleCount = 0; 
+            updateCycleCounterText(); 
+            
+            runNextPhase(); 
+        }
+
+        function stopExercise(isSessionComplete = false) {
+            if (!isRunning && !isSessionComplete) return; 
+            isRunning = false;
+
+            clearTimeout(timeoutId); 
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            durationInputs.forEach(input => input.disabled = false);
+
+            if (!isSessionComplete) {
+                updateInstructionText("Press Start", true);
+            }
+            updateCycleCounterText(); 
+
+            breathingShape.className = 'breathing-shape'; 
+            bodyElement.className = 'bg-state-default';
+            currentPhase = 0;
+        }
+
+        function sessionComplete() {
+            updateInstructionText("Session Complete!", true);
+            cycleCounterTextElement.textContent = `Completed ${targetCycles} cycles.`;
+            cycleCounterTextElement.classList.remove('opacity-0');
+            stopExercise(true); 
+        }
+
+        startButton.addEventListener('click', startExercise);
+        stopButton.addEventListener('click', () => stopExercise(false));
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateInstructionText("Press Start", true);
+            getAndValidateDurations(); 
+            bodyElement.classList.add('bg-state-default'); 
+        });
+
+    </script>
+</body>
+</html>

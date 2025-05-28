@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Typer Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        #text-to-type span {
+            transition: color 0.2s ease, background-color 0.2s ease;
+        }
+        .correct {
+            color: #10b981; /* Tailwind emerald-500 */
+        }
+        .incorrect {
+            color: #ef4444; /* Tailwind red-500 */
+            background-color: #fee2e2; /* Tailwind red-100 */
+            text-decoration: underline;
+            text-decoration-color: #ef4444;
+        }
+        .current-char {
+            background-color: #e0e7ff; /* Tailwind indigo-100 */
+            padding: 0 1px;
+            border-radius: 2px;
+        }
+        .game-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+        }
+        .game-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* Custom message box styling */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+        }
+        .message-box h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        .message-box p {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .message-box button {
+            background-color: #4a5568; /* Tailwind gray-700 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .message-box button:hover {
+            background-color: #2d3748; /* Tailwind gray-800 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-indigo-600 mb-6">Speed Typer</h1>
+
+        <div id="text-to-type-container" class="mb-6 p-4 border border-gray-300 rounded-lg bg-gray-50 text-lg leading-relaxed shadow-inner">
+            <p id="text-to-type" class="select-none"></p>
+        </div>
+
+        <textarea id="typing-input" rows="3" class="w-full p-3 border border-gray-300 rounded-lg text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none" placeholder="Start typing here..." disabled></textarea>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-6 text-center">
+            <div>
+                <p class="text-sm text-gray-500">Time Left</p>
+                <p id="timer-display" class="text-2xl font-semibold text-gray-700">60s</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">WPM</p>
+                <p id="wpm-display" class="text-2xl font-semibold text-gray-700">0</p>
+            </div>
+            <div class="col-span-2 sm:col-span-1">
+                <p class="text-sm text-gray-500">Accuracy</p>
+                <p id="accuracy-display" class="text-2xl font-semibold text-gray-700">0%</p>
+            </div>
+        </div>
+
+        <div class="flex justify-center">
+            <button id="start-reset-button" class="game-button bg-indigo-500 hover:bg-indigo-600 text-white font-semibold">Start Game</button>
+        </div>
+    </div>
+
+    <div id="results-modal" class="message-box hidden">
+        <h3 id="results-title">Results</h3>
+        <p>WPM: <span id="modal-wpm">0</span></p>
+        <p>Accuracy: <span id="modal-accuracy">0%</span></p>
+        <p>Errors: <span id="modal-errors">0</span></p>
+        <button id="modal-close-button">Try Again</button>
+    </div>
+
+    <script>
+        const textToTypeElement = document.getElementById('text-to-type');
+        const typingInputElement = document.getElementById('typing-input');
+        const timerDisplay = document.getElementById('timer-display');
+        const wpmDisplay = document.getElementById('wpm-display');
+        const accuracyDisplay = document.getElementById('accuracy-display');
+        const startResetButton = document.getElementById('start-reset-button');
+
+        // Results Modal Elements
+        const resultsModal = document.getElementById('results-modal');
+        const modalWpm = document.getElementById('modal-wpm');
+        const modalAccuracy = document.getElementById('modal-accuracy');
+        const modalErrors = document.getElementById('modal-errors');
+        const modalCloseButton = document.getElementById('modal-close-button');
+
+        const sampleTexts = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Pack my box with five dozen liquor jugs.",
+            "How quickly daft jumping zebras vex.",
+            "Programming is the art of telling another human being what one wants the computer to do.",
+            "To be, or not to be, that is the question.",
+            "All that glitters is not gold.",
+            "A journey of a thousand miles begins with a single step.",
+            "The only thing we have to fear is fear itself."
+        ];
+
+        let timer;
+        let timeLeft = 60; // Default time in seconds
+        let timeElapsed = 0;
+        let totalTypedChars = 0;
+        let correctTypedChars = 0;
+        let errors = 0;
+        let gameStarted = false;
+        let currentText = "";
+        let currentTextSpans = [];
+
+        function initializeGame() {
+            // Select a random text
+            currentText = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+            textToTypeElement.innerHTML = ''; // Clear previous text
+            currentTextSpans = []; // Reset spans array
+
+            // Wrap each character in a span for individual styling
+            currentText.split('').forEach(char => {
+                const charSpan = document.createElement('span');
+                charSpan.innerText = char;
+                textToTypeElement.appendChild(charSpan);
+                currentTextSpans.push(charSpan);
+            });
+
+            typingInputElement.value = '';
+            typingInputElement.disabled = true; // Disabled until game starts
+            startResetButton.textContent = 'Start Game';
+            startResetButton.classList.remove('bg-red-500', 'hover:bg-red-600');
+            startResetButton.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+
+
+            timeLeft = 60; // Reset timer
+            timeElapsed = 0;
+            totalTypedChars = 0;
+            correctTypedChars = 0;
+            errors = 0;
+            gameStarted = false;
+
+            timerDisplay.textContent = `${timeLeft}s`;
+            wpmDisplay.textContent = '0';
+            accuracyDisplay.textContent = '0%';
+            if (currentTextSpans.length > 0) {
+                 currentTextSpans[0].classList.add('current-char'); // Highlight first char
+            }
+            resultsModal.classList.add('hidden');
+        }
+
+        function startGame() {
+            if (gameStarted) return; // Prevent multiple starts
+            
+            initializeGame(); // Load new text and reset stats
+            gameStarted = true;
+            typingInputElement.disabled = false;
+            typingInputElement.focus();
+            startResetButton.textContent = 'Reset Game';
+            startResetButton.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
+            startResetButton.classList.add('bg-red-500', 'hover:bg-red-600');
+
+
+            timer = setInterval(() => {
+                timeLeft--;
+                timeElapsed++;
+                timerDisplay.textContent = `${timeLeft}s`;
+                updateWPM(); // Update WPM live
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function resetGame() {
+            clearInterval(timer);
+            gameStarted = false;
+            initializeGame();
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            gameStarted = false;
+            typingInputElement.disabled = true;
+            
+            // Final calculations
+            updateWPM(); // Final WPM
+            updateAccuracy(); // Final Accuracy
+
+            // Show results modal
+            modalWpm.textContent = wpmDisplay.textContent;
+            modalAccuracy.textContent = accuracyDisplay.textContent;
+            modalErrors.textContent = errors;
+            resultsModal.classList.remove('hidden');
+
+            startResetButton.textContent = 'Play Again'; // Or 'Start Game'
+            startResetButton.classList.remove('bg-red-500', 'hover:bg-red-600');
+            startResetButton.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+
+        }
+
+        function updateWPM() {
+            if (timeElapsed > 0) {
+                // A common WPM formula: (Total Chars / 5) / Time in Minutes
+                const words = (correctTypedChars / 5);
+                const minutes = timeElapsed / 60;
+                const wpm = Math.round(words / minutes) || 0;
+                wpmDisplay.textContent = wpm;
+            } else {
+                wpmDisplay.textContent = '0';
+            }
+        }
+
+        function updateAccuracy() {
+            if (totalTypedChars > 0) {
+                const accuracy = Math.round((correctTypedChars / totalTypedChars) * 100) || 0;
+                accuracyDisplay.textContent = `${accuracy}%`;
+            } else {
+                accuracyDisplay.textContent = '0%';
+            }
+        }
+
+        typingInputElement.addEventListener('input', () => {
+            if (!gameStarted) return;
+
+            const typedText = typingInputElement.value;
+            totalTypedChars = typedText.length;
+            correctTypedChars = 0; // Recalculate correct chars on each input
+            errors = 0;
+
+            currentTextSpans.forEach((charSpan, index) => {
+                charSpan.classList.remove('correct', 'incorrect', 'current-char'); // Reset styles
+                const typedChar = typedText[index];
+
+                if (typedChar == null) { // Not yet typed
+                    if (index === typedText.length) { // This is the current character to type
+                        charSpan.classList.add('current-char');
+                    }
+                } else if (typedChar === charSpan.innerText) {
+                    charSpan.classList.add('correct');
+                    correctTypedChars++;
+                } else {
+                    charSpan.classList.add('incorrect');
+                    errors++;
+                }
+            });
+            
+            // Highlight next character if current one is typed
+            if (typedText.length < currentTextSpans.length) {
+                currentTextSpans[typedText.length].classList.add('current-char');
+            }
+
+
+            updateAccuracy(); // Update accuracy live
+
+            // Check if all text is typed correctly
+            if (typedText.length === currentText.length && errors === 0) {
+                endGame();
+            }
+        });
+
+        startResetButton.addEventListener('click', () => {
+            if (gameStarted) { // If game is running, button is 'Reset'
+                resetGame();
+            } else { // If game is not running, button is 'Start' or 'Play Again'
+                startGame();
+            }
+        });
+        
+        modalCloseButton.addEventListener('click', () => {
+            resultsModal.classList.add('hidden');
+            // Optionally, directly call resetGame() or initializeGame() if 'Try Again' means immediate reset
+            resetGame(); 
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+</body>
+</html>
