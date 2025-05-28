@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordBloom Garden</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Raleway:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Raleway', sans-serif;
+            background-color: #e6f7ff; /* Light sky blue */
+            color: #2c5282; /* Darker blue for text */
+            overscroll-behavior: none;
+        }
+        .header-font {
+            font-family: 'Caveat', cursive;
+        }
+        .panel {
+            background-color: rgba(255, 255, 255, 0.85); /* Semi-transparent white */
+            backdrop-filter: blur(10px);
+            border: 1px solid #b3e0ff; /* Light blue border */
+            box-shadow: 0 8px 16px rgba(0, 123, 255, 0.1);
+        }
+        .btn {
+            background-color: #38a169; /* Green 600 */
+            color: white;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            border: none;
+            font-weight: 600;
+        }
+        .btn:hover {
+            background-color: #2f855a; /* Green 700 */
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #718096; /* Slate 500 */
+        }
+        .btn-secondary:hover {
+            background-color: #4a5568; /* Slate 700 */
+        }
+        .input-field {
+            background-color: #ffffff;
+            border: 2px solid #7f9cf5; /* Indigo 400 */
+            color: #2d3748; /* Gray 800 */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        .input-field:focus {
+            border-color: #5a67d8; /* Indigo 600 */
+            box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.3);
+            outline: none;
+        }
+        #gardenCanvas {
+            border: 2px solid #a0aec0; /* Slate 400 */
+            background-color: #f0fff4; /* Mint cream - very light green */
+            cursor: pointer; /* Indicate clickable for planting */
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none; /* So it doesn't interfere with canvas clicks */
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+         .start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-2 sm:p-4 selection:bg-green-200 selection:text-green-800">
+
+    <div id="startAudioOverlay" class="start-overlay">
+        <button id="startAudioButton" class="btn text-white font-bold py-4 px-8 rounded-lg text-2xl header-font bg-green-500 hover:bg-green-600">
+            Enter the Garden
+        </button>
+    </div>
+
+    <header class="my-4 sm:my-6 text-center">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl text-green-700 header-font">WordBloom Garden</h1>
+        <p class="text-lg sm:text-xl text-green-600 mt-2">Plant your words and watch them grow.</p>
+    </header>
+
+    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <aside class="lg:col-span-1 panel p-4 sm:p-6 rounded-lg space-y-4 h-fit sticky top-4">
+            <div>
+                <label for="wordInput" class="block text-md font-semibold text-green-700 mb-1">Plant a Word or Phrase:</label>
+                <input type="text" id="wordInput" placeholder="e.g., Love, Dream, Nature" class="input-field w-full p-2.5 rounded-md text-lg">
+            </div>
+            <button id="plantButton" class="btn w-full py-2.5 px-4 rounded-md text-lg">Plant Word!</button>
+
+            <div class="border-t border-blue-200 pt-4 space-y-3">
+                 <h3 class="text-md font-semibold text-green-700">Garden Tools:</h3>
+                <button id="gentleBreezeButton" class="btn-secondary w-full py-2 px-4 rounded-md">Gentle Breeze</button>
+                <button id="clearGardenButton" class="btn-secondary bg-red-500 hover:bg-red-600 w-full py-2 px-4 rounded-md">Clear Garden</button>
+            </div>
+             <div class="text-xs text-slate-500 mt-3">
+                Click on the garden to choose where your next flower blooms!
+            </div>
+        </aside>
+
+        <main class="lg:col-span-2 panel rounded-lg p-2 sm:p-3 flex justify-center items-center relative">
+            <canvas id="gardenCanvas" class="rounded-md"></canvas>
+            <div id="wordTooltip" class="tooltip"></div>
+        </main>
+    </div>
+
+    <footer class="mt-6 sm:mt-8 text-center text-sm text-blue-700">
+        <p>&copy; <span id="currentYear"></span> WordBloom Garden. Cultivated with code.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const startAudioOverlay = document.getElementById('startAudioOverlay');
+        const startAudioButton = document.getElementById('startAudioButton');
+
+        const canvas = document.getElementById('gardenCanvas');
+        const ctx = canvas.getContext('2d');
+        const wordInput = document.getElementById('wordInput');
+        const plantButton = document.getElementById('plantButton');
+        const gentleBreezeButton = document.getElementById('gentleBreezeButton');
+        const clearGardenButton = document.getElementById('clearGardenButton');
+        const wordTooltip = document.getElementById('wordTooltip');
+
+        let gardenFlowers = []; // Stores { x, y, word, colorPalette, petalCount, petalShape, size, stemHeight, bloomState, animationProps }
+        let animationFrameId = null;
+        let nextPlantPosition = null; // {x, y} for next flower if canvas clicked
+
+        // --- Tone.js Synths ---
+        let synths = {};
+
+        async function setupAudio() {
+            await Tone.start();
+            console.log("Audio Context Started");
+            startAudioOverlay.classList.add('hidden');
+
+            synths.bloom = new Tone.PolySynth(Tone.FMSynth, {
+                harmonicity: 1.2,
+                modulationIndex: 5,
+                envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: 0.8 },
+                modulationEnvelope: { attack: 0.05, decay: 0.2, sustain: 0, release: 0.5 },
+                volume: -15
+            }).toDestination();
+            synths.breeze = new Tone.NoiseSynth({
+                noise: { type: "pink" },
+                envelope: { attack: 0.5, decay: 1.5, sustain: 0, release: 1 },
+                volume: -25
+            }).toDestination();
+            const breezeFilter = new Tone.AutoFilter("2n").toDestination().start();
+            breezeFilter.baseFrequency = 200;
+            breezeFilter.octaves = 2.6;
+            synths.breeze.connect(breezeFilter);
+        }
+        startAudioButton.addEventListener('click', setupAudio);
+
+
+        function setCanvasSize() {
+            const parent = canvas.parentElement;
+            const availableWidth = parent.clientWidth - 20; // some padding
+            const availableHeight = Math.max(400, window.innerHeight * 0.6); // Responsive height
+            
+            canvas.width = availableWidth;
+            canvas.height = availableHeight;
+            drawGarden(); // Redraw existing flowers if any
+        }
+
+        function seededRandom(seedStr) {
+            let h = 1779033703 ^ seedStr.length;
+            for (let i = 0; i < seedStr.length; i++) {
+                h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+                h = h << 13 | h >>> 19;
+            }
+            return function(max = 1, min = 0) {
+                h = Math.imul(h ^ h >>> 16, 2246822507);
+                h = Math.imul(h ^ h >>> 13, 3266489909);
+                const randomValue = ((h ^= h >>> 16) >>> 0) / 0x100000000; // 0 to almost 1
+                return min + randomValue * (max - min);
+            }
+        }
+
+        function generateFlowerData(word, plantX, plantY) {
+            if (!word.trim()) return null;
+            const rng = seededRandom(word);
+
+            const len = word.length;
+            const vowels = (word.match(/[aeiou]/gi) || []).length;
+            
+            // Color Palette Derivation (simple example)
+            const hueBase = rng(360); // 0-359
+            const saturation = 60 + rng(30); // 60-90%
+            const lightness = 50 + rng(20); // 50-70%
+            
+            const colorPalette = {
+                stem: `hsl(${hueBase + rng(30, -15)}, ${saturation - 20}%, ${lightness - 20}%)`,
+                petal1: `hsl(${hueBase}, ${saturation}%, ${lightness}%)`,
+                petal2: `hsl(${(hueBase + 30 + rng(30, -15)) % 360}, ${saturation - 5}%, ${lightness + 5}%)`,
+                center: `hsl(${(hueBase + 60 + rng(40, -20)) % 360}, ${saturation + 10}%, ${lightness - 10}%)`,
+            };
+
+            const petalCount = Math.max(3, Math.min(12, len + vowels + Math.floor(rng(5, -2))));
+            const petalShapes = ["ellipse", "pointed", "roundedRect", "heart"];
+            const petalShape = petalShapes[Math.floor(rng(petalShapes.length))];
+            
+            const baseSize = 20 + Math.min(len * 2, 30) + rng(15, -5); // Base size for flower head
+            const stemHeight = 50 + rng(baseSize * 2, baseSize * 0.8);
+
+            return {
+                x: plantX, y: plantY, word, colorPalette, petalCount, petalShape, 
+                size: baseSize, stemHeight, 
+                bloomState: 0, // 0 to 1 for animation
+                animationProps: { 
+                    currentStemHeight: 0, 
+                    currentPetalSize: 0, 
+                    currentCenterSize: 0,
+                    swayAngle: 0,
+                    swayDirection: 1,
+                    swaySpeed: rng(0.02, 0.005)
+                }
+            };
+        }
+
+        function plantFlower() {
+            const word = wordInput.value;
+            if (!word.trim()) {
+                alert("Please enter a word or phrase to plant!");
+                return;
+            }
+
+            let plantX, plantY;
+            if (nextPlantPosition) {
+                plantX = nextPlantPosition.x;
+                plantY = nextPlantPosition.y;
+                nextPlantPosition = null; // Reset after use
+            } else {
+                // Random position if not clicked, trying to avoid overlap (very basic)
+                let attempts = 0;
+                do {
+                    plantX = Math.random() * (canvas.width - 80) + 40; // Keep away from edges
+                    plantY = canvas.height - 20; // Plant at the bottom initially
+                    attempts++;
+                } while (gardenFlowers.some(f => Math.abs(f.x - plantX) < f.size*0.8) && attempts < 20);
+            }
+
+
+            const flowerData = generateFlowerData(word, plantX, plantY);
+            if (flowerData) {
+                gardenFlowers.push(flowerData);
+                wordInput.value = ""; // Clear input
+                
+                if (Tone.context && Tone.context.state === 'running' && synths.bloom) {
+                    const notes = ["C4", "E4", "G4", "C5"].slice(0, Math.max(1, Math.floor(word.length/2)));
+                    synths.bloom.triggerAttackRelease(notes, "2n", Tone.now() + 0.1);
+                }
+
+                if (!animationFrameId) { // Start animation loop if not already running
+                    animateGarden();
+                }
+            }
+        }
+
+        function drawFlower(flower) {
+            ctx.save();
+            ctx.translate(flower.x, flower.y); // Base position is bottom of stem
+            ctx.rotate(flower.animationProps.swayAngle); // Apply sway
+
+            // Stem
+            ctx.strokeStyle = flower.colorPalette.stem;
+            ctx.lineWidth = Math.max(2, flower.size / 10);
+            ctx.beginPath();
+            ctx.moveTo(0, 0); // Bottom of stem
+            ctx.lineTo(0, -flower.animationProps.currentStemHeight); // Top of stem
+            ctx.stroke();
+
+            // Leaves (simple)
+            if (flower.animationProps.currentStemHeight > 20) {
+                 ctx.fillStyle = flower.colorPalette.stem; // Darker green for leaves
+                 const leafSize = flower.animationProps.currentStemHeight * 0.3;
+                 ctx.beginPath();
+                 ctx.ellipse(-leafSize*0.6, -flower.animationProps.currentStemHeight * 0.6, leafSize, leafSize*0.4, -0.5, 0, Math.PI*2);
+                 ctx.fill();
+                 ctx.beginPath();
+                 ctx.ellipse(leafSize*0.6, -flower.animationProps.currentStemHeight * 0.4, leafSize, leafSize*0.4, 0.5, 0, Math.PI*2);
+                 ctx.fill();
+            }
+
+
+            // Flower Head (at top of stem)
+            ctx.translate(0, -flower.animationProps.currentStemHeight);
+            
+            // Petals
+            const angleStep = (Math.PI * 2) / flower.petalCount;
+            for (let i = 0; i < flower.petalCount; i++) {
+                ctx.save();
+                ctx.rotate(angleStep * i + (flower.animationProps.swayAngle * 0.5)); // Slight counter-sway for petals
+                ctx.fillStyle = i % 2 === 0 ? flower.colorPalette.petal1 : flower.colorPalette.petal2;
+                
+                const pSize = flower.animationProps.currentPetalSize;
+                ctx.beginPath();
+                if (flower.petalShape === "ellipse") {
+                    ctx.ellipse(0, -pSize * 0.6, pSize * 0.4, pSize * 0.7, 0, 0, Math.PI * 2);
+                } else if (flower.petalShape === "pointed") {
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-pSize * 0.3, -pSize);
+                    ctx.lineTo(pSize * 0.3, -pSize);
+                    ctx.closePath();
+                } else if (flower.petalShape === "roundedRect") {
+                    const r = pSize * 0.2;
+                    ctx.beginPath();
+                    ctx.moveTo(-pSize*0.3 + r, -pSize);
+                    ctx.arcTo(pSize*0.3, -pSize,   pSize*0.3, -pSize+r, r);
+                    ctx.arcTo(pSize*0.3, 0,        pSize*0.3-r, 0,    r);
+                    ctx.arcTo(-pSize*0.3, 0,       -pSize*0.3, -r,   r);
+                    ctx.arcTo(-pSize*0.3, -pSize,  -pSize*0.3+r, -pSize, r);
+                    ctx.closePath();
+                } else if (flower.petalShape === "heart") {
+                    ctx.moveTo(0, -pSize * 0.4);
+                    ctx.bezierCurveTo(pSize * 0.4, -pSize * 0.8, pSize * 0.7, -pSize * 0.2, 0, 0);
+                    ctx.bezierCurveTo(-pSize * 0.7, -pSize * 0.2, -pSize * 0.4, -pSize * 0.8, 0, -pSize * 0.4);
+                }
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Center
+            ctx.fillStyle = flower.colorPalette.center;
+            ctx.beginPath();
+            ctx.arc(0, 0, flower.animationProps.currentCenterSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawGarden() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = getComputedStyle(canvas).backgroundColor || '#f0fff4';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+
+            gardenFlowers.forEach(drawFlower);
+        }
+
+        function animateGarden() {
+            let allBloomed = true;
+            gardenFlowers.forEach(flower => {
+                if (flower.bloomState < 1) {
+                    allBloomed = false;
+                    flower.bloomState += 0.02; // Bloom speed
+                    flower.bloomState = Math.min(1, flower.bloomState);
+
+                    flower.animationProps.currentStemHeight = flower.stemHeight * flower.bloomState;
+                    flower.animationProps.currentPetalSize = flower.size * flower.bloomState;
+                    flower.animationProps.currentCenterSize = (flower.size / 3) * flower.bloomState;
+                } else {
+                    // Gentle sway for fully bloomed flowers
+                    flower.animationProps.swayAngle += flower.animationProps.swaySpeed * flower.animationProps.swayDirection;
+                    if (Math.abs(flower.animationProps.swayAngle) > 0.05) {
+                         flower.animationProps.swayDirection *= -1;
+                    }
+                }
+            });
+
+            drawGarden();
+
+            if (!allBloomed || gardenFlowers.some(f => f.animationProps.swayAngle !== 0)) { // Continue if blooming or swaying
+                animationFrameId = requestAnimationFrame(animateGarden);
+            } else {
+                animationFrameId = null; // Stop if all are static
+            }
+        }
+        
+        plantButton.addEventListener('click', plantFlower);
+
+        gentleBreezeButton.addEventListener('click', () => {
+            if (Tone.context && Tone.context.state === 'running' && synths.breeze) {
+                 synths.breeze.triggerAttackRelease("2s");
+            }
+            gardenFlowers.forEach(flower => {
+                if (flower.bloomState >= 1) { // Only affect bloomed flowers
+                    flower.animationProps.swayDirection = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random()); // More vigorous initial sway
+                    flower.animationProps.swaySpeed = 0.02 + Math.random() * 0.02; // Faster sway for breeze
+                }
+            });
+            if (!animationFrameId) animateGarden(); // Restart animation if stopped
+        });
+
+        clearGardenButton.addEventListener('click', () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            gardenFlowers = [];
+            drawGarden();
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            let clickedOnFlower = false;
+            for (let i = gardenFlowers.length - 1; i >= 0; i--) { // Check from top flower
+                const flower = gardenFlowers[i];
+                // Approximate click area around the flower head
+                const dist = Math.sqrt(Math.pow(x - flower.x, 2) + Math.pow(y - (flower.y - flower.animationProps.currentStemHeight), 2));
+                if (dist < flower.animationProps.currentPetalSize * 1.2) { // Check if click is within flower head bounds
+                    wordTooltip.textContent = flower.word;
+                    wordTooltip.style.left = `${e.clientX + 10}px`;
+                    wordTooltip.style.top = `${e.clientY - 20}px`;
+                    wordTooltip.style.opacity = '1';
+                    clickedOnFlower = true;
+                    setTimeout(() => wordTooltip.style.opacity = '0', 2000);
+                    break;
+                }
+            }
+            if (!clickedOnFlower) {
+                 nextPlantPosition = {x, y: canvas.height - 20}; // Plant at bottom, at clicked x
+                 wordTooltip.style.opacity = '0'; // Hide tooltip if clicking empty space
+                 // Optionally, you could plant immediately: plantFlower(); but this sets it for next button press
+                 alert("Next flower will be planted at this x-position (bottom of garden). Click 'Plant Word!'");
+            }
+        });
+         canvas.addEventListener('mousemove', (e) => {
+            if (wordTooltip.style.opacity === '1') { // Keep tooltip near mouse if visible
+                wordTooltip.style.left = `${e.clientX + 10}px`;
+                wordTooltip.style.top = `${e.clientY - 20}px`;
+            }
+        });
+
+
+        // Initial Setup
+        window.addEventListener('load', () => {
+            setCanvasSize();
+            drawGarden();
+        });
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+        });
+
+    </script>
+</body>
+</html>

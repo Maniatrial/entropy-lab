@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Groovebox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #111827; /* Tailwind gray-900 */
+            color: #d1d5db; /* Tailwind gray-300 */
+            overscroll-behavior: none; /* Prevent pull-to-refresh on mobile */
+        }
+        .header-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .control-panel, .pads-container, .sequencer-container, .visualizer-container {
+            background-color: #1f2937; /* Tailwind gray-800 */
+            border: 1px solid #374151; /* Tailwind gray-700 */
+        }
+        .pad {
+            background-color: #374151; /* Tailwind gray-700 */
+            border: 2px solid #4b5563; /* Tailwind gray-600 */
+            transition: background-color 0.1s ease, transform 0.1s ease;
+            user-select: none; /* Prevent text selection on rapid clicks */
+        }
+        .pad:active, .pad.active-visual {
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            transform: scale(0.95);
+            border-color: #6366f1; /* Tailwind indigo-500 */
+        }
+        .sequencer-step {
+            background-color: #374151; /* Tailwind gray-700 */
+            border: 1px solid #4b5563; /* Tailwind gray-600 */
+            transition: background-color 0.1s ease;
+            min-width: 2rem; /* Ensure minimum width for steps */
+        }
+        .sequencer-step.active {
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+        }
+        .sequencer-step.current-playing-step {
+            background-color: #f59e0b !important; /* Tailwind amber-500, !important to override .active */
+            box-shadow: 0 0 8px #f59e0b;
+        }
+        .btn-control, .btn-action {
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            transition: background-color 0.2s ease;
+        }
+        .btn-control:hover, .btn-action:hover {
+            background-color: #4338ca; /* Tailwind indigo-700 */
+        }
+        .btn-control:disabled, .btn-action:disabled {
+            background-color: #374151; /* gray-700 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .btn-control.playing {
+            background-color: #16a34a; /* Tailwind green-600 */
+        }
+        .btn-control.playing:hover {
+            background-color: #15803d; /* Tailwind green-700 */
+        }
+        input[type="range"], input[type="number"].styled-input, select.styled-select {
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.5rem;
+        }
+        input[type="number"].styled-input {
+             width: 5rem; /* Adjust width for number input */
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #111827;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #4f46e5;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #111827;
+        }
+        #audioVisualizer {
+            display: block;
+            width: 100%;
+            height: 100px;
+            background-color: #000;
+            border-radius: 0.25rem;
+        }
+        .start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .sequencer-track-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* space-x-2 */
+        }
+        .sequencer-track-label {
+            width: 6rem; /* w-24 */
+            min-width: 6rem;
+            text-align: right;
+            padding-right: 0.5rem; /* pr-2 */
+            font-size: 0.75rem; /* text-xs */
+            color: #9ca3af; /* text-gray-400 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 selection:bg-indigo-500 selection:text-white">
+
+    <div id="startAudioOverlay" class="start-overlay">
+        <button id="startAudioButton" class="btn-control text-white font-bold py-4 px-8 rounded-lg text-2xl header-font">
+            Start Groovebox
+        </button>
+    </div>
+
+    <header class="my-6 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold text-indigo-400 header-font">Web Groovebox</h1>
+    </header>
+
+    <main class="w-full max-w-5xl space-y-6">
+        <section class="control-panel p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Master Controls</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
+                <button id="playStopButton" class="btn-control text-white font-semibold py-2 px-4 rounded-md h-10">Play</button>
+                <div>
+                    <label for="tempoRange" class="block text-sm font-medium mb-1">Tempo: <span id="tempoValue">120</span> BPM</label>
+                    <input type="range" id="tempoRange" min="40" max="240" value="120" class="w-full">
+                </div>
+                <div>
+                    <label for="volumeRange" class="block text-sm font-medium mb-1">Volume: <span id="volumeValue">0</span> dB</label>
+                    <input type="range" id="volumeRange" min="-40" max="6" value="0" step="0.5" class="w-full">
+                </div>
+                <div>
+                    <label for="numStepsInput" class="block text-sm font-medium mb-1">Steps: <span id="currentStepDisplay">-</span> / <span id="totalStepsDisplay">16</span></label>
+                    <input type="number" id="numStepsInput" min="8" max="64" value="16" step="4" class="styled-input w-full h-10">
+                </div>
+                <button id="clearPatternButton" class="btn-action bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md h-10">Clear Pattern</button>
+            </div>
+        </section>
+
+        <section class="pads-container p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Sound Pads (Tracks 1-4)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button data-track="0" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 1</button>
+                <button data-track="1" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 2</button>
+                <button data-track="2" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 3</button>
+                <button data-track="3" class="pad h-20 md:h-28 rounded-md text-white font-semibold text-lg">Track 4</button>
+            </div>
+        </section>
+
+        <section class="sequencer-container p-4 rounded-lg shadow-lg overflow-x-auto">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-xl font-semibold header-font text-indigo-300">Step Sequencer</h2>
+                <button id="addTrackButton" class="btn-action text-sm py-1 px-3 rounded-md">Add Track (+)</button>
+            </div>
+            <div id="sequencerGrid" class="space-y-2">
+                </div>
+        </section>
+
+        <section class="visualizer-container p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-3 header-font text-indigo-300">Audio Output</h2>
+            <canvas id="audioVisualizer"></canvas>
+        </section>
+    </main>
+
+    <footer class="mt-10 mb-6 text-center text-gray-500 text-sm">
+        <p>&copy; <span id="currentYear"></span> Web Groovebox. Powered by Tone.js.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const startAudioOverlay = document.getElementById('startAudioOverlay');
+        const startAudioButton = document.getElementById('startAudioButton');
+
+        const playStopButton = document.getElementById('playStopButton');
+        const tempoRange = document.getElementById('tempoRange');
+        const tempoValueDisplay = document.getElementById('tempoValue');
+        const volumeRange = document.getElementById('volumeRange');
+        const volumeValueDisplay = document.getElementById('volumeValue');
+        const numStepsInput = document.getElementById('numStepsInput');
+        const totalStepsDisplay = document.getElementById('totalStepsDisplay');
+        const clearPatternButton = document.getElementById('clearPatternButton');
+        const addTrackButton = document.getElementById('addTrackButton');
+        const sequencerGridContainer = document.getElementById('sequencerGrid');
+        const pads = document.querySelectorAll('.pad');
+        const currentStepDisplay = document.getElementById('currentStepDisplay');
+
+        const visualizerCanvas = document.getElementById('audioVisualizer');
+        const vizCtx = visualizerCanvas.getContext('2d');
+
+        let allInstruments = {}; 
+        let selectedInstrumentsForTrack = []; 
+        let sequence;
+        let sequencerSteps = []; 
+        let numSteps = 16; 
+        let numTracksGlobal = 4; 
+        const maxTracks = 8; 
+        let waveform;
+        let currentPlayingStepVisual = 0; 
+
+        const availableInstrumentConfigs = [
+            // Drums
+            { name: "Kick", type: "MembraneSynth", options: { octaves: 4, pitchDecay: 0.08, envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.2 } }, note: "C1", defaultVolume: 0 },
+            { name: "Deep Kick", type: "MembraneSynth", options: { octaves: 6, pitchDecay: 0.1, envelope: { attack: 0.001, decay: 0.5, sustain: 0.01, release: 0.3 } }, note: "A0", defaultVolume: -2 },
+            { name: "Snare", type: "NoiseSynth", options: { noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 } }, useFilter: true, filterFreq: 1000, defaultVolume: 0 },
+            { name: "Tight Snare", type: "NoiseSynth", options: { noise: { type: 'pink' }, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 } }, useFilter: true, filterFreq: 1200, defaultVolume: -3 },
+            { name: "Hi-Hat C", type: "MetalSynth", options: { frequency: 250, envelope: { attack: 0.001, decay: 0.05, release: 0.01 }, harmonicity: 3.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }, defaultVolume: -12 },
+            { name: "Hi-Hat O", type: "MetalSynth", options: { frequency: 300, envelope: { attack: 0.001, decay: 0.3, release: 0.1 }, harmonicity: 4.1, modulationIndex: 20, resonance: 3000, octaves: 1.5 }, defaultVolume: -10 },
+            { name: "Shaker", type: "MetalSynth", options: { frequency: 400, envelope: { attack: 0.01, decay: 0.08, release: 0.05 }, harmonicity: 0.5, modulationIndex: 10, resonance: 2000, octaves: 1 }, defaultVolume: -15 },
+            { name: "Tom Low", type: "MembraneSynth", options: { pitchDecay: 0.1, octaves: 2, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }, note: "G1", defaultVolume: -3 },
+            { name: "Tom Mid", type: "MembraneSynth", options: { pitchDecay: 0.08, octaves: 2, envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.1 } }, note: "C2", defaultVolume: -4 },
+            { name: "Clap", type: "NoiseSynth", options: { noise: {type: "pink"}, envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.1 } }, useFilter: true, filterFreq: 1500, defaultVolume: -6 },
+            { name: "Rim Shot", type: "PluckSynth", options: { attackNoise: 2, dampening: 6000, resonance: 0.2 }, note: "C5", defaultVolume: -9 },
+            // Synths & Melodic
+            { name: "Synth Lead", type: "Synth", options: { oscillator: { type: "sawtooth" }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.5 } }, note: "C4", defaultVolume: -10 },
+            { name: "Square Lead", type: "Synth", options: { oscillator: { type: "square" }, envelope: { attack: 0.02, decay: 0.15, sustain: 0.2, release: 0.3 } }, note: "C4", defaultVolume: -12 },
+            { name: "FM Bell", type: "FMSynth", options: { harmonicity: 3.01, modulationIndex: 10, envelope: { attack: 0.01, decay: 0.5, sustain: 0.01, release: 0.8 }, modulationEnvelope: { attack: 0.02, decay: 0.3, sustain: 0, release: 0.5 } }, note: "C5", defaultVolume: -9 },
+            { name: "Synth Pad", type: "PolySynth", options: { voice: Tone.Synth, options: { oscillator: {type: "triangle8"}, envelope: {attack: 0.2, decay: 0.1, sustain:0.8, release:0.5}}}, note: "C3", defaultVolume: -15 }, // PolySynth for pads
+            { name: "Bass Synth", type: "MonoSynth", options: { oscillator: { type: "square" }, filter: { Q: 2, type: "lowpass", rolloff: -24 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.4 }, filterEnvelope: { attack: 0.01, decay: 0.05, sustain: 0.1, baseFrequency: 200, octaves: 2.6 } }, note: "C2", defaultVolume: -6 },
+            { name: "Sub Bass", type: "MonoSynth", options: { oscillator: { type: "sine" }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.5, release: 0.2 }, filterEnvelope: { attack: 0.005, decay: 0.01, sustain: 1, baseFrequency: 50, octaves: 1 } }, note: "C1", defaultVolume: -3 },
+            { name: "Pluck", type: "PluckSynth", options: { attackNoise: 1, dampening: 4000, resonance: 0.7 }, note: "C4", defaultVolume: -8 },
+            { name: "Kalimba Plk", type: "PluckSynth", options: { attackNoise: 0.5, dampening: 2000, resonance: 0.9 }, note: "G4", defaultVolume: -10 },
+            // FX
+            { name: "FX Riser", type: "NoiseSynth", options: { noise: { type: "white" }, envelope: { attack: 0.5, decay: 1, sustain: 0.1, release: 0.2 } }, note: "C4", usePitchEnv: true, defaultVolume: -12 },
+            { name: "Zap FX", type: "MembraneSynth", options: { pitchDecay: 0.01, octaves: 8, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.1 } }, note: "C3", defaultVolume: -9 },
+            { name: "Laser FX", type: "Synth", options: { oscillator: {type: "sine"}, envelope: {attack: 0.001, decay:0.1, sustain:0, release:0.1}, pitchDecay: 0.05}, note: "C6", usePitchEnvShort: true, defaultVolume: -6 }
+        ];
+
+
+        async function setupAudio() {
+            await Tone.start();
+            console.log("Audio Context Started with Tone.js");
+            Tone.Destination.volume.value = parseFloat(volumeRange.value);
+
+            availableInstrumentConfigs.forEach(config => {
+                let instrument;
+                // Handle PolySynth separately for its voice option
+                if (config.type === "PolySynth") {
+                    instrument = new Tone.PolySynth(config.options.voice ? config.options.voice : Tone.Synth, config.options.options ? config.options.options : config.options);
+                }
+                else if (config.type === "MembraneSynth") instrument = new Tone.MembraneSynth(config.options);
+                else if (config.type === "NoiseSynth") instrument = new Tone.NoiseSynth(config.options);
+                else if (config.type === "MetalSynth") instrument = new Tone.MetalSynth(config.options);
+                else if (config.type === "Synth") instrument = new Tone.Synth(config.options);
+                else if (config.type === "FMSynth") instrument = new Tone.FMSynth(config.options);
+                else if (config.type === "MonoSynth") instrument = new Tone.MonoSynth(config.options);
+                else if (config.type === "PluckSynth") instrument = new Tone.PluckSynth(config.options);
+                
+                if (instrument) {
+                    if (config.useFilter) {
+                        const filter = new Tone.Filter(config.filterFreq || 1000, "highpass").toDestination();
+                        instrument.connect(filter);
+                    } else {
+                        instrument.toDestination();
+                    }
+                    if (config.defaultVolume !== undefined) {
+                        instrument.volume.value = config.defaultVolume;
+                    }
+                    allInstruments[config.name] = instrument;
+                }
+            });
+            
+            selectedInstrumentsForTrack = [];
+            for (let i = 0; i < numTracksGlobal; i++) {
+                const defaultConfig = availableInstrumentConfigs[i % availableInstrumentConfigs.length];
+                selectedInstrumentsForTrack.push(allInstruments[defaultConfig.name]);
+            }
+            
+            updatePadLabels();
+
+            waveform = new Tone.Analyser('waveform', 1024);
+            Tone.Destination.connect(waveform);
+
+            numSteps = parseInt(numStepsInput.value);
+            totalStepsDisplay.textContent = numSteps;
+            initializeSequencerDataAndUI(); 
+            rebuildToneSequence();   
+            
+            setupEventListeners();
+            startAudioOverlay.classList.add('hidden');
+            addTrackButton.disabled = (numTracksGlobal >= maxTracks);
+            drawVisualizer();
+        }
+        
+        startAudioButton.addEventListener('click', setupAudio);
+
+        function initializeSequencerDataAndUI() {
+            const oldSequencerSteps = JSON.parse(JSON.stringify(sequencerSteps)); 
+            sequencerGridContainer.innerHTML = ''; 
+            sequencerSteps = [];
+
+            for (let i = 0; i < numTracksGlobal; i++) {
+                const newStepArray = new Array(numSteps).fill(false);
+                if (oldSequencerSteps[i]) {
+                    for (let j = 0; j < Math.min(numSteps, oldSequencerSteps[i].length); j++) {
+                        newStepArray[j] = oldSequencerSteps[i][j];
+                    }
+                }
+                sequencerSteps[i] = newStepArray;
+
+                const trackRow = document.createElement('div');
+                trackRow.classList.add('flex', 'items-center', 'space-x-1', 'mb-1');
+                
+                const controlsDiv = document.createElement('div');
+                controlsDiv.classList.add('sequencer-track-controls');
+
+                const trackLabel = document.createElement('div');
+                trackLabel.id = `trackLabel-${i}`;
+                trackLabel.classList.add('sequencer-track-label');
+                // Ensure selectedInstrumentsForTrack[i] exists before trying to find its config
+                const currentInstrument = selectedInstrumentsForTrack[i] || allInstruments[availableInstrumentConfigs[i % availableInstrumentConfigs.length].name];
+                if (!selectedInstrumentsForTrack[i]) selectedInstrumentsForTrack[i] = currentInstrument; // Assign if undefined
+
+                const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === currentInstrument);
+                trackLabel.textContent = instrumentConfig ? instrumentConfig.name : `Track ${i+1}`;
+                controlsDiv.appendChild(trackLabel);
+
+                const selectInstrument = document.createElement('select');
+                selectInstrument.classList.add('styled-select', 'text-xs', 'py-1', 'px-1', 'flex-shrink-0');
+                selectInstrument.dataset.track = i;
+                availableInstrumentConfigs.forEach(config => {
+                    const option = document.createElement('option');
+                    option.value = config.name;
+                    option.textContent = config.name;
+                    if (allInstruments[config.name] === currentInstrument) {
+                        option.selected = true;
+                    }
+                    selectInstrument.appendChild(option);
+                });
+                selectInstrument.addEventListener('change', handleInstrumentChange);
+                controlsDiv.appendChild(selectInstrument);
+                trackRow.appendChild(controlsDiv);
+
+                const stepsContainer = document.createElement('div');
+                stepsContainer.classList.add('grid', 'gap-0.5', 'flex-grow');
+                stepsContainer.style.gridTemplateColumns = `repeat(${numSteps}, minmax(0, 1fr))`;
+
+                for (let j = 0; j < numSteps; j++) {
+                    const stepButton = document.createElement('button');
+                    stepButton.classList.add('sequencer-step', 'h-8', 'w-full', 'rounded-sm');
+                    stepButton.dataset.track = i;
+                    stepButton.dataset.step = j;
+                    if (sequencerSteps[i][j]) { 
+                        stepButton.classList.add('active');
+                    }
+                    stepButton.addEventListener('click', toggleStep);
+                    stepsContainer.appendChild(stepButton);
+                }
+                trackRow.appendChild(stepsContainer);
+                sequencerGridContainer.appendChild(trackRow);
+            }
+        }
+        
+        function rebuildToneSequence() {
+            if (sequence) {
+                sequence.stop();
+                sequence.dispose();
+            }
+            const sequenceEvents = Array.from({ length: numSteps }, (_, i) => i);
+
+            sequence = new Tone.Sequence((time, step) => {
+                currentPlayingStepVisual = step;
+                Tone.Draw.schedule(() => { 
+                    updateCurrentStepVisuals(step);
+                }, time);
+
+                for (let track = 0; track < numTracksGlobal; track++) { 
+                    if (sequencerSteps[track] && sequencerSteps[track][step] && selectedInstrumentsForTrack[track]) {
+                        const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === selectedInstrumentsForTrack[track]);
+                        if (instrumentConfig) {
+                            const instrument = selectedInstrumentsForTrack[track];
+                            if (instrumentConfig.type === "NoiseSynth" && instrumentConfig.usePitchEnv) {
+                                instrument.triggerAttackRelease("4n", time);
+                                instrument.frequency.linearRampToValueAtTime(8000, time + Tone.Time("4n").toSeconds() * 0.8);
+                                instrument.frequency.setValueAtTime(200, time);
+                            } else if (instrumentConfig.usePitchEnvShort) { // For Laser FX
+                                instrument.triggerAttackRelease(instrumentConfig.note || "C6", "16n", time);
+                                instrument.detune.setValueAtTime(0, time);
+                                instrument.detune.linearRampToValueAtTime(-2400, time + 0.08); // Quick pitch drop
+                            }else {
+                                instrument.triggerAttackRelease(instrumentConfig.note || "C4", "8n", time);
+                            }
+                        }
+                    }
+                }
+            }, sequenceEvents, "16n");
+            
+            sequence.loop = true;
+            if (Tone.Transport.state === "started") {
+                sequence.start(0);
+            }
+            Tone.Transport.bpm.value = parseInt(tempoRange.value);
+        }
+
+        function handleInstrumentChange(event) {
+            const trackIndex = parseInt(event.target.dataset.track);
+            const instrumentName = event.target.value;
+            selectedInstrumentsForTrack[trackIndex] = allInstruments[instrumentName];
+            
+            const trackLabel = document.getElementById(`trackLabel-${trackIndex}`);
+            if (trackLabel) trackLabel.textContent = instrumentName;
+            
+            updatePadLabels(); 
+            console.log(`Track ${trackIndex} instrument changed to ${instrumentName}`);
+        }
+
+        function updatePadLabels() {
+            pads.forEach((pad, index) => {
+                if (index < numTracksGlobal && selectedInstrumentsForTrack[index]) { 
+                    const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === selectedInstrumentsForTrack[index]);
+                    pad.textContent = instrumentConfig ? instrumentConfig.name : `Track ${index + 1}`;
+                    pad.disabled = false;
+                } else { 
+                    pad.textContent = `Track ${index + 1}`; 
+                    pad.disabled = true; 
+                }
+            });
+        }
+
+
+        function toggleStep(event) {
+            const track = parseInt(event.target.dataset.track);
+            const step = parseInt(event.target.dataset.step);
+            sequencerSteps[track][step] = !sequencerSteps[track][step];
+            event.target.classList.toggle('active', sequencerSteps[track][step]);
+        }
+        
+        function updateCurrentStepVisuals(step) {
+            currentStepDisplay.textContent = `${step + 1}`;
+            document.querySelectorAll('.sequencer-step').forEach(btn => {
+                btn.classList.remove('current-playing-step');
+                if (parseInt(btn.dataset.step) === step) {
+                    btn.classList.add('current-playing-step');
+                }
+            });
+        }
+
+        function clearPattern() {
+            for (let i = 0; i < numTracksGlobal; i++) {
+                for (let j = 0; j < numSteps; j++) {
+                    sequencerSteps[i][j] = false;
+                }
+            }
+            document.querySelectorAll('.sequencer-step.active').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            console.log("Pattern cleared");
+        }
+        
+
+        numStepsInput.addEventListener('change', (e) => {
+            const newNumSteps = parseInt(e.target.value);
+            if (newNumSteps >= 8 && newNumSteps <= 64 && newNumSteps % 4 === 0) { 
+                const wasPlaying = Tone.Transport.state === "started";
+                if (wasPlaying) Tone.Transport.stop();
+                
+                numSteps = newNumSteps;
+                totalStepsDisplay.textContent = numSteps;
+                
+                initializeSequencerDataAndUI(); 
+                rebuildToneSequence();   
+                
+                if (wasPlaying) Tone.Transport.start();
+            } else {
+                alert("Number of steps must be between 8 and 64, and a multiple of 4.");
+                e.target.value = numSteps; 
+            }
+        });
+
+        addTrackButton.addEventListener('click', () => {
+            if (numTracksGlobal < maxTracks) {
+                const wasPlaying = Tone.Transport.state === "started";
+                if (wasPlaying) Tone.Transport.stop();
+
+                numTracksGlobal++;
+                const defaultConfig = availableInstrumentConfigs[ (numTracksGlobal - 1) % availableInstrumentConfigs.length]; 
+                selectedInstrumentsForTrack.push(allInstruments[defaultConfig.name]);
+                
+                // Add a new empty step array for the new track
+                const newStepArray = new Array(numSteps).fill(false);
+                sequencerSteps.push(newStepArray);
+
+
+                initializeSequencerDataAndUI(); // This will redraw everything
+                rebuildToneSequence();
+                updatePadLabels(); 
+
+                if (wasPlaying) Tone.Transport.start();
+                addTrackButton.disabled = (numTracksGlobal >= maxTracks);
+            }
+        });
+
+
+        function setupEventListeners() {
+            playStopButton.addEventListener('click', () => {
+                if (Tone.Transport.state === "started") {
+                    Tone.Transport.stop();
+                    playStopButton.textContent = "Play";
+                    playStopButton.classList.remove('playing');
+                    updateCurrentStepVisuals(-1); 
+                    currentStepDisplay.textContent = `-`;
+                } else {
+                    Tone.Transport.start();
+                    if (sequence) sequence.start(0); 
+                    playStopButton.textContent = "Stop";
+                    playStopButton.classList.add('playing');
+                }
+            });
+
+            tempoRange.addEventListener('input', (e) => {
+                const newTempo = parseInt(e.target.value);
+                Tone.Transport.bpm.value = newTempo;
+                tempoValueDisplay.textContent = newTempo;
+            });
+
+            volumeRange.addEventListener('input', (e) => {
+                const newVolume = parseFloat(e.target.value);
+                Tone.Destination.volume.value = newVolume;
+                volumeValueDisplay.textContent = newVolume.toFixed(1);
+            });
+            
+            clearPatternButton.addEventListener('click', clearPattern);
+
+
+            pads.forEach(pad => {
+                pad.addEventListener('mousedown', (e) => { 
+                    if (Tone.context.state !== 'running' || pad.disabled) return;
+                    
+                    const trackIndex = parseInt(e.target.dataset.track);
+                    // This check is now redundant due to pad.disabled but good for safety
+                    if (trackIndex >= numTracksGlobal) return; 
+
+                    const instrument = selectedInstrumentsForTrack[trackIndex];
+                    const instrumentConfig = availableInstrumentConfigs.find(conf => allInstruments[conf.name] === instrument);
+
+                    if (instrument && instrumentConfig) {
+                        e.target.classList.add('active-visual');
+                        try {
+                             const currentInstrument = selectedInstrumentsForTrack[trackIndex]; // Use the specific instrument for this track
+                             if (instrumentConfig.type === "NoiseSynth" && instrumentConfig.usePitchEnv) {
+                                currentInstrument.triggerAttackRelease("4n", Tone.now());
+                                currentInstrument.frequency.linearRampToValueAtTime(8000, Tone.now() + Tone.Time("4n").toSeconds() * 0.8);
+                                currentInstrument.frequency.setValueAtTime(200, Tone.now());
+                            } else if (instrumentConfig.usePitchEnvShort) {
+                                currentInstrument.triggerAttackRelease(instrumentConfig.note || "C6", "16n", Tone.now());
+                                currentInstrument.detune.setValueAtTime(0, Tone.now());
+                                currentInstrument.detune.linearRampToValueAtTime(-2400, Tone.now() + 0.08);
+                            } else {
+                                currentInstrument.triggerAttackRelease(instrumentConfig.note || "C4", "4n", Tone.now());
+                            }
+                        } catch (error) {
+                            console.error("Error playing sound from pad:", instrumentConfig.name, error);
+                        }
+                    }
+                });
+                pad.addEventListener('mouseup', (e) => e.target.classList.remove('active-visual'));
+                pad.addEventListener('mouseleave', (e) => e.target.classList.remove('active-visual'));
+            });
+        }
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            if (!waveform || (Tone.Transport.state !== "started" && !document.querySelector('.pad.active-visual'))) {
+                vizCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+                vizCtx.fillStyle = '#000000';
+                vizCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+                return;
+            }
+
+            const waveformValues = waveform.getValue();
+            vizCtx.fillStyle = '#000000'; 
+            vizCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+
+            vizCtx.lineWidth = 2;
+            vizCtx.strokeStyle = '#4f46e5'; 
+            vizCtx.beginPath();
+
+            const sliceWidth = visualizerCanvas.width * 1.0 / waveformValues.length;
+            let x = 0;
+
+            for (let i = 0; i < waveformValues.length; i++) {
+                const v = waveformValues[i] / 2 + 0.5; 
+                const y = v * visualizerCanvas.height;
+
+                if (i === 0) vizCtx.moveTo(x, y);
+                else vizCtx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            vizCtx.lineTo(visualizerCanvas.width, visualizerCanvas.height / 2);
+            vizCtx.stroke();
+        }
+
+        function resizeVisualizer() {
+            visualizerCanvas.width = visualizerCanvas.clientWidth;
+        }
+        window.addEventListener('load', resizeVisualizer);
+        window.addEventListener('resize', resizeVisualizer);
+
+    </script>
+</body>
+</ht

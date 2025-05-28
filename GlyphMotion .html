@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlyphMotion Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend+Mega&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #1e293b; /* Slate 800 */
+            color: #e2e8f0; /* Slate 200 */
+            overscroll-behavior: none;
+        }
+        .header-font {
+            font-family: 'Lexend Mega', sans-serif;
+        }
+        .panel {
+            background-color: #334155; /* Slate 700 */
+            border: 1px solid #475569; /* Slate 600 */
+        }
+        .btn {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            transition: background-color 0.2s ease;
+            border: none;
+        }
+        .btn:hover {
+            background-color: #4338ca; /* Indigo 700 */
+        }
+        .btn-secondary {
+            background-color: #64748b; /* Slate 500 */
+        }
+        .btn-secondary:hover {
+            background-color: #475569; /* Slate 600 */
+        }
+        .btn-danger {
+            background-color: #dc2626; /* Red 600 */
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c; /* Red 700 */
+        }
+        .input-field, .select-field, input[type="color"].styled-color-input {
+            background-color: #475569; /* Slate 600 */
+            border: 1px solid #64748b; /* Slate 500 */
+            color: #e2e8f0;
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        input[type="color"].styled-color-input { padding: 0.1rem; height: 2.25rem; }
+
+        #glyphDrawCanvas, #stageCanvas {
+            border: 2px dashed #64748b; /* Slate 500 */
+            background-color: #0f172a; /* Slate 900 - dark background for drawing */
+            cursor: crosshair;
+        }
+        .glyph-library-item {
+            border: 2px solid #64748b;
+            background-color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 60px; height: 60px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .glyph-library-item:hover, .glyph-library-item.selected {
+            border-color: #4f46e5;
+            background-color: #334155;
+        }
+        .glyph-library-item img { max-width: 90%; max-height: 90%; image-rendering: pixelated; }
+
+        .start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 8px;
+            background: #475569; border-radius: 5px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+            background: #4f46e5; border-radius: 50%; cursor: pointer; border: 2px solid #0f172a;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-2 sm:p-4 selection:bg-indigo-500 selection:text-white">
+
+    <div id="startAudioOverlay" class="start-overlay">
+        <button id="startAudioButton" class="btn text-white font-bold py-4 px-8 rounded-lg text-2xl header-font">
+            Start Glyph Studio
+        </button>
+    </div>
+
+    <header class="my-4 sm:my-6 text-center">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl text-indigo-400 header-font">GlyphMotion Studio</h1>
+    </header>
+
+    <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <aside class="lg:col-span-1 panel p-3 sm:p-4 rounded-lg space-y-4 h-fit sticky top-4">
+            <div>
+                <h2 class="text-xl font-semibold text-indigo-300 header-font mb-2">Draw Glyph</h2>
+                <canvas id="glyphDrawCanvas" width="150" height="150" class="mx-auto rounded"></canvas>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <input type="color" id="glyphColor" value="#FFFFFF" class="styled-color-input w-full rounded" title="Glyph Color">
+                    <input type="range" id="lineWidth" min="1" max="10" value="3" class="w-full self-center" title="Line Width">
+                </div>
+                <div class="flex gap-2 mt-2">
+                    <button id="clearDrawingButton" class="btn-secondary text-xs p-2 rounded flex-grow">Clear Pad</button>
+                    <button id="saveGlyphButton" class="btn text-xs p-2 rounded flex-grow">Save Glyph</button>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-600 pt-3">
+                <h2 class="text-xl font-semibold text-indigo-300 header-font mb-2">Glyph Library</h2>
+                <div id="glyphLibrary" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1 bg-slate-800 rounded">
+                    </div>
+            </div>
+
+            <div id="behaviorPanel" class="border-t border-slate-600 pt-3 space-y-2 hidden">
+                <h2 class="text-lg font-semibold text-indigo-300 header-font mb-1">Behavior for Selected</h2>
+                <div>
+                    <label for="actionSelect" class="text-xs block mb-0.5">Action:</label>
+                    <select id="actionSelect" class="select-field p-1.5 text-sm w-full rounded">
+                        <option value="none">None</option>
+                        <option value="moveRight">Move Right</option>
+                        <option value="moveLeft">Move Left</option>
+                        <option value="floatUp">Float Up</option>
+                        <option value="floatDown">Float Down</option>
+                        <option value="spin">Spin</option>
+                        <option value="pulseSize">Pulse Size</option>
+                        <option value="jiggle">Jiggle</option>
+                        <option value="followMouse">Follow Mouse</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="speedSlider" class="text-xs block mb-0.5">Speed/Intensity: <span id="speedValue">1</span></label>
+                    <input type="range" id="speedSlider" min="0.1" max="5" value="1" step="0.1" class="w-full">
+                </div>
+                <div>
+                    <label for="soundSelect" class="text-xs block mb-0.5">Sound Effect:</label>
+                    <select id="soundSelect" class="select-field p-1.5 text-sm w-full rounded">
+                        <option value="none">None</option>
+                        <option value="boop">Boop</option>
+                        <option value="swoosh">Swoosh</option>
+                        <option value="twinkle">Twinkle</option>
+                        <option value="click">Click</option>
+                        <option value="hum">Hum (Loop)</option>
+                    </select>
+                </div>
+                <button id="applyBehaviorButton" class="btn text-sm p-2 rounded w-full mt-1">Apply to Selected Glyph</button>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-3 panel p-3 sm:p-4 rounded-lg">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-xl font-semibold text-indigo-300 header-font">Stage</h2>
+                <div class="flex gap-2">
+                    <button id="playButton" class="btn p-2 rounded">Play</button>
+                    <button id="stopButton" class="btn-secondary p-2 rounded">Stop</button>
+                    <button id="clearStageButton" class="btn-danger p-2 rounded">Clear Stage</button>
+                </div>
+            </div>
+            <canvas id="stageCanvas" class="rounded"></canvas>
+        </main>
+    </div>
+
+    <footer class="mt-6 sm:mt-8 text-center text-sm text-slate-400">
+        <p>&copy; <span id="currentYear"></span> GlyphMotion Studio. Animate your symbols!</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Audio Start
+        const startAudioOverlay = document.getElementById('startAudioOverlay');
+        const startAudioButton = document.getElementById('startAudioButton');
+
+        // Glyph Drawing
+        const glyphDrawCanvas = document.getElementById('glyphDrawCanvas');
+        const drawCtx = glyphDrawCanvas.getContext('2d');
+        const glyphColorInput = document.getElementById('glyphColor');
+        const lineWidthInput = document.getElementById('lineWidth');
+        const clearDrawingButton = document.getElementById('clearDrawingButton');
+        const saveGlyphButton = document.getElementById('saveGlyphButton');
+        let drawing = false;
+        let currentGlyphPath = []; // Array of points {x, y}
+
+        // Glyph Library
+        const glyphLibraryDiv = document.getElementById('glyphLibrary');
+        let glyphLibrary = []; // Stores { id, imageDataUrl, path, color, lineWidth, action, speed, sound, soundInstance }
+        let selectedLibraryGlyphId = null;
+
+        // Behavior Panel
+        const behaviorPanel = document.getElementById('behaviorPanel');
+        const actionSelect = document.getElementById('actionSelect');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValueDisplay = document.getElementById('speedValue');
+        const soundSelect = document.getElementById('soundSelect');
+        const applyBehaviorButton = document.getElementById('applyBehaviorButton');
+
+        // Stage
+        const stageCanvas = document.getElementById('stageCanvas');
+        const stageCtx = stageCanvas.getContext('2d');
+        const playButton = document.getElementById('playButton');
+        const stopButton = document.getElementById('stopButton');
+        const clearStageButton = document.getElementById('clearStageButton');
+        let stageGlyphInstances = []; // Stores { libId, x, y, angle, scale, currentSpeedX, currentSpeedY, animationState, soundInstance }
+        let animationFrameId = null;
+        let mousePos = { x: 0, y: 0 };
+
+        // --- Tone.js Synths ---
+        let synths = {}; // To store Tone.js synth instances
+
+        async function setupAudio() {
+            await Tone.start();
+            console.log("Audio Context Started with Tone.js");
+            startAudioOverlay.classList.add('hidden');
+
+            synths.boop = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+            synths.swoosh = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }).toDestination();
+            synths.twinkle = new Tone.FMSynth({ harmonicity: 3, modulationIndex: 10, envelope: { attack: 0.01, decay: 0.2, release: 0.2 }, modulationEnvelope: { attack: 0.01, decay: 0.1, release: 0.2 } }).toDestination();
+            synths.click = new Tone.MembraneSynth({ pitchDecay: 0.008, octaves: 2, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.01 } }).toDestination();
+            synths.hum = new Tone.Oscillator({type: "triangle", frequency: "C3", volume: -20 }).toDestination(); // Loop this one
+            synths.collision = new Tone.MetalSynth({frequency: 600, envelope: {attack: 0.001, decay: 0.05, release: 0.01}, harmonicity: 1.5, octaves: 0.5, volume: -15}).toDestination();
+        }
+        startAudioButton.addEventListener('click', setupAudio);
+
+
+        // --- Glyph Drawing Logic ---
+        function clearDrawCanvas() {
+            drawCtx.fillStyle = getComputedStyle(glyphDrawCanvas).backgroundColor || '#0f172a';
+            drawCtx.fillRect(0, 0, glyphDrawCanvas.width, glyphDrawCanvas.height);
+            currentGlyphPath = [];
+        }
+
+        glyphDrawCanvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            const rect = glyphDrawCanvas.getBoundingClientRect();
+            currentGlyphPath.push({ x: e.clientX - rect.left, y: e.clientY - rect.top, newStroke: true });
+            drawCurrentPath();
+        });
+        glyphDrawCanvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            const rect = glyphDrawCanvas.getBoundingClientRect();
+            currentGlyphPath.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+            drawCurrentPath();
+        });
+        glyphDrawCanvas.addEventListener('mouseup', () => drawing = false);
+        glyphDrawCanvas.addEventListener('mouseleave', () => drawing = false);
+
+        function drawCurrentPath() {
+            drawCtx.fillStyle = getComputedStyle(glyphDrawCanvas).backgroundColor || '#0f172a';
+            drawCtx.fillRect(0, 0, glyphDrawCanvas.width, glyphDrawCanvas.height); // Clear first
+            if (currentGlyphPath.length < 1) return;
+
+            drawCtx.strokeStyle = glyphColorInput.value;
+            drawCtx.lineWidth = lineWidthInput.value;
+            drawCtx.lineCap = "round";
+            drawCtx.lineJoin = "round";
+
+            drawCtx.beginPath();
+            currentGlyphPath.forEach((point, i) => {
+                if (point.newStroke && i > 0) {
+                    drawCtx.stroke(); // End previous stroke
+                    drawCtx.beginPath(); // Start new one
+                    drawCtx.moveTo(point.x, point.y);
+                } else if (i === 0 || point.newStroke) {
+                    drawCtx.moveTo(point.x, point.y);
+                } else {
+                    drawCtx.lineTo(point.x, point.y);
+                }
+            });
+            drawCtx.stroke();
+        }
+        glyphColorInput.addEventListener('input', drawCurrentPath);
+        lineWidthInput.addEventListener('input', drawCurrentPath);
+        clearDrawingButton.addEventListener('click', clearDrawCanvas);
+
+        // --- Glyph Library Logic ---
+        saveGlyphButton.addEventListener('click', () => {
+            if (currentGlyphPath.length < 2) {
+                alert("Please draw something before saving!");
+                return;
+            }
+            const id = `glyph_${Date.now()}`;
+            // Create a temporary canvas to get a tight bounding box image
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const bounds = getPathBounds(currentGlyphPath);
+            if (!bounds) return;
+
+            tempCanvas.width = bounds.width + parseInt(lineWidthInput.value) * 2;
+            tempCanvas.height = bounds.height + parseInt(lineWidthInput.value) * 2;
+            
+            tempCtx.strokeStyle = glyphColorInput.value;
+            tempCtx.lineWidth = lineWidthInput.value;
+            tempCtx.lineCap = "round";
+            tempCtx.lineJoin = "round";
+            tempCtx.beginPath();
+            currentGlyphPath.forEach((point, i) => {
+                const x = point.x - bounds.minX + parseInt(lineWidthInput.value);
+                const y = point.y - bounds.minY + parseInt(lineWidthInput.value);
+                 if (point.newStroke && i > 0) {
+                    tempCtx.stroke(); tempCtx.beginPath(); tempCtx.moveTo(x, y);
+                } else if (i === 0 || point.newStroke) {
+                    tempCtx.moveTo(x, y);
+                } else {
+                    tempCtx.lineTo(x, y);
+                }
+            });
+            tempCtx.stroke();
+            
+            const imageDataUrl = tempCanvas.toDataURL();
+
+            glyphLibrary.push({
+                id, imageDataUrl,
+                path: JSON.parse(JSON.stringify(currentGlyphPath)), // Deep copy
+                color: glyphColorInput.value,
+                lineWidth: lineWidthInput.value,
+                action: 'none', speed: 1, sound: 'none', soundInstance: null
+            });
+            renderGlyphLibrary();
+            clearDrawCanvas();
+        });
+
+        function getPathBounds(path) {
+            if (path.length === 0) return null;
+            let minX = path[0].x, maxX = path[0].x, minY = path[0].y, maxY = path[0].y;
+            path.forEach(p => {
+                minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+            });
+            return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+        }
+
+
+        function renderGlyphLibrary() {
+            glyphLibraryDiv.innerHTML = '';
+            glyphLibrary.forEach(glyph => {
+                const item = document.createElement('div');
+                item.classList.add('glyph-library-item', 'rounded');
+                item.dataset.id = glyph.id;
+                const img = document.createElement('img');
+                img.src = glyph.imageDataUrl;
+                item.appendChild(img);
+                if (glyph.id === selectedLibraryGlyphId) {
+                    item.classList.add('selected');
+                }
+                item.addEventListener('click', () => selectGlyphFromLibrary(glyph.id));
+                glyphLibraryDiv.appendChild(item);
+            });
+        }
+
+        function selectGlyphFromLibrary(id) {
+            selectedLibraryGlyphId = id;
+            renderGlyphLibrary(); // Re-render to show selection
+            const glyph = glyphLibrary.find(g => g.id === id);
+            if (glyph) {
+                behaviorPanel.classList.remove('hidden');
+                actionSelect.value = glyph.action;
+                speedSlider.value = glyph.speed;
+                speedValueDisplay.textContent = glyph.speed;
+                soundSelect.value = glyph.sound;
+            } else {
+                behaviorPanel.classList.add('hidden');
+            }
+        }
+
+        // --- Behavior Logic ---
+        speedSlider.addEventListener('input', () => speedValueDisplay.textContent = speedSlider.value);
+        applyBehaviorButton.addEventListener('click', () => {
+            if (!selectedLibraryGlyphId) return;
+            const glyph = glyphLibrary.find(g => g.id === selectedLibraryGlyphId);
+            if (glyph) {
+                glyph.action = actionSelect.value;
+                glyph.speed = parseFloat(speedSlider.value);
+                glyph.sound = soundSelect.value;
+                // If sound is 'hum', create its instance now if not already
+                if (glyph.sound === 'hum' && !glyph.soundInstance) {
+                    glyph.soundInstance = new Tone.Oscillator({type: "triangle", frequency: "C3", volume: -25 }).toDestination();
+                } else if (glyph.sound !== 'hum' && glyph.soundInstance && glyph.soundInstance.name === "Oscillator") {
+                    // Clean up old hum instance if sound changed
+                    if(glyph.soundInstance.state === "started") glyph.soundInstance.stop();
+                    glyph.soundInstance.dispose();
+                    glyph.soundInstance = null;
+                }
+                console.log(`Behavior applied to ${glyph.id}:`, glyph);
+            }
+        });
+
+        // --- Stage Logic ---
+        function resizeStageCanvas() {
+            const parent = stageCanvas.parentElement;
+            stageCanvas.width = parent.clientWidth - 10; // some padding
+            stageCanvas.height = Math.max(300, parent.clientHeight - 50); // min height
+        }
+
+        stageCanvas.addEventListener('click', (e) => {
+            if (!selectedLibraryGlyphId) {
+                alert("Select a glyph from the library first!");
+                return;
+            }
+            const libGlyph = glyphLibrary.find(g => g.id === selectedLibraryGlyphId);
+            if (!libGlyph) return;
+
+            const rect = stageCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Create a new sound instance for this stage glyph if it's 'hum'
+            let instanceSoundPlayer = null;
+            if (libGlyph.sound === 'hum') {
+                instanceSoundPlayer = new Tone.Oscillator({type: "triangle", frequency: "C3", volume: -25 }).toDestination();
+            }
+
+
+            stageGlyphInstances.push({
+                libId: libGlyph.id,
+                x, y,
+                angle: 0,
+                scale: 1,
+                currentSpeedX: (Math.random() - 0.5) * 0.5 * libGlyph.speed, // Initial random nudge
+                currentSpeedY: (Math.random() - 0.5) * 0.5 * libGlyph.speed,
+                animationState: { pulseDirection: 1, jiggleOffset: {x:0, y:0} },
+                soundPlayer: instanceSoundPlayer, // Store the unique hum instance
+                originalPath: libGlyph.path, // Store path for drawing
+                color: libGlyph.color,
+                lineWidth: libGlyph.lineWidth,
+                action: libGlyph.action,
+                speed: libGlyph.speed,
+                sound: libGlyph.sound,
+                bounds: getPathBounds(libGlyph.path) || {minX:0, minY:0, width:10, height:10} // Get bounds for collision
+            });
+            playSoundForGlyph(libGlyph, 'place');
+            if (!animationFrameId) drawStage(); // Draw immediately if not playing
+        });
+
+        stageCanvas.addEventListener('mousemove', (e) => {
+            const rect = stageCanvas.getBoundingClientRect();
+            mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        });
+
+        function playSoundForGlyph(glyphData, triggerType = 'action') {
+            if (!Tone.context || Tone.context.state !== 'running' || !glyphData) return;
+            
+            const soundType = glyphData.sound;
+            if (soundType === 'none') return;
+
+            if (soundType === 'hum') {
+                // Hum is handled by instance's soundPlayer during animation loop
+                return;
+            }
+
+            // For non-looping sounds, trigger them
+            if (triggerType === 'place' || triggerType === 'action' || triggerType === 'collision') {
+                try {
+                    if (soundType === 'boop' && synths.boop) synths.boop.triggerAttackRelease("C5", "16n");
+                    else if (soundType === 'swoosh' && synths.swoosh) synths.swoosh.triggerAttackRelease("4n");
+                    else if (soundType === 'twinkle' && synths.twinkle) synths.twinkle.triggerAttackRelease("A5", "8n");
+                    else if (soundType === 'click' && synths.click) synths.click.triggerAttackRelease("C2", "32n");
+                    else if (triggerType === 'collision' && synths.collision) synths.collision.triggerAttackRelease("8n");
+                } catch (err) { console.error("Error playing sound:", soundType, err); }
+            }
+        }
+
+
+        // --- Animation Loop ---
+        function gameLoop() {
+            stageCtx.fillStyle = getComputedStyle(stageCanvas).backgroundColor || '#0f172a';
+            stageCtx.fillRect(0, 0, stageCanvas.width, stageCanvas.height);
+
+            for (let i = 0; i < stageGlyphInstances.length; i++) {
+                const inst = stageGlyphInstances[i];
+                
+                // Update based on action
+                const baseSpeed = inst.speed * 0.5; // Global speed factor for actions
+                switch (inst.action) {
+                    case 'moveRight': inst.x += baseSpeed; break;
+                    case 'moveLeft': inst.x -= baseSpeed; break;
+                    case 'floatUp': inst.y -= baseSpeed * 0.7; break;
+                    case 'floatDown': inst.y += baseSpeed * 0.7; break;
+                    case 'spin': inst.angle += baseSpeed * 0.02; break;
+                    case 'pulseSize':
+                        inst.scale += inst.animationState.pulseDirection * baseSpeed * 0.01;
+                        if (inst.scale > 1.2 || inst.scale < 0.8) inst.animationState.pulseDirection *= -1;
+                        break;
+                    case 'jiggle':
+                        inst.animationState.jiggleOffset.x = (Math.random() - 0.5) * baseSpeed * 0.5;
+                        inst.animationState.jiggleOffset.y = (Math.random() - 0.5) * baseSpeed * 0.5;
+                        break;
+                    case 'followMouse':
+                        const dx = mousePos.x - inst.x;
+                        const dy = mousePos.y - inst.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist > 1) {
+                            inst.x += (dx / dist) * baseSpeed * 0.8;
+                            inst.y += (dy / dist) * baseSpeed * 0.8;
+                        }
+                        break;
+                    default: // 'none' or other, apply slight drift
+                        inst.x += inst.currentSpeedX * 0.1;
+                        inst.y += inst.currentSpeedY * 0.1;
+                }
+
+                // Boundary checks (bounce)
+                // Approximate glyph width/height from bounds for collision
+                const glyphWidth = inst.bounds.width * inst.scale;
+                const glyphHeight = inst.bounds.height * inst.scale;
+
+                if (inst.x - glyphWidth/2 < 0 || inst.x + glyphWidth/2 > stageCanvas.width) {
+                    inst.currentSpeedX *= -1; // Reverse horizontal speed
+                    if (inst.action === 'moveLeft' || inst.action === 'moveRight') inst.action = (inst.action === 'moveLeft' ? 'moveRight' : 'moveLeft');
+                    inst.x = Math.max(glyphWidth/2, Math.min(inst.x, stageCanvas.width - glyphWidth/2)); // Clamp position
+                    playSoundForGlyph(inst, 'collision');
+                }
+                if (inst.y - glyphHeight/2 < 0 || inst.y + glyphHeight/2 > stageCanvas.height) {
+                    inst.currentSpeedY *= -1; // Reverse vertical speed
+                    if (inst.action === 'floatUp' || inst.action === 'floatDown') inst.action = (inst.action === 'floatUp' ? 'floatDown' : 'floatUp');
+                    inst.y = Math.max(glyphHeight/2, Math.min(inst.y, stageCanvas.height - glyphHeight/2)); // Clamp position
+                    playSoundForGlyph(inst, 'collision');
+                }
+
+                // Handle 'hum' sound loop
+                if (inst.sound === 'hum' && inst.soundPlayer) {
+                    if (inst.soundPlayer.state !== "started") {
+                        try { inst.soundPlayer.start(); } catch(e){} // Start if not already
+                    }
+                } else if (inst.sound !== 'hum' && inst.soundPlayer && inst.soundPlayer.state === "started") {
+                    try { inst.soundPlayer.stop(); } catch(e){} // Stop if changed from hum
+                }
+
+
+                // Draw instance
+                drawGlyphInstance(inst);
+            }
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function drawGlyphInstance(inst) {
+            stageCtx.save();
+            stageCtx.translate(inst.x + (inst.animationState.jiggleOffset?.x || 0), inst.y + (inst.animationState.jiggleOffset?.y || 0));
+            stageCtx.rotate(inst.angle);
+            stageCtx.scale(inst.scale, inst.scale);
+
+            stageCtx.strokeStyle = inst.color;
+            stageCtx.lineWidth = inst.lineWidth;
+            stageCtx.lineCap = "round";
+            stageCtx.lineJoin = "round";
+            
+            // Center the drawing path around the instance's x,y
+            const offsetX = -inst.bounds.minX - inst.bounds.width / 2;
+            const offsetY = -inst.bounds.minY - inst.bounds.height / 2;
+
+            stageCtx.beginPath();
+            inst.originalPath.forEach((point, i) => {
+                const x = point.x + offsetX;
+                const y = point.y + offsetY;
+                if (point.newStroke && i > 0) {
+                    stageCtx.stroke(); stageCtx.beginPath(); stageCtx.moveTo(x,y);
+                } else if (i === 0 || point.newStroke) {
+                    stageCtx.moveTo(x, y);
+                } else {
+                    stageCtx.lineTo(x, y);
+                }
+            });
+            stageCtx.stroke();
+            stageCtx.restore();
+        }
+
+        function drawStage() { // For static drawing when not animating
+            stageCtx.fillStyle = getComputedStyle(stageCanvas).backgroundColor || '#0f172a';
+            stageCtx.fillRect(0, 0, stageCanvas.width, stageCanvas.height);
+            stageGlyphInstances.forEach(drawGlyphInstance);
+        }
+
+        playButton.addEventListener('click', () => {
+            if (!animationFrameId) {
+                mousePos = { x: stageCanvas.width / 2, y: stageCanvas.height / 2 }; // Reset mouse for follow
+                gameLoop();
+            }
+        });
+        stopButton.addEventListener('click', () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            // Stop any looping sounds
+            stageGlyphInstances.forEach(inst => {
+                if (inst.soundPlayer && inst.soundPlayer.state === "started") {
+                   try { inst.soundPlayer.stop(); } catch(e){}
+                }
+            });
+        });
+        clearStageButton.addEventListener('click', () => {
+            stopButton.click(); // Stop animation and sounds
+            stageGlyphInstances.forEach(inst => { // Dispose of individual hummers
+                if(inst.soundPlayer) { try { inst.soundPlayer.dispose(); } catch(e){} }
+            });
+            stageGlyphInstances = [];
+            drawStage();
+        });
+
+
+        // Initial Setup
+        window.addEventListener('load', () => {
+            resizeStageCanvas();
+            clearDrawCanvas();
+            renderGlyphLibrary();
+            drawStage(); // Initial empty stage draw
+        });
+        window.addEventListener('resize', () => {
+            resizeStageCanvas();
+            drawStage(); // Redraw static content on resize
+        });
+        
+        // Default behavior panel state
+        behaviorPanel.classList.add('hidden');
+
+    </script>
+</body>
+</html>

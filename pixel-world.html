@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Reaction Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'VT323', monospace; /* Pixel-friendly font */
+            background-color: #2c3e50; /* Dark slate blue */
+            color: #ecf0f1; /* Light silver */
+            overscroll-behavior: none;
+        }
+        .header-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .game-container {
+            border: 4px solid #34495e; /* Slightly darker slate */
+            box-shadow: 0 0 0 4px #1abc9c, 0 0 20px rgba(26, 188, 156, 0.5); /* Teal glow */
+        }
+        #gameCanvas {
+            display: block;
+            image-rendering: pixelated; /* Crisper pixels */
+            background-color: #bdc3c7; /* Lighter gray for empty space - UPDATED */
+        }
+        .palette-button {
+            background-color: #34495e;
+            border: 2px solid #7f8c8d;
+            color: #ecf0f1;
+            padding: 6px 8px; /* Slightly smaller padding */
+            font-size: 14px; /* Slightly smaller font */
+            cursor: pointer;
+            transition: all 0.1s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 90px; 
+        }
+        .palette-button:hover {
+            background-color: #4a6179;
+            border-color: #95a5a6;
+        }
+        .palette-button.selected {
+            background-color: #1abc9c; /* Teal */
+            border-color: #16a085; /* Darker teal */
+            color: #2c3e50;
+            box-shadow: 0 0 10px #1abc9c;
+        }
+        .palette-button .icon {
+            width: 16px; /* Smaller icon */
+            height: 16px;
+            margin-right: 6px;
+            border: 1px solid #2c3e50;
+        }
+        .control-button, .action-button { /* Added action-button for consistency */
+            background-color: #3498db; /* Blue for general actions */
+            border: 2px solid #2980b9; /* Darker blue */
+            color: white;
+            padding: 8px 12px;
+            font-size: 16px;
+            transition: all 0.1s ease-in-out;
+        }
+        .control-button:hover, .action-button:hover {
+            background-color: #2980b9;
+        }
+        #clearButton {
+             background-color: #e74c3c; /* Red for clear */
+             border: 2px solid #c0392b;
+        }
+        #clearButton:hover {
+            background-color: #c0392b;
+        }
+
+        /* Element specific icon colors */
+        .icon-EMPTY { background-color: #bdc3c7; } 
+        .icon-SOIL { background-color: #8B4513; } 
+        .icon-WATER { background-color: #3498DB; } 
+        .icon-SEED { background-color: #2ECC71; } 
+        .icon-SUN_ORB { background-color: #F1C40F; } 
+        .icon-STONE { background-color: #95A5A6; } 
+        .icon-LAVA { background-color: #E67E22; } 
+        .icon-PLANT_FOOD { background-color: #9b59b6; } /* Purple */
+        .icon-ACID { background-color: #cddc39; } /* Lime green */
+        .icon-METAL_ORE { background-color: #795548; } /* Brownish gray */
+        .icon-CLOUD { background-color: #ecf0f1; } /* White/Light silver */
+
+        select.styled-select {
+            background-color: #34495e;
+            border: 2px solid #7f8c8d;
+            color: #ecf0f1;
+            padding: 8px 10px;
+            font-size: 16px;
+            border-radius: 0.375rem; /* rounded-md */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 selection:bg-teal-500 selection:text-white">
+
+    <header class="my-4 sm:my-6 text-center">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl text-teal-400 header-font">Pixel Reaction Lab</h1>
+    </header>
+
+    <div class="game-container bg-gray-800 p-2 sm:p-4 rounded-lg shadow-2xl w-full max-w-fit">
+        <div class="flex flex-col lg:flex-row gap-2 sm:gap-4">
+            <div id="paletteContainer" class="flex flex-wrap sm:flex-nowrap lg:flex-col gap-2 p-2 bg-gray-700 rounded-md overflow-x-auto lg:overflow-y-auto justify-center lg:justify-start">
+                </div>
+
+            <div class="flex flex-col items-center">
+                <canvas id="gameCanvas"></canvas>
+                <div class="mt-3 flex flex-wrap justify-center gap-2">
+                    <select id="gridSizeSelect" class="styled-select rounded-md">
+                        <option value="small">Small Grid (20x15)</option>
+                        <option value="medium" selected>Medium Grid (30x25)</option>
+                        <option value="large">Large Grid (40x30)</option>
+                    </select>
+                    <button id="clearButton" class="control-button palette-button rounded-md">Clear World</button>
+                    <button id="saveImageButton" class="action-button palette-button rounded-md">Save Image</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-6 sm:mt-8 text-center text-sm text-gray-400">
+        <p>&copy; <span id="currentYear"></span> Pixel Reaction Lab. Experiment and Discover!</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const paletteContainer = document.getElementById('paletteContainer');
+        const clearButton = document.getElementById('clearButton');
+        const saveImageButton = document.getElementById('saveImageButton');
+        const gridSizeSelect = document.getElementById('gridSizeSelect');
+
+        let TILE_SIZE = 16; 
+        let GRID_WIDTH = 30; 
+        let GRID_HEIGHT = 25; 
+        
+        const ELEMENT_TYPES = {
+            EMPTY: 0,
+            SOIL: 1,
+            WATER: 2,
+            SEED: 3,
+            SUN_ORB: 4,
+            STONE: 5,
+            LAVA: 6,
+            PLANT: 7,
+            FIRE: 8,
+            ASH: 9,
+            STEAM: 10, 
+            WET_SOIL: 11,
+            SPROUT: 12,
+            PLANT_FOOD: 13,
+            ACID: 14,
+            METAL_ORE: 15,
+            REFINED_METAL: 16,
+            CLOUD: 17,
+            RAIN_CLOUD: 18,
+        };
+
+        const ELEMENT_COLORS = {
+            [ELEMENT_TYPES.EMPTY]: '#bdc3c7', 
+            [ELEMENT_TYPES.SOIL]: '#8B4513',  
+            [ELEMENT_TYPES.WATER]: '#3498DB', 
+            [ELEMENT_TYPES.SEED]: '#2ECC71',   
+            [ELEMENT_TYPES.SUN_ORB]: '#F1C40F',
+            [ELEMENT_TYPES.STONE]: '#95A5A6', 
+            [ELEMENT_TYPES.LAVA]: '#E67E22',   
+            [ELEMENT_TYPES.PLANT]: '#27AE60',  
+            [ELEMENT_TYPES.FIRE]: '#E74C3C',   
+            [ELEMENT_TYPES.ASH]: '#707070',    
+            [ELEMENT_TYPES.WET_SOIL]: '#654321', 
+            [ELEMENT_TYPES.SPROUT]: '#90EE90', 
+            [ELEMENT_TYPES.PLANT_FOOD]: '#9b59b6', // Purple
+            [ELEMENT_TYPES.ACID]: '#cddc39',      // Lime Green (Toxic Look)
+            [ELEMENT_TYPES.METAL_ORE]: '#795548', // Brownish Gray
+            [ELEMENT_TYPES.REFINED_METAL]: '#bdc3c7', // Silver/Gray
+            [ELEMENT_TYPES.CLOUD]: '#ecf0f1',      // White/Light Silver
+            [ELEMENT_TYPES.RAIN_CLOUD]: '#7f8c8d', // Darker Cloud
+        };
+        
+        const ELEMENT_NAMES = { 
+            [ELEMENT_TYPES.EMPTY]: "Eraser",
+            [ELEMENT_TYPES.SOIL]: "Soil",
+            [ELEMENT_TYPES.WATER]: "Water",
+            [ELEMENT_TYPES.SEED]: "Seed",
+            [ELEMENT_TYPES.SUN_ORB]: "Sun Orb",
+            [ELEMENT_TYPES.STONE]: "Stone",
+            [ELEMENT_TYPES.LAVA]: "Lava",
+            [ELEMENT_TYPES.PLANT_FOOD]: "Plant Food",
+            [ELEMENT_TYPES.ACID]: "Acid",
+            [ELEMENT_TYPES.METAL_ORE]: "Metal Ore",
+            [ELEMENT_TYPES.CLOUD]: "Cloud",
+        };
+
+        let grid = [];
+        let selectedElement = ELEMENT_TYPES.SOIL;
+        let gameTick = 0;
+        let particleEffects = []; 
+
+        function updateCanvasAndGridSize() {
+            const sizeOption = gridSizeSelect.value;
+            if (sizeOption === "small") {
+                GRID_WIDTH = 20;
+                GRID_HEIGHT = 15;
+                TILE_SIZE = 20; // Larger tiles for smaller grid for visibility
+            } else if (sizeOption === "large") {
+                GRID_WIDTH = 40;
+                GRID_HEIGHT = 30;
+                TILE_SIZE = 12; // Smaller tiles for larger grid
+            } else { // Medium (default)
+                GRID_WIDTH = 30;
+                GRID_HEIGHT = 25;
+                TILE_SIZE = 16;
+            }
+            canvas.width = TILE_SIZE * GRID_WIDTH;
+            canvas.height = TILE_SIZE * GRID_HEIGHT;
+            initGrid(); // Reinitialize grid with new dimensions
+            drawGrid(); // Redraw
+        }
+
+
+        function initGrid() {
+            grid = [];
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                const row = [];
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    row.push({ type: ELEMENT_TYPES.EMPTY, age: 0, health: 100, waterContent: 0 }); 
+                }
+                grid.push(row);
+            }
+        }
+
+        function createPalette() {
+            paletteContainer.innerHTML = ''; // Clear existing palette
+            Object.keys(ELEMENT_NAMES).forEach(key => {
+                const type = parseInt(key);
+                const name = ELEMENT_NAMES[type];
+                const button = document.createElement('button');
+                button.classList.add('palette-button', 'rounded-md');
+                if (type === selectedElement) button.classList.add('selected');
+                
+                const iconSpan = document.createElement('span');
+                iconSpan.classList.add('icon', `icon-${Object.keys(ELEMENT_TYPES).find(k => ELEMENT_TYPES[k] === type)}`);
+                // iconSpan.style.backgroundColor = ELEMENT_COLORS[type]; // Color set by CSS class now
+                
+                button.appendChild(iconSpan);
+                button.appendChild(document.createTextNode(name));
+                
+                button.onclick = () => {
+                    selectedElement = type;
+                    document.querySelectorAll('.palette-button').forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                };
+                paletteContainer.appendChild(button);
+            });
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = ELEMENT_COLORS[ELEMENT_TYPES.EMPTY]; // Fill background for empty
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const cell = grid[y][x];
+                    if (cell.type !== ELEMENT_TYPES.EMPTY) { // Only draw non-empty cells over background
+                        ctx.fillStyle = ELEMENT_COLORS[cell.type];
+                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    }
+
+                    if (cell.type === ELEMENT_TYPES.FIRE) {
+                        ctx.fillStyle = Math.random() < 0.5 ? '#F39C12' : '#E67E22'; 
+                        ctx.fillRect(x * TILE_SIZE + TILE_SIZE/4, y * TILE_SIZE + TILE_SIZE/4, TILE_SIZE/2, TILE_SIZE/2);
+                    }
+                    if (cell.type === ELEMENT_TYPES.ACID && cell.age % 10 < 5) { // Bubbling effect for acid
+                        ctx.fillStyle = `rgba(230, 255, 100, ${0.3 + Math.random() * 0.3})`;
+                        ctx.beginPath();
+                        ctx.arc(x * TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*TILE_SIZE*0.3, 
+                                y * TILE_SIZE + TILE_SIZE/2 + (Math.random()-0.5)*TILE_SIZE*0.3, 
+                                TILE_SIZE/5 + Math.random()*TILE_SIZE/8, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                }
+            }
+            particleEffects.forEach(p => {
+                ctx.fillStyle = `rgba(200, 200, 200, ${p.opacity})`;
+                ctx.beginPath();
+                ctx.arc(p.x * TILE_SIZE + TILE_SIZE / 2, p.y * TILE_SIZE + TILE_SIZE / 2, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function updateParticleEffects() {
+            particleEffects = particleEffects.filter(p => {
+                p.y -= p.vy; 
+                p.opacity -= 0.02;
+                p.radius += 0.1;
+                return p.opacity > 0;
+            });
+        }
+
+        function getCell(x, y) {
+            if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) {
+                return null; 
+            }
+            return grid[y][x];
+        }
+
+        function setCell(x, y, type, age = 0, health = 100, waterContent = 0) {
+            if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                grid[y][x] = { type, age, health, waterContent };
+            }
+        }
+        
+        function createSteamEffect(x,y) {
+            for(let i=0; i<3; i++) { 
+                 particleEffects.push({x: x + (Math.random()-0.5)*0.5, y: y + (Math.random()-0.5)*0.5, radius: TILE_SIZE/4, opacity: 0.8, vy: 0.1 + Math.random()*0.1});
+            }
+        }
+
+        function updateLogic() {
+            gameTick++;
+            const newGrid = JSON.parse(JSON.stringify(grid)); 
+
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const currentCell = grid[y][x];
+                    currentCell.age++; // Increment age for all cells
+
+                    switch (currentCell.type) {
+                        case ELEMENT_TYPES.WATER:
+                            for (let dx = -1; dx <= 1; dx++) {
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    const neighbor = getCell(x + dx, y + dy);
+                                    if (neighbor && neighbor.type === ELEMENT_TYPES.SOIL) {
+                                        newGrid[y + dy][x + dx].type = ELEMENT_TYPES.WET_SOIL;
+                                        newGrid[y + dy][x + dx].age = 0;
+                                        newGrid[y + dy][x + dx].waterContent = 100;
+                                    }
+                                }
+                            }
+                            // Simple gravity for water (if cell below is empty or another water)
+                            const cellBelowWater = getCell(x, y + 1);
+                            if (cellBelowWater && (cellBelowWater.type === ELEMENT_TYPES.EMPTY || cellBelowWater.type === ELEMENT_TYPES.STEAM)) {
+                                newGrid[y+1][x] = JSON.parse(JSON.stringify(currentCell)); // Move water down
+                                newGrid[y][x].type = ELEMENT_TYPES.EMPTY; // Old position becomes empty
+                            } else if (cellBelowWater && cellBelowWater.type !== ELEMENT_TYPES.WATER) { // Try to spread sideways if blocked below
+                                const dir = Math.random() < 0.5 ? -1 : 1;
+                                const sideCell = getCell(x + dir, y);
+                                if (sideCell && sideCell.type === ELEMENT_TYPES.EMPTY) {
+                                    newGrid[y][x+dir] = JSON.parse(JSON.stringify(currentCell));
+                                    newGrid[y][x].type = ELEMENT_TYPES.EMPTY;
+                                }
+                            }
+                            break;
+
+                        case ELEMENT_TYPES.SEED:
+                            const soilBelowSeed = getCell(x, y + 1);
+                            let hasSunlightSeed = false;
+                            let hasPlantFood = false;
+                            for (let dx = -1; dx <= 1; dx++) { 
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    const neighbor = getCell(x + dx, y + dy);
+                                    if (neighbor) {
+                                        if (neighbor.type === ELEMENT_TYPES.SUN_ORB) hasSunlightSeed = true;
+                                        if (neighbor.type === ELEMENT_TYPES.PLANT_FOOD) hasPlantFood = true;
+                                    }
+                                }
+                            }
+                            if (soilBelowSeed && soilBelowSeed.type === ELEMENT_TYPES.WET_SOIL && hasSunlightSeed) {
+                                const growTime = hasPlantFood ? 10 : 20; // Faster with plant food
+                                if (currentCell.age > growTime) { 
+                                    newGrid[y][x].type = ELEMENT_TYPES.SPROUT;
+                                    newGrid[y][x].age = 0;
+                                    if(hasPlantFood) setCell(x,y, ELEMENT_TYPES.SPROUT, 0, 150); // Extra health
+                                }
+                            }
+                            break;
+                        
+                        case ELEMENT_TYPES.SPROUT:
+                             let hasSunlightForSprout = false;
+                             let hasPlantFoodForSprout = false;
+                             for (let dx = -1; dx <= 1; dx++) {
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    const neighbor = getCell(x + dx, y + dy);
+                                     if (neighbor) {
+                                        if (neighbor.type === ELEMENT_TYPES.SUN_ORB) hasSunlightForSprout = true;
+                                        if (neighbor.type === ELEMENT_TYPES.PLANT_FOOD) hasPlantFoodForSprout = true;
+                                    }
+                                }
+                            }
+                            if (hasSunlightForSprout && currentCell.age > (hasPlantFoodForSprout ? 25 : 50)) { 
+                                newGrid[y][x].type = ELEMENT_TYPES.PLANT;
+                                newGrid[y][x].age = 0;
+                                if(hasPlantFoodForSprout) setCell(x,y, ELEMENT_TYPES.PLANT, 0, 200); // Extra health for plant
+                            }
+                            break;
+                        
+                        case ELEMENT_TYPES.PLANT_FOOD:
+                            // Dissolves over time, especially if near WET_SOIL
+                            if (currentCell.age > 80 && Math.random() < 0.05) {
+                                newGrid[y][x].type = ELEMENT_TYPES.EMPTY;
+                            }
+                            break;
+
+                        case ELEMENT_TYPES.LAVA:
+                            for (let dx = -1; dx <= 1; dx++) {
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    const neighbor = getCell(x + dx, y + dy);
+                                    if (neighbor) {
+                                        if (neighbor.type === ELEMENT_TYPES.WATER) {
+                                            newGrid[y + dy][x + dx].type = ELEMENT_TYPES.STONE;
+                                            newGrid[y + dy][x + dx].age = 0;
+                                            createSteamEffect(x+dx, y+dy);
+                                            if (Math.random() < 0.3) newGrid[y][x].type = ELEMENT_TYPES.STONE; 
+                                        } else if (neighbor.type === ELEMENT_TYPES.PLANT || neighbor.type === ELEMENT_TYPES.SPROUT || neighbor.type === ELEMENT_TYPES.SEED) {
+                                            newGrid[y + dy][x + dx].type = ELEMENT_TYPES.FIRE;
+                                            newGrid[y + dy][x + dx].age = 0;
+                                        } else if (neighbor.type === ELEMENT_TYPES.METAL_ORE && Math.random() < 0.1) {
+                                            newGrid[y+dy][x+dx].type = ELEMENT_TYPES.REFINED_METAL;
+                                            newGrid[y+dy][x+dx].age = 0;
+                                        }
+                                    }
+                                }
+                            }
+                            if (currentCell.age > 100 && Math.random() < 0.01) {
+                                let nearLava = false;
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    for (let dy = -1; dy <= 1; dy++) {
+                                        if (dx === 0 && dy === 0) continue;
+                                        const neighbor = getCell(x + dx, y + dy);
+                                        if (neighbor && neighbor.type === ELEMENT_TYPES.LAVA) nearLava = true;
+                                    }
+                                }
+                                if (!nearLava) newGrid[y][x].type = ELEMENT_TYPES.STONE;
+                            }
+                            break;
+                        
+                        case ELEMENT_TYPES.FIRE:
+                            for (let dx = -1; dx <= 1; dx++) {
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    const neighbor = getCell(x + dx, y + dy);
+                                    if (neighbor && (neighbor.type === ELEMENT_TYPES.PLANT || neighbor.type === ELEMENT_TYPES.SPROUT || neighbor.type === ELEMENT_TYPES.SEED)) {
+                                        if (Math.random() < 0.15) { 
+                                            newGrid[y + dy][x + dx].type = ELEMENT_TYPES.FIRE;
+                                            newGrid[y + dy][x + dx].age = 0;
+                                        }
+                                    }
+                                }
+                            }
+                            if (currentCell.age > 30 + Math.random()*20) {
+                                newGrid[y][x].type = ELEMENT_TYPES.ASH;
+                                newGrid[y][x].age = 0;
+                            }
+                            break;
+                        
+                        case ELEMENT_TYPES.WET_SOIL:
+                            if (currentCell.waterContent > 0) currentCell.waterContent -= 0.1; // Dry out slowly
+                            if (currentCell.waterContent <= 0 && currentCell.age > 150 && Math.random() < 0.02) {
+                                let nearWaterSource = false;
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    for (let dy = -1; dy <= 1; dy++) {
+                                         const neighbor = getCell(x + dx, y + dy);
+                                         if(neighbor && neighbor.type === ELEMENT_TYPES.WATER) nearWaterSource = true;
+                                         if(neighbor && neighbor.type === ELEMENT_TYPES.RAIN_CLOUD && dy === -1) nearWaterSource = true; // Rain from above
+                                    }
+                                }
+                                if (!nearWaterSource) {
+                                    newGrid[y][x].type = ELEMENT_TYPES.SOIL;
+                                } else {
+                                    currentCell.age = 0; 
+                                    currentCell.waterContent = Math.max(currentCell.waterContent, 50); // Re-wet a bit if water source still there
+                                }
+                            }
+                            break;
+                        
+                        case ELEMENT_TYPES.ACID:
+                            for (let dx = -1; dx <= 1; dx++) {
+                                for (let dy = -1; dy <= 1; dy++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    const neighbor = getCell(x + dx, y + dy);
+                                    if (neighbor && Math.random() < 0.1) { // Chance to affect neighbor
+                                        if ([ELEMENT_TYPES.PLANT, ELEMENT_TYPES.SPROUT, ELEMENT_TYPES.SEED, ELEMENT_TYPES.SOIL, ELEMENT_TYPES.WET_SOIL, ELEMENT_TYPES.ASH].includes(neighbor.type)) {
+                                            newGrid[y+dy][x+dx].type = ELEMENT_TYPES.EMPTY;
+                                        } else if (neighbor.type === ELEMENT_TYPES.STONE) {
+                                            newGrid[y+dy][x+dx].health -= 25;
+                                            if (newGrid[y+dy][x+dx].health <= 0) newGrid[y+dy][x+dx].type = ELEMENT_TYPES.EMPTY;
+                                        } else if (neighbor.type === ELEMENT_TYPES.METAL_ORE || neighbor.type === ELEMENT_TYPES.REFINED_METAL) {
+                                            newGrid[y+dy][x+dx].health -= 10;
+                                            if (newGrid[y+dy][x+dx].health <= 0) newGrid[y+dy][x+dx].type = ELEMENT_TYPES.EMPTY;
+                                        }
+                                    }
+                                }
+                            }
+                            if (currentCell.age > 70 + Math.random()*30) newGrid[y][x].type = ELEMENT_TYPES.EMPTY; // Acid dissipates
+                            break;
+                        
+                        case ELEMENT_TYPES.CLOUD:
+                            // Drift horizontally
+                            if (gameTick % 10 === 0 && Math.random() < 0.3) {
+                                const dir = Math.random() < 0.5 ? -1 : 1;
+                                const nextX = x + dir;
+                                if (getCell(nextX, y)?.type === ELEMENT_TYPES.EMPTY) {
+                                    newGrid[y][nextX] = JSON.parse(JSON.stringify(currentCell));
+                                    newGrid[y][x].type = ELEMENT_TYPES.EMPTY;
+                                }
+                            }
+                            // Chance to become RAIN_CLOUD
+                            if (Math.random() < 0.005) newGrid[y][x].type = ELEMENT_TYPES.RAIN_CLOUD;
+                            break;
+
+                        case ELEMENT_TYPES.RAIN_CLOUD:
+                             // Drift like cloud
+                            if (gameTick % 12 === 0 && Math.random() < 0.25) {
+                                const dir = Math.random() < 0.5 ? -1 : 1;
+                                const nextX = x + dir;
+                                if (getCell(nextX, y)?.type === ELEMENT_TYPES.EMPTY) {
+                                    newGrid[y][nextX] = JSON.parse(JSON.stringify(currentCell));
+                                    newGrid[y][x].type = ELEMENT_TYPES.EMPTY;
+                                }
+                            }
+                            // Chance to rain
+                            if (Math.random() < 0.05) {
+                                const cellBelowRain = getCell(x, y + 1);
+                                if (cellBelowRain && cellBelowRain.type === ELEMENT_TYPES.EMPTY) {
+                                    newGrid[y+1][x].type = ELEMENT_TYPES.WATER;
+                                    newGrid[y+1][x].age = 0;
+                                } else if (cellBelowRain && cellBelowRain.type === ELEMENT_TYPES.SOIL) {
+                                    newGrid[y+1][x].type = ELEMENT_TYPES.WET_SOIL;
+                                    newGrid[y+1][x].age = 0;
+                                    newGrid[y+1][x].waterContent = 100;
+                                }
+                            }
+                            // Dissipates after a while
+                            if (currentCell.age > 200 && Math.random() < 0.01) newGrid[y][x].type = ELEMENT_TYPES.CLOUD; // Back to normal cloud or empty
+                            break;
+
+                    }
+                }
+            }
+            grid = newGrid; 
+            updateParticleEffects();
+        }
+
+        canvas.addEventListener('mousedown', function(event) {
+            handleCanvasClick(event, true); 
+        });
+        canvas.addEventListener('mousemove', function(event) {
+            if (event.buttons === 1) {
+                handleCanvasClick(event, true);
+            }
+        });
+        
+        function handleCanvasClick(event, isDrawing) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const canvasX = (event.clientX - rect.left) * scaleX;
+            const canvasY = (event.clientY - rect.top) * scaleY;
+
+            const gridX = Math.floor(canvasX / TILE_SIZE);
+            const gridY = Math.floor(canvasY / TILE_SIZE);
+
+            if (gridX >= 0 && gridX < GRID_WIDTH && gridY >= 0 && gridY < GRID_HEIGHT) {
+                // Eraser now removes Sun Orbs as well
+                setCell(gridX, gridY, selectedElement);
+                drawGrid(); 
+            }
+        }
+
+        clearButton.addEventListener('click', () => {
+            initGrid();
+            particleEffects = [];
+            drawGrid();
+        });
+
+        saveImageButton.addEventListener('click', () => {
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'pixel-reaction-lab.png';
+            link.href = image;
+            link.click();
+        });
+        
+        gridSizeSelect.addEventListener('change', updateCanvasAndGridSize);
+
+
+        function gameLoop() {
+            updateLogic();
+            drawGrid();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        updateCanvasAndGridSize(); // Sets initial size based on dropdown and calls initGrid
+        createPalette();
+        gameLoop();
+
+    </script>
+</body>
+</html>

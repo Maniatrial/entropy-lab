@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symbolic Self-Portrait</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #fdfbfb; /* Off-white, very light */
+            color: #333;
+        }
+        .header-font {
+            font-family: 'Playfair Display', serif;
+        }
+        .panel {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+        }
+        .btn-primary {
+            background-color: #7c3aed; /* Tailwind violet-600 */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #6d28d9; /* Tailwind violet-700 */
+        }
+        .btn-secondary {
+            background-color: #64748b; /* Tailwind slate-500 */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #475569; /* Tailwind slate-600 */
+        }
+        .input-field, .select-field, input[type="color"].color-input {
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            color: #1f2937; /* Tailwind gray-800 */
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.5rem 0.75rem;
+        }
+        input[type="color"].color-input {
+            padding: 0.25rem; /* Smaller padding for color input */
+            height: 2.5rem; /* Match other inputs height */
+            width: 100%;
+        }
+        .input-field:focus, .select-field:focus, input[type="color"].color-input:focus {
+            border-color: #7c3aed; /* violet-600 */
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+            outline: none;
+        }
+        .shape-selector button {
+            border: 2px solid #d1d5db;
+            transition: all 0.2s ease;
+            padding: 0.5rem;
+        }
+        .shape-selector button.selected {
+            border-color: #7c3aed;
+            background-color: #ede9fe; /* violet-100 */
+            box-shadow: 0 0 0 2px #7c3aed;
+        }
+        .shape-selector svg {
+            width: 24px; height: 24px;
+            stroke-width: 2;
+            fill: none;
+            stroke: #4b5563; /* gray-600 */
+        }
+        .shape-selector button.selected svg {
+            stroke: #7c3aed;
+        }
+        #artCanvas {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            display: block;
+        }
+        .loading-spinner {
+            border: 3px solid #d1d5db; /* gray-300 */
+            border-top: 3px solid #7c3aed; /* violet-600 */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #apiKeyBanner {
+            background-color: #374151;
+            border-bottom: 1px solid #4b5563;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-6">
+
+    <div id="apiKeyBanner" class="w-full text-center p-2 text-sm text-yellow-300 fixed top-0 left-0 z-50 hidden">
+        API Key not set for AI Reflection. <button id="setApiKeyButton" class="underline hover:text-yellow-100 ml-2">Set API Key</button>
+    </div>
+
+    <header class="my-6 md:my-8 text-center pt-10">
+        <h1 class="text-4xl md:text-5xl font-bold text-violet-700 header-font">Symbolic Self-Portrait</h1>
+        <p class="text-lg text-slate-600 mt-2">Generate abstract art from your inner landscape.</p>
+    </header>
+
+    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <aside class="lg:col-span-1 panel p-6 rounded-lg space-y-6 h-fit sticky top-6">
+            <h2 class="text-xl font-semibold text-violet-700 header-font">Craft Your Symbolism</h2>
+            
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Energy Colors (Pick 1-3):</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="color" id="color1" value="#FF6B6B" class="color-input">
+                    <input type="color" id="color2" value="#4ECDC4" class="color-input">
+                    <input type="color" id="color3" value="#45B7D1" class="color-input">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Core Foundation Shape:</label>
+                <div id="shapeSelector" class="grid grid-cols-2 gap-2 shape-selector">
+                    <button data-shape="circle" class="rounded-md selected flex justify-center items-center">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle></svg>
+                    </button>
+                    <button data-shape="square" class="rounded-md flex justify-center items-center">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect></svg>
+                    </button>
+                    <button data-shape="triangle" class="rounded-md flex justify-center items-center">
+                        <svg viewBox="0 0 24 24"><polygon points="12 2 22 22 2 22"></polygon></svg>
+                    </button>
+                    <button data-shape="spiral" class="rounded-md flex justify-center items-center">
+                         <svg viewBox="0 0 24 24"><path d="M12,12c0,0,8.2,0,8.2,8.2S12,20.2,3.8,20.2S3.8,3.8,12,3.8s8.2,0,8.2,8.2"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="textureSelect" class="block text-sm font-semibold text-slate-700 mb-1">Texture of Thoughts:</label>
+                <select id="textureSelect" class="select-field w-full p-2 rounded-md">
+                    <option value="smooth">Smooth</option>
+                    <option value="jagged">Jagged</option>
+                    <option value="flowing">Flowing</option>
+                    <option value="dense">Dense</option>
+                    <option value="scattered">Scattered</option>
+                    <option value="crystalline">Crystalline</option> 
+                </select>
+            </div>
+
+            <div>
+                <label for="wordInput" class="block text-sm font-semibold text-slate-700 mb-1">A Key Word/Aspiration:</label>
+                <input type="text" id="wordInput" placeholder="e.g., Growth, Peace, Focus" class="input-field w-full p-2 rounded-md">
+            </div>
+            
+            <div class="pt-4 border-t border-slate-200 space-y-3">
+                 <button id="generateButton" class="btn-primary w-full py-2.5 px-4 rounded-md font-semibold flex items-center justify-center">
+                    Generate Portrait
+                    <div id="generateSpinner" class="loading-spinner w-5 h-5 ml-2 hidden"></div>
+                </button>
+                 <button id="resetButton" class="btn-secondary w-full py-2 px-4 rounded-md font-semibold">Reset Inputs</button>
+                 <button id="saveButton" class="btn-secondary w-full py-2 px-4 rounded-md font-semibold">Save Portrait</button>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-2 panel rounded-lg p-4 md:p-6 space-y-4">
+            <div class="flex justify-center items-center bg-slate-100 rounded-md aspect-square overflow-hidden">
+                 <canvas id="artCanvas"></canvas>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-violet-700 header-font mb-2">Symbolic Reflection:</h3>
+                <div id="reflectionArea" class="p-4 bg-violet-50 text-violet-800 rounded-md min-h-[80px] text-sm italic">
+                    Your symbolic reflection will appear here after generation...
+                </div>
+                <div id="reflectionSpinner" class="loading-spinner my-4 hidden mx-auto"></div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="mt-10 mb-6 text-center text-slate-500 text-sm">
+        <p>&copy; <span id="currentYear"></span> Symbolic Self-Portrait. Visualizing your essence.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const color1Input = document.getElementById('color1');
+        const color2Input = document.getElementById('color2');
+        const color3Input = document.getElementById('color3');
+        const shapeSelector = document.getElementById('shapeSelector');
+        const textureSelect = document.getElementById('textureSelect');
+        const wordInput = document.getElementById('wordInput');
+        const generateButton = document.getElementById('generateButton');
+        const generateSpinner = document.getElementById('generateSpinner');
+        const resetButton = document.getElementById('resetButton');
+        const saveButton = document.getElementById('saveButton');
+        const reflectionArea = document.getElementById('reflectionArea');
+        const reflectionSpinner = document.getElementById('reflectionSpinner');
+        const apiKeyBanner = document.getElementById('apiKeyBanner');
+        const setApiKeyButton = document.getElementById('setApiKeyButton');
+
+        let userApiKey = sessionStorage.getItem("userGeminiApiKey_Symbolic") || "";
+        let currentSelectedShape = 'circle';
+        let artElements = []; // To store generated elements for animation
+        let animationFrameId = null;
+
+
+        function setCanvasSize() {
+            const parent = canvas.parentElement;
+            const size = Math.min(parent.clientWidth - 10, parent.clientHeight - 10, 500); 
+            canvas.width = size;
+            canvas.height = size;
+        }
+
+        function checkAndPromptApiKey() {
+            if (!userApiKey) {
+                const keyFromPrompt = prompt("Please enter your Google Gemini API Key for Symbolic Reflection:", "");
+                if (keyFromPrompt && keyFromPrompt.trim() !== "") {
+                    userApiKey = keyFromPrompt.trim();
+                    sessionStorage.setItem("userGeminiApiKey_Symbolic", userApiKey);
+                    apiKeyBanner.classList.add('hidden');
+                    return true;
+                } else {
+                    apiKeyBanner.classList.remove('hidden');
+                    reflectionArea.textContent = "API Key is required for reflection. Art will still generate.";
+                    return false;
+                }
+            }
+            apiKeyBanner.classList.add('hidden');
+            return true;
+        }
+        
+        setApiKeyButton.addEventListener('click', () => {
+            sessionStorage.removeItem("userGeminiApiKey_Symbolic");
+            userApiKey = "";
+            checkAndPromptApiKey();
+        });
+
+
+        shapeSelector.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (button && button.dataset.shape) {
+                currentSelectedShape = button.dataset.shape;
+                shapeSelector.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            }
+        });
+
+        function resetInputs() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            artElements = [];
+
+            color1Input.value = "#FF6B6B";
+            color2Input.value = "#4ECDC4";
+            color3Input.value = "#45B7D1";
+            shapeSelector.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+            shapeSelector.querySelector('button[data-shape="circle"]').classList.add('selected');
+            currentSelectedShape = 'circle';
+            textureSelect.value = "smooth";
+            wordInput.value = "";
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fdfbfb'; // Match body bg for initial clear
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+            reflectionArea.textContent = "Your symbolic reflection will appear here after generation...";
+        }
+
+        function seededRandom(seedStr) {
+            let h = 1779033703 ^ seedStr.length;
+            for (let i = 0; i < seedStr.length; i++) {
+                h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+                h = h << 13 | h >>> 19;
+            }
+            return function() {
+                h = Math.imul(h ^ h >>> 16, 2246822507);
+                h = Math.imul(h ^ h >>> 13, 3266489909);
+                return (h ^= h >>> 16) >>> 0;
+            }
+        }
+
+        function generateArtElements() {
+            artElements = []; // Clear previous elements
+            const colors = [color1Input.value, color2Input.value, color3Input.value].filter(c => c.trim() !== "");
+            if (colors.length === 0) colors.push("#cccccc"); // Default color if none selected
+            
+            const shape = currentSelectedShape;
+            const texture = textureSelect.value;
+            const word = wordInput.value.trim() || "essence"; 
+
+            const rng = seededRandom(word + colors.join('') + shape + texture + Date.now()); 
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(centerX, centerY) * 0.85;
+
+            const numElementsBase = Math.max(8, Math.min(40, word.length * 2 + rng()%15));
+            let numElements = numElementsBase;
+
+            if (texture === 'dense') numElements = Math.floor(numElementsBase * 1.8);
+            if (texture === 'scattered') numElements = Math.floor(numElementsBase * 2.2);
+            if (texture === 'crystalline') numElements = Math.floor(numElementsBase * 0.7);
+
+
+            for (let i = 0; i < numElements; i++) {
+                const element = {
+                    color: colors[rng() % colors.length],
+                    shape: shape, // Store base shape
+                    texture: texture,
+                    x: centerX + (rng() % (maxRadius * 2)) - maxRadius,
+                    y: centerY + (rng() % (maxRadius * 2)) - maxRadius,
+                    size: (rng() % 25) + 8,
+                    opacity: 0.4 + (rng() % 60) / 100, // 0.4 to 1.0
+                    angle: (rng() % 360) * (Math.PI / 180), // For rotation or direction
+                    // Animation properties
+                    dx: ((rng() % 100) / 100 - 0.5) * 0.3, // Slow drift
+                    dy: ((rng() % 100) / 100 - 0.5) * 0.3,
+                    dOpacity: ((rng() % 100) / 10000 - 0.0005) * 0.2, // Slow fade in/out
+                    dSize: ((rng() % 100) / 1000 - 0.05) * 0.1, // Slow pulse
+                    rotationSpeed: ((rng() % 100) / 1000 - 0.005) * 0.1,
+                    lineWidth: (texture === 'jagged' || texture === 'dense' || texture === 'crystalline') ? (rng()%3)+1 : (rng()%2)+0.5,
+                };
+                if (texture === 'scattered') element.size *= 0.7;
+                if (texture === 'dense') element.size *= 0.9;
+                if (texture === 'crystalline') element.size = (rng() % 15) + 5;
+
+                artElements.push(element);
+            }
+
+            // Add some "energy lines"
+            const numLines = Math.floor(numElements / 4) + (rng() % 3);
+            for (let i = 0; i < numLines && artElements.length > 1; i++) {
+                const el1 = artElements[rng() % artElements.length];
+                const el2 = artElements[rng() % artElements.length];
+                if (el1 !== el2) {
+                    artElements.push({
+                        type: 'energyLine',
+                        x1: el1.x, y1: el1.y,
+                        x2: el2.x, y2: el2.y,
+                        color: colors[rng() % colors.length],
+                        opacity: 0.2 + (rng() % 30) / 100,
+                        dOpacity: ((rng() % 100) / 10000 - 0.0005) * 0.5,
+                        lineWidth: (rng()%2)+0.5,
+                    });
+                }
+            }
+        }
+
+        function animateArt() {
+            ctx.fillStyle = '#ffffff'; // Clear with white background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            artElements.forEach(el => {
+                // Update animation properties
+                el.x += el.dx || 0;
+                el.y += el.dy || 0;
+                el.opacity += el.dOpacity || 0;
+                el.size += el.dSize || 0;
+                el.angle += el.rotationSpeed || 0;
+
+                // Keep within bounds (simple wrap around)
+                if (el.x > canvas.width + (el.size || 0)) el.x = -(el.size || 0);
+                if (el.x < -(el.size || 0)) el.x = canvas.width + (el.size || 0);
+                if (el.y > canvas.height + (el.size || 0)) el.y = -(el.size || 0);
+                if (el.y < -(el.size || 0)) el.y = canvas.height + (el.size || 0);
+
+                // Clamp opacity and size
+                if (el.opacity > 1) { el.opacity = 1; el.dOpacity *= -1; }
+                if (el.opacity < 0.1) { el.opacity = 0.1; el.dOpacity *= -1; }
+                if (el.size > 40) { el.size = 40; el.dSize *= -1; }
+                if (el.size < 5) { el.size = 5; el.dSize *= -1; }
+
+
+                ctx.save();
+                ctx.globalAlpha = el.opacity;
+                ctx.strokeStyle = el.color;
+                ctx.fillStyle = el.color;
+                ctx.lineWidth = el.lineWidth || 1;
+                
+                if (el.type === 'energyLine') {
+                    ctx.beginPath();
+                    ctx.moveTo(el.x1, el.y1);
+                    // Add a slight curve or jitter to lines for "flowing" or "jagged"
+                    if (el.texture === 'flowing' || textureSelect.value === 'flowing') {
+                         const midX = (el.x1 + el.x2) / 2 + (Math.random() - 0.5) * 20;
+                         const midY = (el.y1 + el.y2) / 2 + (Math.random() - 0.5) * 20;
+                         ctx.quadraticCurveTo(midX, midY, el.x2, el.y2);
+                    } else {
+                        ctx.lineTo(el.x2, el.y2);
+                    }
+                    ctx.stroke();
+                } else {
+                    // Draw main element
+                    ctx.translate(el.x, el.y);
+                    ctx.rotate(el.angle);
+                    ctx.beginPath();
+
+                    const shapeToDraw = el.shape; // Use the stored base shape
+                    const textureToDraw = el.texture; // Use the stored texture
+
+                    if (shapeToDraw === 'circle') {
+                        ctx.arc(0, 0, el.size, 0, Math.PI * 2);
+                    } else if (shapeToDraw === 'square') {
+                        ctx.rect(-el.size / 2, -el.size / 2, el.size, el.size);
+                    } else if (shapeToDraw === 'triangle') {
+                        ctx.moveTo(0, -el.size / Math.sqrt(3));
+                        ctx.lineTo(-el.size / 2, el.size / (2 * Math.sqrt(3)));
+                        ctx.lineTo(el.size / 2, el.size / (2 * Math.sqrt(3)));
+                        ctx.closePath();
+                    } else if (shapeToDraw === 'spiral') {
+                        ctx.moveTo(0,0);
+                        for(let j=0; j<10; j++){
+                            const spAngle = j * 0.5 + el.angle * 5; // Use element's angle for spiral rotation
+                            const spRad = j * (el.size/15);
+                            ctx.lineTo(Math.cos(spAngle) * spRad, Math.sin(spAngle) * spRad);
+                        }
+                    }
+                    
+                    // Texture-based rendering
+                    if (textureToDraw === 'smooth' || textureToDraw === 'flowing') {
+                        ctx.fill();
+                    } else if (textureToDraw === 'crystalline') {
+                        ctx.stroke(); // Draw outline
+                        // Add some internal "facets" for crystalline
+                        for(let k=0; k<3; k++) {
+                            ctx.moveTo(0,0);
+                            ctx.lineTo((Math.random()-0.5) * el.size, (Math.random()-0.5) * el.size);
+                            ctx.stroke();
+                        }
+                    } else { // jagged, dense, scattered default to stroke or a mix
+                        ctx.stroke();
+                        if (textureToDraw === 'dense' && Math.random() < 0.3) ctx.fill(); // Occasionally fill dense
+                    }
+                }
+                ctx.restore();
+            });
+
+            animationFrameId = requestAnimationFrame(animateArt);
+        }
+
+        function startArtGenerationProcess() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            generateSpinner.classList.remove('hidden');
+            generateButton.disabled = true;
+            
+            // Use a timeout to allow spinner to show before potentially heavy generation
+            setTimeout(() => {
+                generateArtElements(); // Prepare element data
+                animateArt();          // Start animation loop
+                
+                generateSpinner.classList.add('hidden');
+                generateButton.disabled = false;
+                getAIReflection();
+            }, 50); 
+        }
+        
+        async function getAIReflection() {
+            if (!checkAndPromptApiKey()) { 
+                reflectionArea.textContent = "API Key not set. Cannot generate reflection.";
+                return;
+            }
+
+            reflectionSpinner.classList.remove('hidden');
+            reflectionArea.textContent = "Generating reflection...";
+
+            const colors = [color1Input.value, color2Input.value, color3Input.value].filter(c => c);
+            const shape = currentSelectedShape;
+            const texture = textureSelect.value;
+            const word = wordInput.value.trim() || "essence";
+
+            const prompt = `Based on the following symbolic inputs chosen by a user for a self-portrait:
+- Colors: ${colors.join(', ')}
+- Core Shape: ${shape}
+- Texture of Thoughts: ${texture}
+- Key Word/Aspiration: ${word}
+
+Generate a short, poetic, and insightful reflection (2-3 sentences) about the possible meaning or feeling these symbols might convey together. Be abstract and encouraging. Do not mention that these are inputs or that you are an AI. Just provide the reflection.`;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userApiKey}`;
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.8, maxOutputTokens: 150 }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("API Error:", errorData);
+                    reflectionArea.textContent = `Error from AI: ${errorData.error?.message || response.statusText}.`;
+                     if (response.status === 400 && errorData.error?.message.toLowerCase().includes("api key not valid")) {
+                        sessionStorage.removeItem("userGeminiApiKey_Symbolic"); 
+                        userApiKey = "";
+                        apiKeyBanner.classList.remove('hidden');
+                    }
+                    return;
+                }
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                    reflectionArea.textContent = result.candidates[0].content.parts[0].text;
+                } else {
+                    reflectionArea.textContent = "Could not generate a reflection at this time.";
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                reflectionArea.textContent = "Failed to connect to AI for reflection. Please check your connection.";
+            } finally {
+                reflectionSpinner.classList.add('hidden');
+            }
+        }
+
+        generateButton.addEventListener('click', startArtGenerationProcess);
+        resetButton.addEventListener('click', resetInputs);
+        saveButton.addEventListener('click', () => {
+            // Ensure animation is paused or a static frame is drawn before saving
+            // For simplicity, we save the current frame. For perfect save, one might stop animation, draw once, then save.
+            const imageName = `symbolic_portrait_${wordInput.value.replace(/\s+/g, '_') || "untitled"}_${Date.now()}.png`;
+            const link = document.createElement('a');
+            link.download = imageName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        window.addEventListener('load', () => {
+            setCanvasSize();
+            resetInputs(); 
+            if (!userApiKey) {
+                apiKeyBanner.classList.remove('hidden');
+            }
+             // Add new texture option dynamically
+            const crystallineOption = document.createElement('option');
+            crystallineOption.value = "crystalline";
+            crystallineOption.textContent = "Crystalline";
+            textureSelect.appendChild(crystallineOption);
+        });
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+            // If artElements exist, re-trigger generation to fit new canvas size
+            if (artElements.length > 0) {
+                 startArtGenerationProcess();
+            } else {
+                // Just clear and fill if no art was present
+                ctx.fillStyle = '#fdfbfb';
+                ctx.fillRect(0,0,canvas.width, canvas.height);
+            }
+        });
+
+    </script>
+</body>
+</html>

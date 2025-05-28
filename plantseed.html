@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithmic Botanist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f0f4f8; /* Light, airy background */
+            color: #334155; /* Tailwind slate-700 */
+        }
+        .header-font {
+            font-family: 'Playfair Display', serif;
+        }
+        .panel {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0; /* Tailwind slate-200 */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .btn-primary {
+            background-color: #22c55e; /* Tailwind green-500 */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #16a34a; /* Tailwind green-600 */
+        }
+        .btn-secondary {
+            background-color: #64748b; /* Tailwind slate-500 */
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #475569; /* Tailwind slate-600 */
+        }
+        .input-field, .select-field {
+            background-color: #f8fafc; /* Tailwind slate-50 */
+            border: 1px solid #cbd5e1; /* Tailwind slate-300 */
+            color: #334155;
+        }
+        .input-field:focus, .select-field:focus {
+            border-color: #22c55e; /* Green-500 */
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+            outline: none;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0; /* slate-200 */
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #22c55e; /* green-500 */
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 2px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #22c55e;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 2px rgba(0,0,0,0.2);
+        }
+        #growthCanvas {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            display: block; /* Remove extra space below canvas */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-6">
+
+    <header class="my-6 md:my-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold text-green-600 header-font">Algorithmic Botanist</h1>
+        <p class="text-lg text-slate-600 mt-2">Cultivate unique digital flora with code.</p>
+    </header>
+
+    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <aside class="lg:col-span-1 panel p-6 rounded-lg space-y-6 h-fit sticky top-6">
+            <div>
+                <label for="algorithmSelect" class="block text-sm font-semibold text-slate-700 mb-1">Growth Algorithm:</label>
+                <select id="algorithmSelect" class="select-field w-full p-2 rounded-md">
+                    <option value="recursiveTree">Recursive Tree</option>
+                    <option value="spiralPhyllotaxis">Spiral Phyllotaxis</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="paletteSelect" class="block text-sm font-semibold text-slate-700 mb-1">Color Palette:</label>
+                <select id="paletteSelect" class="select-field w-full p-2 rounded-md">
+                    <option value="forest">Forest Greens</option>
+                    <option value="desert">Desert Blooms</option>
+                    <option value="ocean">Oceanic Hues</option>
+                    <option value="nebula">Nebula Swirls</option>
+                    <option value="monochrome">Monochrome</option>
+                    <option value="sunset">Sunset Glow</option>
+                </select>
+            </div>
+
+            <div id="recursiveTreeControls" class="space-y-4 border-t border-slate-200 pt-4">
+                <h3 class="text-md font-semibold text-green-700">Tree Parameters</h3>
+                <div>
+                    <label for="maxDepth" class="block text-xs font-medium text-slate-600">Max Depth: <span id="maxDepthValue">5</span></label>
+                    <input type="range" id="maxDepth" min="1" max="10" value="5" class="w-full">
+                </div>
+                <div>
+                    <label for="branchLength" class="block text-xs font-medium text-slate-600">Initial Length: <span id="branchLengthValue">80</span></label>
+                    <input type="range" id="branchLength" min="20" max="150" value="80" class="w-full">
+                </div>
+                <div>
+                    <label for="lengthFactor" class="block text-xs font-medium text-slate-600">Length Factor: <span id="lengthFactorValue">0.7</span></label>
+                    <input type="range" id="lengthFactor" min="0.4" max="0.9" value="0.7" step="0.01" class="w-full">
+                </div>
+                <div>
+                    <label for="branchAngle" class="block text-xs font-medium text-slate-600">Branch Angle: <span id="branchAngleValue">30</span>°</label>
+                    <input type="range" id="branchAngle" min="10" max="75" value="30" class="w-full">
+                </div>
+                <div>
+                    <label for="initialWidth" class="block text-xs font-medium text-slate-600">Initial Width: <span id="initialWidthValue">8</span>px</label>
+                    <input type="range" id="initialWidth" min="1" max="20" value="8" class="w-full">
+                </div>
+                 <div>
+                    <label for="flowerChance" class="block text-xs font-medium text-slate-600">Flower Chance: <span id="flowerChanceValue">0.3</span></label>
+                    <input type="range" id="flowerChance" min="0" max="1" value="0.3" step="0.05" class="w-full">
+                </div>
+            </div>
+
+            <div id="spiralPhyllotaxisControls" class="space-y-4 border-t border-slate-200 pt-4 hidden">
+                <h3 class="text-md font-semibold text-green-700">Spiral Parameters</h3>
+                <div>
+                    <label for="numDots" class="block text-xs font-medium text-slate-600">Number of Dots: <span id="numDotsValue">300</span></label>
+                    <input type="range" id="numDots" min="50" max="1000" value="300" step="10" class="w-full">
+                </div>
+                <div>
+                    <label for="angleConstant" class="block text-xs font-medium text-slate-600">Angle Constant: <span id="angleConstantValue">137.5</span>°</label>
+                    <input type="range" id="angleConstant" min="90" max="180" value="137.5" step="0.1" class="w-full">
+                </div>
+                <div>
+                    <label for="scaleFactor" class="block text-xs font-medium text-slate-600">Scale Factor: <span id="scaleFactorValue">5</span></label>
+                    <input type="range" id="scaleFactor" min="1" max="15" value="5" step="0.1" class="w-full">
+                </div>
+                <div>
+                    <label for="dotSize" class="block text-xs font-medium text-slate-600">Dot Size: <span id="dotSizeValue">4</span>px</label>
+                    <input type="range" id="dotSize" min="1" max="10" value="4" class="w-full">
+                </div>
+            </div>
+            
+            <div class="pt-4 border-t border-slate-200 space-y-3">
+                 <button id="plantSeedButton" class="btn-primary w-full py-2.5 px-4 rounded-md font-semibold">Plant Seed</button>
+                 <button id="resetControlsButton" class="btn-secondary w-full py-2 px-4 rounded-md font-semibold">Reset Controls</button>
+                 <button id="saveImageButton" class="btn-secondary w-full py-2 px-4 rounded-md font-semibold">Save as Image</button>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-2 panel rounded-lg flex justify-center items-center p-2 md:p-4">
+            <canvas id="growthCanvas"></canvas>
+        </main>
+    </div>
+
+    <footer class="mt-10 mb-6 text-center text-slate-500 text-sm">
+        <p>&copy; <span id="currentYear"></span> Algorithmic Botanist. Create unique digital flora.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const canvas = document.getElementById('growthCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Control Elements
+        const algorithmSelect = document.getElementById('algorithmSelect');
+        const paletteSelect = document.getElementById('paletteSelect');
+        const plantSeedButton = document.getElementById('plantSeedButton');
+        const resetControlsButton = document.getElementById('resetControlsButton');
+        const saveImageButton = document.getElementById('saveImageButton');
+
+        const recursiveTreeControlsUI = document.getElementById('recursiveTreeControls');
+        const maxDepthSlider = document.getElementById('maxDepth');
+        const branchLengthSlider = document.getElementById('branchLength');
+        const lengthFactorSlider = document.getElementById('lengthFactor');
+        const branchAngleSlider = document.getElementById('branchAngle');
+        const initialWidthSlider = document.getElementById('initialWidth');
+        const flowerChanceSlider = document.getElementById('flowerChance');
+
+
+        const spiralControlsUI = document.getElementById('spiralPhyllotaxisControls');
+        const numDotsSlider = document.getElementById('numDots');
+        const angleConstantSlider = document.getElementById('angleConstant');
+        const scaleFactorSlider = document.getElementById('scaleFactor');
+        const dotSizeSlider = document.getElementById('dotSize');
+
+        // Value Displays
+        const valueDisplays = {
+            maxDepth: document.getElementById('maxDepthValue'),
+            branchLength: document.getElementById('branchLengthValue'),
+            lengthFactor: document.getElementById('lengthFactorValue'),
+            branchAngle: document.getElementById('branchAngleValue'),
+            initialWidth: document.getElementById('initialWidthValue'),
+            flowerChance: document.getElementById('flowerChanceValue'),
+            numDots: document.getElementById('numDotsValue'),
+            angleConstant: document.getElementById('angleConstantValue'),
+            scaleFactor: document.getElementById('scaleFactorValue'),
+            dotSize: document.getElementById('dotSizeValue'),
+        };
+        
+        const defaultValues = {
+            recursiveTree: { maxDepth: 5, branchLength: 80, lengthFactor: 0.7, branchAngle: 30, initialWidth: 8, flowerChance: 0.3 },
+            spiralPhyllotaxis: { numDots: 300, angleConstant: 137.5, scaleFactor: 5, dotSize: 4 }
+        };
+
+        const palettes = {
+            forest: { background: '#f0f4f8', stem: '#5d4037', leaf: ['#4CAF50', '#66BB6A', '#81C784'], flower: ['#FFEB3B', '#FFC107'] },
+            desert: { background: '#fff3e0', stem: '#8d6e63', leaf: ['#a1887f', '#bcaaa4'], flower: ['#ff7043', '#ffab91', '#f4511e'] },
+            ocean: { background: '#e0f7fa', stem: '#006064', leaf: ['#0097a7', '#26c6da', '#4dd0e1'], flower: ['#80deea', '#b2ebf2'] },
+            nebula: { background: '#1a237e', stem: '#5c6bc0', leaf: ['#7e57c2', '#9575cd', '#ba68c8'], flower: ['#f06292', '#ce93d8'] },
+            monochrome: { background: '#eeeeee', stem: '#424242', leaf: ['#757575', '#9e9e9e', '#bdbdbd'], flower: ['#616161', '#fafafa'] },
+            sunset: { background: '#fff8e1', stem: '#d84315', leaf: ['#ff6f00', '#ff8f00', '#ffa000'], flower: ['#ef5350', '#ffc107'] }
+        };
+
+        let currentAnimationId = null;
+        let currentDrawingOperations = [];
+        let operationIndex = 0;
+
+        function setCanvasSize() {
+            const parent = canvas.parentElement;
+            const size = Math.min(parent.clientWidth - 30, parent.clientHeight -30, 600); // Max 600px, with padding
+            canvas.width = size;
+            canvas.height = size;
+        }
+
+        function updateSliderValue(sliderId, displayId) {
+            const slider = document.getElementById(sliderId);
+            const display = document.getElementById(displayId);
+            if (slider && display) {
+                display.textContent = slider.value;
+                slider.addEventListener('input', () => display.textContent = slider.value);
+            }
+        }
+        
+        function setupControlListeners() {
+            Object.keys(valueDisplays).forEach(key => {
+                 const slider = document.getElementById(key);
+                 if(slider) {
+                    valueDisplays[key].textContent = slider.value; // Initial display
+                    slider.addEventListener('input', () => valueDisplays[key].textContent = slider.value);
+                 }
+            });
+
+            algorithmSelect.addEventListener('change', () => {
+                const selectedAlgorithm = algorithmSelect.value;
+                recursiveTreeControlsUI.classList.toggle('hidden', selectedAlgorithm !== 'recursiveTree');
+                spiralControlsUI.classList.toggle('hidden', selectedAlgorithm !== 'spiralPhyllotaxis');
+            });
+        }
+        
+        function resetAllControls() {
+            algorithmSelect.value = "recursiveTree";
+            paletteSelect.value = "forest";
+
+            Object.entries(defaultValues.recursiveTree).forEach(([key, value]) => {
+                document.getElementById(key).value = value;
+                if (valueDisplays[key]) valueDisplays[key].textContent = value;
+            });
+            Object.entries(defaultValues.spiralPhyllotaxis).forEach(([key, value]) => {
+                document.getElementById(key).value = value;
+                if (valueDisplays[key]) valueDisplays[key].textContent = value;
+            });
+            algorithmSelect.dispatchEvent(new Event('change')); // Trigger visibility update
+        }
+
+
+        function drawRecursiveTree() {
+            const palette = palettes[paletteSelect.value];
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const depth = parseInt(maxDepthSlider.value);
+            const startLength = parseInt(branchLengthSlider.value);
+            const lenFactor = parseFloat(lengthFactorSlider.value);
+            const angle = parseFloat(branchAngleSlider.value);
+            const startWidth = parseFloat(initialWidthSlider.value);
+            const flowerProb = parseFloat(flowerChanceSlider.value);
+
+            currentDrawingOperations = []; // Reset operations
+            operationIndex = 0;
+
+            function generateBranchOperations(x, y, currentAngle, currentLength, currentDepth, currentWidth) {
+                if (currentDepth > depth || currentLength < 2) {
+                    // Maybe draw a flower/fruit at the tip
+                    if (Math.random() < flowerProb) {
+                         const flowerColor = palette.flower[Math.floor(Math.random() * palette.flower.length)];
+                         const flowerSize = Math.max(2, currentWidth * 0.8 + Math.random() * 4);
+                         currentDrawingOperations.push({ type: 'flower', x, y, size: flowerSize, color: flowerColor });
+                    }
+                    return;
+                }
+
+                const endX = x + Math.cos(degToRad(currentAngle)) * currentLength;
+                const endY = y + Math.sin(degToRad(currentAngle)) * currentLength;
+                
+                currentDrawingOperations.push({ type: 'branch', x1: x, y1: y, x2: endX, y2: endY, width: currentWidth, color: palette.stem });
+
+                // Add leaves along the branch (simplified)
+                if (currentLength > 10 && currentDepth > 0) { // Only add leaves to substantial branches
+                    for (let i = 0; i < 3; i++) { // Add a few leaves
+                        const leafPos = Math.random(); // 0 to 1 along the branch
+                        const leafX = x + (endX - x) * leafPos;
+                        const leafY = y + (endY - y) * leafPos;
+                        const leafAngle = currentAngle + (Math.random() - 0.5) * 90; // Random angle relative to branch
+                        const leafLength = currentLength * 0.2 * (Math.random() * 0.5 + 0.5);
+                        const leafColor = palette.leaf[Math.floor(Math.random() * palette.leaf.length)];
+                        currentDrawingOperations.push({ type: 'leaf', x: leafX, y: leafY, angle: leafAngle, length: leafLength, color: leafColor });
+                    }
+                }
+
+                const newLength = currentLength * lenFactor;
+                const newWidth = Math.max(1, currentWidth * 0.7);
+
+                // Left branch
+                generateBranchOperations(endX, endY, currentAngle - angle + (Math.random()-0.5)*10, newLength, currentDepth + 1, newWidth);
+                // Right branch
+                generateBranchOperations(endX, endY, currentAngle + angle + (Math.random()-0.5)*10, newLength, currentDepth + 1, newWidth);
+            }
+            
+            generateBranchOperations(canvas.width / 2, canvas.height, -90, startLength, 0, startWidth); // Start pointing up
+            animateDrawing();
+        }
+
+        function drawSpiralPhyllotaxis() {
+            const palette = palettes[paletteSelect.value];
+            ctx.fillStyle = palette.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const n = parseInt(numDotsSlider.value);
+            const angleC = parseFloat(angleConstantSlider.value); // Angle in degrees
+            const scale = parseFloat(scaleFactorSlider.value);
+            const dotR = parseFloat(dotSizeSlider.value);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            currentDrawingOperations = [];
+            operationIndex = 0;
+
+            for (let i = 0; i < n; i++) {
+                const angle = i * degToRad(angleC);
+                const radius = scale * Math.sqrt(i);
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                
+                // Vary color and size slightly based on distance or index
+                const colorIndex = i % palette.flower.length;
+                const dotColor = palette.flower[colorIndex];
+                const sizeVariation = (Math.sin(i * 0.1) + 1.5) / 2.5; // 0.2 to 1
+                const currentDotSize = dotR * sizeVariation + 1;
+
+                currentDrawingOperations.push({ type: 'dot', x, y, radius: currentDotSize, color: dotColor });
+            }
+            animateDrawing();
+        }
+
+
+        function animateDrawing() {
+            if (currentAnimationId) cancelAnimationFrame(currentAnimationId);
+
+            const opsPerFrame = Math.max(1, Math.floor(currentDrawingOperations.length / 150)); // Adjust for speed
+
+            function drawFrame() {
+                for (let i = 0; i < opsPerFrame && operationIndex < currentDrawingOperations.length; i++, operationIndex++) {
+                    const op = currentDrawingOperations[operationIndex];
+                    if (op.type === 'branch') {
+                        ctx.beginPath();
+                        ctx.moveTo(op.x1, op.y1);
+                        ctx.lineTo(op.x2, op.y2);
+                        ctx.lineWidth = op.width;
+                        ctx.strokeStyle = op.color;
+                        ctx.lineCap = 'round';
+                        ctx.stroke();
+                    } else if (op.type === 'flower') {
+                        ctx.beginPath();
+                        ctx.arc(op.x, op.y, op.size, 0, Math.PI * 2);
+                        ctx.fillStyle = op.color;
+                        ctx.fill();
+                    } else if (op.type === 'leaf') {
+                        ctx.save();
+                        ctx.translate(op.x, op.y);
+                        ctx.rotate(degToRad(op.angle));
+                        ctx.beginPath();
+                        // Simple elliptical leaf
+                        ctx.ellipse(0, 0, op.length, op.length / 3, 0, 0, Math.PI * 2);
+                        ctx.fillStyle = op.color;
+                        ctx.fill();
+                        ctx.restore();
+                    } else if (op.type === 'dot') {
+                        ctx.beginPath();
+                        ctx.arc(op.x, op.y, op.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = op.color;
+                        ctx.fill();
+                    }
+                }
+
+                if (operationIndex < currentDrawingOperations.length) {
+                    currentAnimationId = requestAnimationFrame(drawFrame);
+                } else {
+                    currentAnimationId = null;
+                }
+            }
+            drawFrame();
+        }
+
+
+        function degToRad(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        plantSeedButton.addEventListener('click', () => {
+            if (currentAnimationId) {
+                cancelAnimationFrame(currentAnimationId);
+                currentAnimationId = null;
+            }
+            const selectedAlgorithm = algorithmSelect.value;
+            if (selectedAlgorithm === 'recursiveTree') {
+                drawRecursiveTree();
+            } else if (selectedAlgorithm === 'spiralPhyllotaxis') {
+                drawSpiralPhyllotaxis();
+            }
+        });
+        
+        resetControlsButton.addEventListener('click', resetAllControls);
+
+        saveImageButton.addEventListener('click', () => {
+            const imageName = `algorithmic_plant_${algorithmSelect.value}_${new Date().toISOString().slice(0,10)}.png`;
+            const link = document.createElement('a');
+            link.download = imageName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Initial Setup
+        window.addEventListener('load', () => {
+            setCanvasSize();
+            setupControlListeners();
+            resetAllControls(); // Set default values and trigger UI updates
+            // Optionally draw a default plant on load
+            // plantSeedButton.click(); 
+        });
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+            // Optionally redraw if a plant was on canvas
+            // if (currentDrawingOperations.length > 0) plantSeedButton.click();
+        });
+        
+        // Trigger initial UI update for algorithm controls visibility
+        algorithmSelect.dispatchEvent(new Event('change'));
+
+    </script>
+</body>
+</html>
