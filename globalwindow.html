@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Window Swap - Random Views</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to bottom, #89CFF0 0%, #B2FFFF 100%); /* Sky blue gradient */
+            color: #333;
+        }
+        .title-font {
+            font-family: 'Playfair Display', serif;
+        }
+        #windowViewContainer {
+            width: 100%;
+            max-width: 800px; /* Max width for the "window" */
+            aspect-ratio: 16 / 9; /* Common aspect ratio for views */
+            background-color: #000; /* Black background for the frame effect */
+            border: 10px solid #8B4513; /* Wooden frame color */
+            border-radius: 10px; /* Rounded corners for the frame */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 0 5px #A0522D inset; /* Outer shadow and inner frame highlight */
+            overflow: hidden; /* Ensures image stays within frame */
+            position: relative;
+        }
+        #windowImage {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover the area, cropping if necessary */
+            display: block;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .swap-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .swap-button:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        .swap-button:active {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .location-tag { 
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 0 0 5px 5px;
+            position: absolute;
+            bottom: 10px; 
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            z-index: 10;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5; 
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 selection:bg-blue-200 selection:text-blue-800">
+
+    <div class="bg-white/70 backdrop-blur-md shadow-xl rounded-lg p-6 md:p-10 w-full max-w-3xl text-center">
+        <header class="mb-6">
+            <h1 class="title-font text-4xl md:text-5xl font-bold text-sky-700">
+                Global Window Swap
+            </h1>
+            <p class="mt-2 text-gray-600 text-sm md:text-base">Discover a new, random view from somewhere out there!</p>
+        </header>
+
+        <div id="windowViewContainer" class="mx-auto mb-6 relative">
+            <img id="windowImage" src="https://placehold.co/800x450/E0E0E0/777777?text=Welcome!+Click+Swap+View." alt="View from a window"
+                 onerror="handleImageError(this, 'Initial placeholder failed')">
+            <div id="loader" class="loader hidden"></div>
+            <div id="viewInfo" class="location-tag">Your Next View Awaits...</div>
+        </div>
+
+        <div class="mb-4">
+            <button id="swapViewButton" class="swap-button bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-75 text-lg">
+                Swap View
+            </button>
+        </div>
+
+        <footer class="mt-6">
+            <p class="text-xs text-gray-500">
+                Images sourced randomly. Each view is a surprise! (All images are SFW)
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const swapViewButton = document.getElementById('swapViewButton');
+        const windowImage = document.getElementById('windowImage');
+        const viewInfoDisplay = document.getElementById('viewInfo');
+        const loader = document.getElementById('loader');
+
+        const imageWidth = 800;
+        const imageHeight = 450;
+
+        function getRandomImageUrl() {
+            const cacheBuster = new Date().getTime();
+            return `https://picsum.photos/${imageWidth}/${imageHeight}?random=${cacheBuster}`;
+        }
+
+        function handleImageError(imageElement, errorMessage) {
+            console.error("Image loading error:", errorMessage);
+            imageElement.src = `https://placehold.co/${imageWidth}x${imageHeight}/FF7F7F/FFFFFF?text=Oops!+View+Unavailable`;
+            viewInfoDisplay.textContent = 'Could not load view. Try again!';
+            loader.classList.add('hidden');
+            windowImage.style.opacity = '1';
+        }
+
+        function loadRandomView() {
+            loader.classList.remove('hidden');
+            windowImage.style.opacity = '0.3'; 
+            viewInfoDisplay.style.opacity = '0'; 
+
+            const newImageUrl = getRandomImageUrl();
+            
+            console.log("Attempting to load image:", newImageUrl); 
+
+            const tempImage = new Image();
+            tempImage.onload = () => {
+                console.log("Image loaded successfully:", newImageUrl);
+                windowImage.src = newImageUrl;
+                viewInfoDisplay.textContent = 'A Glimpse from Somewhere...';
+                loader.classList.add('hidden');
+                windowImage.style.opacity = '1';
+                viewInfoDisplay.style.opacity = '1';
+            };
+            tempImage.onerror = (err) => {
+                console.error("tempImage.onerror triggered for URL:", newImageUrl, "Error event:", err);
+                handleImageError(windowImage, `Failed to load: ${newImageUrl}`);
+            };
+            tempImage.src = newImageUrl; 
+        }
+
+        swapViewButton.addEventListener('click', loadRandomView);
+
+        window.addEventListener('load', () => {
+            viewInfoDisplay.textContent = "Click 'Swap View' for a surprise!";
+        });
+    </script>
+
+</body>
+</html>

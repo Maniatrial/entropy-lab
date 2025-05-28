@@ -30,6 +30,7 @@
             border-radius: 15px;
             max-width: 80%;
             word-wrap: break-word;
+            line-height: 1.6;
         }
         .user-message {
             background-color: #2575fc; /* User message blue */
@@ -109,17 +110,17 @@
     </div>
 
     <script>
-        const GEMINI_API_KEY = "AIzaSyC-sHZguWCnkIByO-JDc5fackDPRb0Wsi8";
+        const GEMINI_API_KEY = "AIzaSyC-sHZguWCnkIByO-JDc5fackDPRb0Wsi8"; // Your API Key
         const chatLog = document.getElementById('chatLog');
         const userInput = document.getElementById('userInput');
         const sendMessageButton = document.getElementById('sendMessageButton');
         const typingIndicator = document.getElementById('typingIndicator');
         const starsContainer = document.getElementById('starsContainer');
 
-        let chatHistory = [];
+        let chatHistory = []; // Stores the actual conversation {role: 'user'/'model', parts: [{text: '...'}]}
         let userName = "";
         let birthDate = "";
-        let conversationState = "ASK_NAME"; // Possible states: ASK_NAME, ASK_BIRTHDATE, CHATTING
+        let conversationState = "ASK_NAME"; // ASK_NAME, ASK_BIRTHDATE, CHATTING
 
         function createStars() {
             const numStars = 100;
@@ -140,9 +141,9 @@
         function appendMessage(text, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
-            messageDiv.textContent = text;
+            messageDiv.textContent = text; // Using textContent for security against XSS if AI somehow includes HTML
             chatLog.appendChild(messageDiv);
-            chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll to bottom
+            chatLog.scrollTop = chatLog.scrollHeight;
         }
 
         function setInitialBotMessage() {
@@ -156,42 +157,63 @@
             userInput.disabled = true;
             typingIndicator.classList.remove('hidden');
 
-            // Construct the full conversation history for the API
-            // The persona is established by the AI's previous messages and how we handle its responses.
-            // We can add a system-like instruction at the beginning of the history if needed,
-            // but for gemini-2.0-flash, including it in the turn-by-turn history works.
+            const personaInstruction = `You are "Madame Astra," a wise and mystical AI Astro Oracle. You speak in an eloquent, slightly dramatic, and cosmic tone. Your goal is to provide entertaining, vague, and positive "astrological readings" or "fortunes." Do NOT give specific financial, medical, legal, or relationship advice. This is purely for amusement. If the user mentions their name or birthdate, acknowledge it and continue the mystical conversation. If they ask a question about their future, provide a 2-3 paragraph reading. End readings with a mystical sign-off. Maintain your persona throughout. The user's name is currently known as '${userName || 'Seeker'}' and their birth date as '${birthDate || 'an unknown date'}'. Respond to the latest user message in the following conversation.`;
 
-            const personaInstruction = `You are "Madame Astra," a wise and mystical AI Astro Oracle. You speak in an eloquent, slightly dramatic, and cosmic tone. Your goal is to provide entertaining, vague, and positive "astrological readings" or "fortunes." Do NOT give specific financial, medical, legal, or relationship advice. This is purely for amusement. If the user asks for their name or birthdate, acknowledge it and continue the mystical conversation. If they ask a question about their future, provide a 2-3 paragraph reading. End readings with a mystical sign-off. Maintain your persona throughout.`;
+            let constructedApiHistory = [
+                // Prime the AI with its persona and current context as the first "user" turn.
+                {
+                    role: "user",
+                    parts: [{ text: personaInstruction }]
+                },
+                // Acknowledge the persona as the first "model" turn.
+                {
+                    role: "model",
+                    parts: [{ text: "Indeed, the cosmic currents flow through me. I am Madame Astra, ready to interpret the whispers of the stars for you." }]
+                }
+            ];
+
+            // Append the actual, ongoing chat history.
+            // Ensure that the roles are strictly alternating.
+            // The chatHistory should already be alternating from handleUserMessage.
+            // We might need to be careful if the first message in chatHistory is a model message (our initial greeting)
+            // as it would follow the model message above.
             
-            // Create a temporary history for the API call, prepending the persona and context
-            let apiChatHistory = [
-                { role: "user", parts: [{ text: `(System Note: Your persona is Madame Astra. User Name: ${userName || 'Unknown'}, User Birth Date: ${birthDate || 'Unknown'}. Remember this context.) ${personaInstruction}` }] },
-                 // Add a dummy model response to ensure alternating turns if the actual history starts with user
-                { role: "model", parts: [{ text: "Understood. I shall channel the cosmic energies."}] } 
+            let historyToAppend = [...chatHistory];
+            // If the first message in chatHistory is the bot's initial greeting,
+            // and we've already added a model priming message, we can skip the first one from chatHistory
+            // to avoid two model messages in a row at the start of the appended history.
+            if (historyToAppend.length > 0 && historyToAppend[0].role === "model" && 
+                historyToAppend[0].parts[0].text.startsWith("Greetings, seeker")) {
+                // This check is a bit fragile. A better way might be to not add the initial greeting to chatHistory
+                // or to ensure the priming model message is distinct.
+                // For now, let's see if this simple check helps.
+                // Actually, it's simpler: the API expects alternating turns.
+                // The `chatHistory` starts with a model message.
+                // So, `constructedApiHistory` will have user, model, then model (from chatHistory[0]). This is bad.
+            }
+
+            // Revised history construction:
+            constructedApiHistory = [
+                 { role: "user", parts: [{ text: personaInstruction }] },
+                 { role: "model", parts: [{ text: "Indeed, the cosmic currents flow through me. I am Madame Astra, ready to interpret the whispers of the stars for you, " + (userName || "Seeker") + "." }] }
             ];
             
-            // Add the actual chat history, ensuring user/model turns are correct
-            chatHistory.forEach(turn => {
-                // Basic check to avoid consecutive messages from the same role if the above structure creates it
-                if (apiChatHistory.length > 0 && apiChatHistory[apiChatHistory.length -1].role === turn.role) {
-                    // If last message in apiChatHistory is same role, and it's the dummy model one, replace it.
-                    if (turn.role === "model" && apiChatHistory[apiChatHistory.length -1].parts[0].text === "Understood. I shall channel the cosmic energies.") {
-                         apiChatHistory[apiChatHistory.length -1] = turn;
-                    } else {
-                        // If it's a genuine duplicate role, this indicates a logic flaw elsewhere, but for now, we'll just append.
-                        // Or, more robustly, try to merge or skip. For simplicity, we append here.
-                        // This part needs careful handling in complex scenarios.
-                        apiChatHistory.push(turn);
-                    }
-                } else {
-                    apiChatHistory.push(turn);
-                }
-            });
+            // Append the actual chat history. The first message in chatHistory is the AI's greeting.
+            // The second is the user's name. The third is the AI's request for birthdate, etc.
+            // This needs to be carefully managed.
+            // Let's ensure the `chatHistory` itself is what we send, prepended by the persona instruction.
+            
+            let finalApiContents = [];
+            // Start with persona instruction from user
+            finalApiContents.push({ role: "user", parts: [{ text: `(System Instructions: Embody the persona of Madame Astra. ${personaInstruction} User Name: ${userName || 'Unknown'}, User Birth Date: ${birthDate || 'Unknown'}. Respond to the last message in the conversation below.)` }] });
+            // Model acknowledges (implicitly)
+            // Then add the actual conversation
+            finalApiContents = finalApiContents.concat(chatHistory);
 
 
             const payload = {
-                contents: apiChatHistory,
-                // generationConfig: { temperature: 0.7 } // Optional: adjust creativity
+                contents: finalApiContents,
+                // generationConfig: { temperature: 0.7 } 
             };
             
             try {
@@ -203,6 +225,7 @@
 
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.error("API Error Response:", errorData); // Log the full error
                     throw new Error(`Cosmic interference! Status ${response.status}: ${errorData.error?.message || 'Unknown disturbance'}`);
                 }
 
@@ -214,7 +237,10 @@
                     result.candidates[0].content.parts.length > 0) {
                     aiText = result.candidates[0].content.parts[0].text;
                 } else {
-                    console.error("Unexpected API response structure:", result);
+                    console.warn("Unexpected API response structure or no content:", result); // Warn instead of error for no content
+                    if (result.promptFeedback && result.promptFeedback.blockReason) {
+                         aiText = `The Oracle is silent. The cosmic energies are blocked. (Reason: ${result.promptFeedback.blockReason.toLowerCase()})`;
+                    }
                 }
                 
                 appendMessage(aiText, "ai");
@@ -240,6 +266,10 @@
             appendMessage(messageText, "user");
             chatHistory.push({ role: "user", parts: [{ text: messageText }] });
             userInput.value = "";
+            
+            // Disable input while AI "thinks" or processes state changes
+            sendMessageButton.disabled = true;
+            userInput.disabled = true;
 
             if (conversationState === "ASK_NAME") {
                 userName = messageText;
@@ -247,28 +277,26 @@
                 const askBirthDateMsg = `Ah, ${userName}, a name that resonates with certain cosmic vibrations! And when did your spirit embark upon this earthly journey? (Your birth date, if you please.)`;
                 appendMessage(askBirthDateMsg, "ai");
                 chatHistory.push({ role: "model", parts: [{ text: askBirthDateMsg }] });
-                userInput.focus(); // Keep focus on input
-                sendMessageButton.disabled = false; // Re-enable for next input
+                sendMessageButton.disabled = false;
                 userInput.disabled = false;
-                typingIndicator.classList.add('hidden'); // Hide indicator as AI has "spoken"
+                userInput.focus();
             } else if (conversationState === "ASK_BIRTHDATE") {
-                birthDate = messageText; // We're not validating date format strictly here for simplicity
+                birthDate = messageText; 
                 conversationState = "CHATTING";
                 const confirmationMsg = `Thank you, ${userName}. The date ${birthDate} is noted in the celestial records. Now, what mysteries do you wish for Madame Astra to unveil? What question burns within your soul?`;
                 appendMessage(confirmationMsg, "ai");
                 chatHistory.push({ role: "model", parts: [{ text: confirmationMsg }] });
-                userInput.focus();
                 sendMessageButton.disabled = false;
                 userInput.disabled = false;
-                typingIndicator.classList.add('hidden');
+                userInput.focus();
             } else { // CHATTING state
-                await getAIResponse();
+                await getAIResponse(); // This will re-enable buttons in its finally block
             }
         }
 
         sendMessageButton.addEventListener('click', handleUserMessage);
         userInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !sendMessageButton.disabled) { // Prevent multiple sends if button is disabled
                 handleUserMessage();
             }
         });

@@ -3,113 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Fun Activities & Games Portal</title>
+    <title>Entropy Lab - A Digital Playground</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&family=Turret+Road:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Rajdhani', sans-serif;
-            background-color: #111827; /* Tailwind Gray 900 */
-            color: #e5e7eb; /* Tailwind Gray 200 */
+            font-family: 'Roboto Mono', monospace;
+            background-color: #1a1a2e; /* Deep void blue */
+            color: #e0e6f0; /* Light cyber-text */
+            overflow-x: hidden;
         }
         .header-font {
-            font-family: 'Orbitron', sans-serif;
-            text-shadow: 0 0 10px #60a5fa, 0 0 15px #60a5fa; /* Blue glow */
+            font-family: 'Turret Road', cursive; /* Was Orbitron, Turret Road feels more 'lab' like */
+            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff30;
         }
-        .activity-card {
-            background-color: #1f2937; /* Tailwind Gray 800 */
-            border: 1px solid #374151; /* Tailwind Gray 700 */
+        .card {
+            background-color: rgba(23, 37, 84, 0.7); /* Darker blue, semi-transparent */
+            border: 1px solid rgba(0, 255, 255, 0.3); /* Cyan border */
             transition: all 0.3s ease-in-out;
-            transform-style: preserve-3d;
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden; /* For pseudo-elements */
         }
-        .activity-card:hover {
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3), 0 0 15px #60a5fa;
-            border-color: #60a5fa; /* Blue 400 */
+        .card:before { /* Glitchy scanline effect */
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 255, 0.2);
+            animation: scanline 8s linear infinite;
+            opacity: 0;
         }
-        .card-emoji {
-            font-size: 3rem; /* Increased emoji size */
-            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+        .card:hover:before {
+            opacity: 1;
+        }
+        @keyframes scanline {
+            0% { transform: translateY(-10px); opacity: 0; }
+            10% { transform: translateY(0px); opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(100%); opacity: 0; height: 4px; }
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.2), 0 0 30px rgba(0, 255, 255, 0.1);
+            border-color: rgba(0, 255, 255, 0.7);
         }
         .card-title {
             font-family: 'Orbitron', sans-serif;
-            color: #93c5fd; /* Blue 300 */
+            color: #00ffff; /* Cyan */
         }
-        .card-link {
-            display: block;
-            text-decoration: none;
-            color: inherit; /* Inherit color from parent */
+        .card-description {
+            color: #bdc1c6; /* Lighter gray */
+            font-size: 0.875rem;
         }
+        .launch-button {
+            background-color: #00ffff;
+            color: #1a1a2e;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            border: 1px solid #00ffff;
+        }
+        .launch-button:hover {
+            background-color: #1a1a2e;
+            color: #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+        .featured-card {
+            /* Tailwind: md:col-span-2 md:row-span-2 or specific grid areas */
+            background-color: rgba(40, 58, 114, 0.8); /* Slightly different bg for featured */
+        }
+        .grid-container {
+            display: grid;
+            gap: 1.5rem; /* Tailwind gap-6 */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive columns */
+        }
+
+        /* For making specific items larger using grid span */
+        .md\:col-span-2 {
+           grid-column: span 2 / span 2;
+        }
+        .md\:row-span-2 {
+            grid-row: span 2 / span 2;
+        }
+        
+        /* Custom scrollbar for a more thematic feel */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ffff;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00b3b3;
+        }
+
     </style>
 </head>
-<body class="min-h-screen p-4 sm:p-8">
-    <header class="text-center mb-10 sm:mb-16">
-        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-blue-400 header-font">
-            Interactive Creations Hub
-        </h1>
-        <p class="text-lg text-gray-400 mt-3">A collection of fun games and creative activities.</p>
+<body class="min-h-screen p-4 md:p-8 selection:bg-cyan-500 selection:text-black">
+
+    <header class="text-center mb-12 md:mb-16">
+        <h1 class="header-font text-5xl md:text-7xl font-bold text-cyan-400">ENTROPY LAB</h1>
+        <p class="text-xl md:text-2xl text-cyan-200 mt-2">A Digital Playground of Experiments & Curiosities</p>
     </header>
 
-    <main class="container mx-auto">
-        <div id="activityGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+    <main>
+        <div id="experimentsGrid" class="grid-container">
             </div>
     </main>
 
-    <footer class="text-center mt-12 sm:mt-20 text-sm text-gray-500">
-        <p>&copy; <span id="currentYear"></span> Your Name/Creations. Explore and Enjoy!</p>
+    <footer class="text-center mt-12 md:mt-16 pt-8 border-t border-dashed border-cyan-500/30">
+        <p class="text-sm text-cyan-300">Welcome to the void. Construct additional pylons.</p>
+        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - All experiments conducted with questionable sanity.</p>
     </footer>
 
     <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-
-        const activities = [
+        const experiments = [
             // Games
-            { title: "Cosmic Snake", file: "snakespacegame.html", emoji: "🐍🌌", description: "Classic snake with a cosmic twist and power-ups." },
-            { title: "StarDust Driller", file: "StarDustgame.html", emoji: "🚀⛏️", description: "Mine asteroids, upgrade your ship, and explore the cosmos." },
-            { title: "Abyssal Angler", file: "AbyssalAnglergame.html", emoji: "🎣🌊", description: "A deep-sea fishing adventure game." }, // Assuming it's a game
+            { id: 'abyssalAnglergame', file: 'abyssalAnglergame.html', name: 'Abyssal Angler', category: 'Game', description: 'Dive deep and lure mysterious creatures from the abyss.' },
+            { id: 'AstroWreckageGame', file: 'AstroWreckageGame.html', name: 'Astro Wreckage', category: 'Game', description: 'Navigate space debris and survive the cosmic junkyard.' },
+            { id: 'boxstacker', file: 'boxstacker.html', name: 'Box Stacker', category: 'Game', description: 'Test your precision by stacking boxes to new heights.' },
+            { id: 'BreakoutballGame', file: 'BreakoutballGame.html', name: 'Breakout Ball', category: 'Game', description: 'A classic brick-breaking challenge with a twist.' },
+            { id: 'colorsequenceGame', file: 'colorsequenceGame.html', name: 'Color Sequence', category: 'Game', description: 'Memorize and replicate increasingly complex color patterns.' },
+            { id: 'groovbox', file: 'groovbox.html', name: 'GroovBox', category: 'Music Game', description: 'Create and play rhythmic patterns on this interactive beatbox.', featured: true },
+            { id: 'memorymatchgame', file: 'memorymatchgame.html', name: 'Memory Match', category: 'Game', description: 'Flip cards and find the matching pairs. A test of memory!' },
+            { id: 'reflexGame', file: 'reflexGame.html', name: 'Reflex Test', category: 'Game', description: 'How fast are your reactions? Click when prompted!' },
+            { id: 'RocketGame', file: 'RocketGame.html', name: 'Rocket Adventure', category: 'Game', description: 'Pilot your rocket through challenging stellar courses.' },
+            { id: 'snakespacegame', file: 'snakespacegame.html', name: 'Snake In Space', category: 'Game', description: 'The classic snake game, but with a cosmic setting.' },
+            { id: 'speedtyper', file: 'speedtyper.html', name: 'Speed Typer', category: 'Game', description: 'Test and improve your typing speed against the clock.' },
+            { id: 'StarDustgame', file: 'StarDustGame.html', name: 'StarDust', category: 'Game', description: 'Collect stardust while evading cosmic hazards.' }, // Corrected filename case
+            { id: 'tetrisgame', file: 'tetrisgame.html', name: 'Block Matrix (Tetris)', category: 'Game', description: 'The timeless puzzle game of falling blocks.' },
+            { id: 'void_gobblergame', file: 'void_gobblergame.html', name: 'Void Gobbler', category: 'Game', description: 'Consume orbs and grow, but avoid the void monsters.' },
+            { id: 'wrack-a-dotgame', file: 'wrack-a-dotgame.html', name: 'Wrack-a-Dot', category: 'Game', description: 'A fast-paced dot-whacking challenge.' },
             
-            // Creative Tools & Simulators
-            { title: "Web Groovebox", file: "groovbox.html", emoji: "🎵🥁", description: "Create beats with an interactive step sequencer and sound pads." },
-            { title: "KaleidoStream", file: "kalido.html", emoji: "✨🌀", description: "Paint mesmerizing kaleidoscopic patterns in real-time." },
-            { title: "Pattern Morph", file: "patternmorph.html", emoji: "▦🎨", description: "Explore generative grid patterns: Game of Life, Truchet, and more." },
-            { title: "Pixel Reaction Lab", file: "pixel-world.html", emoji: "🧪🔬", description: "An alchemy sandbox where pixel elements react and transform." },
-            { title: "Pocket Ecosystems", file: "pocket-ecosystem.html", emoji: "🌿🐠", description: "Design and nurture miniature digital terrariums and aquariums." },
-            { title: "WordBloom Garden", file: "wordbloomgarden.html", emoji: "🌸📜", description: "Grow beautiful, unique flowers from the words you plant." },
-            { title: "GlyphMotion Studio", file: "GlyphMotion.html", emoji: "✏️🎬", description: "Animate your own simple symbol stories and glyphs." },
-            { title: "Algorithmic Botanist", file: "plantseed.html", emoji: "🌳💻", description: "Cultivate unique digital plants using generative algorithms." },
-            { title: "Symbolic Self-Portrait", file: "Self-Portrait.html", emoji: "👤🎨", description: "Generate abstract art based on your inner landscape and symbols." },
+            // AI & Interactive
+            { id: 'astrobot', file: 'astrobot.html', name: 'AI Astro Oracle', category: 'AI Chat', description: 'Converse with a mystical AI and unveil your digital fortune.', featured: true },
+            { id: 'learnuselessskills', file: 'learnuselessskills.html', name: 'Useless Skills AI', category: 'AI Fun', description: 'Let an AI teach you wonderfully impractical skills.', featured: true },
+            { id: 'storyteller', file: 'storyteller.html', name: 'AI Storyteller', category: 'AI Creative', description: 'Collaborate with an AI to weave unique tales.' },
+            { id: 'whatif', file: 'whatif.html', name: 'What If Machine', category: 'AI Fun', description: 'Explore alternate realities with AI-generated scenarios.' },
+
+            // Creative & Visual Tools
+            { id: 'darkcanvas', file: 'darkcanvas.html', name: 'Dark Canvas', category: 'Art Tool', description: 'Paint with light on a canvas of darkness.' },
+            { id: 'GlyphMotion', file: 'GlyphMotion.html', name: 'Glyph Motion', category: 'Visualizer', description: 'Watch intricate glyphs and symbols come alive.' },
+            { id: 'particleplayground', file: 'particleplayground.html', name: 'Particle Playground', category: 'Visualizer', description: 'Interact with mesmerizing swarms of digital particles.' },
+            { id: 'patternmorph', file: 'patternmorph.html', name: 'Pattern Morph', category: 'Visualizer', description: 'See patterns transform and evolve in real-time.' },
+            { id: 'pixel-world', file: 'pixel-world.html', name: 'Pixel World Sim', category: 'Simulation', description: 'A tiny, evolving world built from pixels.' },
+            { id: 'pixeldraw', file: 'pixeldraw.html', name: 'Pixel Draw', category: 'Art Tool', description: 'Create your own pixel art masterpieces.' },
+            { id: 'wordbloomgarden', file: 'wordbloomgarden.html', name: 'Word Bloom Garden', category: 'Creative', description: 'Watch words blossom into a unique visual garden.' },
             
-            // Interactive Experiences / Others
-            { title: "Story Weaver AI", file: "storyteller.html", emoji: "📚🤖", description: "Collaborate with an AI to create branching, evolving narratives." },
-            { title: "Symbiotic Worlds", file: "darkcanvas.html", emoji: "�🤝", description: "A conceptual generative ecosystem influenced by user interaction." }, // Assuming darkcanvas.html is this
-            { title: "CityBeat Pulse", file: "whatif.html", emoji: "🏙️📊", description: "Simulated real-time local event and mood aggregator." } // Assuming whatif.html is this
+            // Utilities & Misc
+            { id: 'globalwindow', file: 'globalwindow.html', name: 'Global Window Swap', category: 'Experience', description: 'Peek through random windows from around the (digital) world.' },
+            { id: 'kalido', file: 'kalido.html', name: 'Kalido Visualizer', category: 'Visualizer', description: 'A kaleidoscopic interactive visual experience.' },
+            { id: 'meitationact', file: 'meitationact.html', name: 'Digital Meditation', category: 'Utility', description: 'A simple tool for focus and calm.' }, // Assumed "meditation"
+            { id: 'plantseed', file: 'plantseed.html', name: 'Digital Plant Seed', category: 'Simulation', description: 'Nurture a digital seed and watch it grow.' },
+            { id: 'pocket-ecosystem', file: 'pocket-ecosystem.html', name: 'Pocket Ecosystem', category: 'Simulation', description: 'A miniature evolving world in your browser.' },
+            { id: 'Self-Portrait', file: 'Self-Portrait.html', name: 'AI Self-Portrait', category: 'AI Art', description: 'Generate abstract self-portraits with AI assistance.' },
+            { id: 'trial', file: 'trial.html', name: 'Trial Grounds', category: 'Misc', description: 'An experimental space for new ideas.' },
+            { id: 'uselessweb', file: 'uselessweb.html', name: 'Useless Web Remix', category: 'Fun', description: 'A portal to the wonderfully pointless corners of the internet.' },
         ];
 
-        const activityGrid = document.getElementById('activityGrid');
+        const experimentsGrid = document.getElementById('experimentsGrid');
 
-        activities.forEach(activity => {
-            const card = document.createElement('a');
-            card.href = activity.file;
-            card.classList.add('activity-card', 'rounded-lg', 'p-6', 'flex', 'flex-col', 'items-center', 'justify-center', 'text-center', 'card-link');
-            // card.setAttribute('target', '_blank'); // Optional: to open in new tab
-
-            const emojiSpan = document.createElement('span');
-            emojiSpan.classList.add('card-emoji', 'mb-4');
-            emojiSpan.textContent = activity.emoji;
-            card.appendChild(emojiSpan);
-
-            const titleH3 = document.createElement('h3');
-            titleH3.classList.add('card-title', 'text-xl', 'font-semibold', 'mb-2');
-            titleH3.textContent = activity.title;
-            card.appendChild(titleH3);
-
-            const descriptionP = document.createElement('p');
-            descriptionP.classList.add('text-xs', 'text-gray-400');
-            descriptionP.textContent = activity.description;
-            card.appendChild(descriptionP);
+        function createExperimentCard(exp) {
+            const card = document.createElement('div');
+            card.className = `card p-6 rounded-lg flex flex-col justify-between shadow-lg hover:shadow-cyan-500/50 ${exp.featured ? 'md:col-span-2 featured-card min-h-[250px]' : 'min-h-[200px]'}`;
             
-            activityGrid.appendChild(card);
+            let iconSvg = '';
+            // Placeholder icons based on category - you can replace these with actual images or more specific SVGs
+            switch (exp.category.toLowerCase().split(' ')[0]) {
+                case 'game':
+                case 'music':
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 7a1 1 0 000 2h6a1 1 0 100-2H7zM7 11a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>`; // Generic game/controller icon
+                    break;
+                case 'ai':
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z" /></svg>`; // Brain/chip icon
+                    break;
+                case 'art':
+                case 'visualizer':
+                case 'creative':
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>`; // Palette/image icon
+                    break;
+                default:
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clip-rule="evenodd" /></svg>`; // Generic app/window icon
+            }
+
+            card.innerHTML = `
+                <div>
+                    ${iconSvg}
+                    <h3 class="card-title text-xl font-bold mb-2">${exp.name}</h3>
+                    <p class="card-description mb-4">${exp.description}</p>
+                </div>
+                <a href="${exp.file}" class="launch-button mt-auto self-start py-2 px-4 rounded-md text-sm">Launch Experiment</a>
+            `;
+            experimentsGrid.appendChild(card);
+        }
+
+        // Sort experiments to put featured ones first, then alphabetically by name
+        experiments.sort((a, b) => {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return a.name.localeCompare(b.name);
         });
+
+        experiments.forEach(createExperimentCard);
+
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
+
 </body>
 </html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Useless Web Remix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Background gradient for a playful feel */
+            background: linear-gradient(135deg, #FF9A8B 0%, #FF6A88 50%, #FF99AC 100%);
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        /* Custom styles for the iframe to ensure it's responsive and has a border */
+        #siteFrame {
+            width: 100%;
+            height: 70vh; /* Adjust height as needed */
+            border: 5px solid #333;
+            border-radius: 0.5rem; /* Tailwind's rounded-lg */
+            background-color: #f0f0f0; /* Fallback background for the iframe area */
+        }
+        /* Style for the button to make it more prominent and fun */
+        .fun-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .fun-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+        }
+        .fun-button:active {
+            transform: translateY(-1px) scale(1.02);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.19), 0 3px 3px rgba(0,0,0,0.23);
+        }
+        /* Loading animation */
+        .loader {
+            border: 5px solid #f3f3f3; /* Light grey */
+            border-top: 5px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 selection:bg-pink-300 selection:text-pink-900">
+
+    <div class="bg-white/80 backdrop-blur-md shadow-2xl rounded-xl p-6 md:p-10 w-full max-w-4xl text-center">
+        <header class="mb-8">
+            <h1 class="pixel-font text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800">
+                The Useless Web
+            </h1>
+            <p class="pixel-font text-sm text-pink-600 mt-2">~ Remix ~</p>
+            <p class="mt-4 text-gray-600">Discover the wonderfully pointless corners of the internet!</p>
+        </header>
+
+        <div class="mb-6">
+            <button id="randomSiteButton" class="fun-button pixel-font bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75 text-lg">
+                Beam Me Up, Useless!
+            </button>
+        </div>
+
+        <div id="currentSiteInfo" class="mb-4 h-12 flex items-center justify-center">
+            <p id="siteName" class="text-gray-700 font-semibold italic"></p>
+            <div id="loader" class="loader hidden"></div>
+        </div>
+        
+        <div class="w-full aspect-[16/10] sm:aspect-video rounded-lg overflow-hidden shadow-inner bg-gray-200">
+             <iframe id="siteFrame" title="Useless Website Content"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                onerror="handleIframeError()">
+            </iframe>
+        </div>
+
+        <footer class="mt-8">
+            <p class="text-xs text-gray-500">
+                Note: Some websites might not load correctly due to their own security settings (X-Frame-Options). If a site doesn't appear, try another!
+                <br>This is for amusement purposes only. We don't own or operate the embedded sites.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const sites = [
+            // Original sites
+            { name: "Pointer Pointer", url: "https://pointerpointer.com/" },
+            { name: "Cat Bounce", url: "https://cat-bounce.com/" },
+            { name: "Endless Horse", url: "http://endless.horse/" }, // Note: HTTP
+            { name: "Corndog on Corndog", url: "https://corndog.io/" },
+            { name: "One Square Minesweeper", url: "https://onesquareminesweeper.com/" },
+            { name: "Checkbox Race", url: "https://checkboxrace.com/" },
+            { name: "Strobe Illusion", url: "https://strobe.cool/" },
+            { name: "Long Doge Challenge", url: "https://longdogechallenge.com/" },
+            { name: "Always Judge A Book By Its Cover", url: "https://alwaysjudgeabookbyitscover.com/" },
+            { name: "That's The Finger", url: "https://thatsthefinger.com/" },
+            { name: "Falling Falling", url: "https://fallingfalling.com/" },
+            { name: "Paper Toilet", url: "https://papertoilet.com/" },
+            { name: "Eel Slap!", url: "https://eelslap.com/" },
+            { name: "The Zen Zone", url: "https://tholman.com/the-zen-zone/"},
+            { name: "Bury Me With My Money", url: "https://burymewithmymoney.com/" },
+
+            // Newly added sites
+            { name: "OMFG Dogs", url: "https://www.omfgdogs.com/" },
+            { name: "Mondrian and Me", url: "https://mondrianandme.com/" },
+            { name: "Pug in a Rug", url: "https://puginarug.com/" },
+            { name: "Pixels Fighting", url: "https://pixelsfighting.com/" },
+            { name: "Heeeeeeeey", url: "https://heeeeeeeey.com/" },
+            { name: "Hooooooooo", url: "https://hooooooooo.com/" },
+            { name: "Trash Loop", url: "https://www.trashloop.com/" },
+            { name: "Much Better Than This", url: "https://www.muchbetterthanthis.com/" },
+            { name: "Is It Christmas?", url: "https://isitchristmas.com/" },
+            { name: "Potato or Tomato", url: "https://potatoortomato.com/" },
+            { name: "Binary Piano", url: "https://binarypiano.com/" },
+            { name: "Scream Into The Void", url: "https://screamintothevoid.com/" },
+            { name: "Zoom Quilt", url: "https://zoomquilt.org/" },
+            { name: "Click To Release", url: "https://www.clicktorelease.com/" },
+            { name: "Random Colour", url: "https://randomcolour.com/" },
+            { name: "Patatap", url: "https://patatap.com/" }, // Interactive sound/visual
+            { name: "Checkbox Olympics", url: "https://checkboxolympics.com/"},
+            { name: "InspiroBot", url: "https://inspirobot.me/" }, // AI quotes
+            { name: "This is Sand", url: "https://thisissand.com/" },
+            { name: "Find the Invisible Cow", url: "https://findtheinvisiblecow.com/" },
+            { name: "Koalas to the Max", url: "https://www.koalastothemax.com/" },
+            { name: "Window Swap", url: "https://www.window-swap.com/" }, // May have strict embedding rules
+            { name: "Neal Fun: Absurd Trolley Problems", url: "https://neal.fun/absurd-trolley-problems/" },
+            { name: "Neal Fun: Ambient Chaos", url: "https://neal.fun/ambient-chaos/" },
+            { name: "Neal Fun: Deep Sea", url: "https://neal.fun/deep-sea/" },
+            { name: "Neal Fun: Drawing Prompts", url: "https://neal.fun/drawing-prompts/" },
+            { name: "Neal Fun: Earth Reviews", url: "https://neal.fun/earth-reviews/" },
+            { name: "Neal Fun: Every Second", url: "https://neal.fun/every-second/" },
+            { name: "Neal Fun: Life Checklist", url: "https://neal.fun/life-checklist/" },
+            { name: "Neal Fun: Perfect Circle", url: "https://neal.fun/perfect-circle/" },
+            { name: "Neal Fun: Printing Money", url: "https://neal.fun/printing-money/" },
+            { name: "Neal Fun: Spend Bill Gates' Money", url: "https://neal.fun/spend/" },
+            { name: "Neal Fun: Wonders of Street View", url: "https://neal.fun/wonders-of-street-view/" },
+            { name: "Try Paper Airplanes", url: "https://trypap.com/" },
+            { name: "Hacker Typer", url: "https://hackertyper.net/" },
+            { name: "Make Everything OK", url: "http://make-everything-ok.com/" }, // Note: HTTP
+            { name: "Pop Bubble Wrap", url: "https://popbubblewrap.com/" },
+            { name: "Procatinator", url: "https://procatinator.com/" }, // Cats + Music
+            { name: "Rainy Mood", url: "https://rainymood.com/" } // Calming
+        ];
+
+        const randomSiteButton = document.getElementById('randomSiteButton');
+        const siteFrame = document.getElementById('siteFrame');
+        const siteNameDisplay = document.getElementById('siteName');
+        const loader = document.getElementById('loader');
+        let currentSite = null;
+
+        function loadRandomSite() {
+            // Show loader and hide site name
+            loader.classList.remove('hidden');
+            siteNameDisplay.textContent = 'Finding a useless gem...';
+            siteFrame.src = 'about:blank'; // Clear previous site to prevent issues
+
+            // Prevent selecting the same site twice in a row if possible
+            let newSite;
+            if (sites.length > 1) {
+                do {
+                    newSite = sites[Math.floor(Math.random() * sites.length)];
+                } while (newSite === currentSite && sites.length > 1); // Ensure it actually picks a new one if list is > 1
+            } else if (sites.length === 1) {
+                newSite = sites[0];
+            } else {
+                // Handle case with no sites
+                loader.classList.add('hidden');
+                siteNameDisplay.textContent = 'No websites in the list!';
+                return;
+            }
+            currentSite = newSite;
+            
+            console.log(`Attempting to load: ${currentSite.name} from ${currentSite.url}`);
+
+            // The 'load' event on iframe is more reliable for knowing when content is actually trying to render
+            siteFrame.onload = function() {
+                loader.classList.add('hidden');
+                siteNameDisplay.textContent = `Now viewing: ${currentSite.name}`;
+                console.log(`Successfully loaded (or attempted to load): ${currentSite.name}`);
+            };
+
+            siteFrame.onerror = function() { // This is a fallback, might not always trigger for X-Frame-Options
+                loader.classList.add('hidden');
+                siteNameDisplay.textContent = `Oops! '${currentSite.name}' might be blocking us. Try another!`;
+                console.error(`Error loading iframe for: ${currentSite.name}`);
+            };
+            
+            siteFrame.src = currentSite.url;
+        }
+        
+        // Global error handler for iframes (though limited by browser security for cross-origin iframes)
+        function handleIframeError() {
+            loader.classList.add('hidden');
+            // Check if a site was supposed to be loading
+            if (currentSite) {
+                 siteNameDisplay.textContent = `Could not load '${currentSite.name}'. It might be shy! Try another.`;
+            } else {
+                 siteNameDisplay.textContent = `An issue occurred with the embedded site.`;
+            }
+            // This console log might not always provide detailed info due to security restrictions
+            console.error("Iframe content failed to load, possibly due to X-Frame-Options or other security policies.");
+        }
+
+
+        randomSiteButton.addEventListener('click', loadRandomSite);
+
+        // Display a welcome message initially
+        window.addEventListener('load', () => {
+            if (sites.length > 0) {
+                siteNameDisplay.textContent = "Click the button to start the useless journey!";
+            } else {
+                siteNameDisplay.textContent = "Looks like we're out of useless sites for now!";
+                randomSiteButton.disabled = true; // Disable button if no sites
+                randomSiteButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+    </script>
+
+</body>
+</html>
