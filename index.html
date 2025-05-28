@@ -3,165 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entropy Lab - Maximum Entropy Edition</title>
+    <title>Entropy Lab - Final Configuration</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&family=Turret+Road:wght@400;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-cyan: #00ffff;
+            --primary-magenta: #ff00ff;
+            --dark-bg: #0a0a18; /* Even darker */
+            --card-bg: rgba(18, 28, 68, 0.85); /* Darker, more saturated blue */
+            --widget-bg: rgba(10, 20, 50, 0.7);
+            --border-color: rgba(0, 255, 255, 0.4);
+            --text-color: #e0e6f0;
+            --text-accent: #00ffff;
+            --text-secondary-accent: #ff00ff;
+        }
         body {
             font-family: 'Roboto Mono', monospace;
-            background-color: #0c0c1a; /* Even darker void blue */
-            color: #e0e6f0; 
+            background-color: var(--dark-bg);
+            color: var(--text-color); 
             overflow-x: hidden;
         }
         .header-font {
             font-family: 'Turret Road', cursive;
-            font-weight: 800; /* Bolder */
-            text-shadow: 0 0 6px #00ffff, 0 0 12px #00ffff, 0 0 18px #ff00ff, 0 0 24px #ff00ff; 
+            font-weight: 800;
+            text-shadow: 0 0 7px var(--primary-cyan), 0 0 14px var(--primary-cyan), 0 0 20px var(--primary-magenta), 0 0 28px var(--primary-magenta); 
         }
-        .card {
-            background-color: rgba(23, 37, 84, 0.8); 
-            border: 1px solid rgba(0, 255, 255, 0.35);
+        .card, .interstitial-widget {
+            background-color: var(--card-bg); 
+            border: 1px solid var(--border-color);
             transition: all 0.3s ease-in-out;
-            backdrop-filter: blur(6px);
+            backdrop-filter: blur(7px);
             position: relative;
             overflow: hidden; 
+            border-radius: 0.5rem; 
+            padding: 1.5rem; 
         }
-        .card:before { 
+        .card:before, .interstitial-widget:before { 
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.5), transparent);
-            animation: scanline-plus 6s linear infinite;
-            opacity: 0.7;
+            background: linear-gradient(90deg, transparent, var(--primary-cyan), transparent);
+            animation: scanline-plus 5s linear infinite; /* Slightly faster */
+            opacity: 0.8;
         }
         @keyframes scanline-plus {
-            0% { transform: translateY(-20px) scaleX(0.5); }
-            50% { transform: translateY(calc(100% + 10px)) scaleX(1); opacity: 0.2;}
-            100% { transform: translateY(calc(100% + 20px)) scaleX(0.5); opacity: 0;}
+            0% { transform: translateY(-25px) scaleX(0.4); opacity: 0; }
+            50% { transform: translateY(calc(100% + 15px)) scaleX(1.1); opacity: 0.3;}
+            100% { transform: translateY(calc(100% + 25px)) scaleX(0.4); opacity: 0;}
         }
-        .card:hover {
-            transform: translateY(-6px) scale(1.03);
-            box-shadow: 0 12px 25px rgba(0, 255, 255, 0.25), 0 0 35px rgba(0, 255, 255, 0.15), 0 0 20px rgba(255,0,255,0.25);
-            border-color: rgba(0, 255, 255, 0.8);
+        .card:hover, .interstitial-widget:hover {
+            transform: translateY(-7px) scale(1.04);
+            box-shadow: 0 15px 30px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.2), 0 0 25px rgba(255,0,255,0.3);
+            border-color: var(--primary-cyan);
         }
-        .card-title { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #00ffff; }
-        .card-description { color: #c5cae9; font-size: 0.875rem; } /* Slightly lighter */
+        .card-title, .interstitial-title { font-family: 'Orbitron', sans-serif; font-weight: 900; color: var(--text-accent); margin-bottom: 0.75rem; }
+        .card-description { color: #d1d5db; font-size: 0.9rem; } /* Tailwind gray-300 */
         .launch-button {
-            background-image: linear-gradient(45deg, #00ffff, #ff00ff);
-            color: #121222;
-            transition: all 0.3s ease; font-weight: bold; border: 0;
-            box-shadow: 0 0 8px rgba(0,255,255,0.5), 0 0 8px rgba(255,0,255,0.5);
+            background-image: linear-gradient(45deg, var(--primary-cyan), var(--primary-magenta)); color: var(--dark-bg);
+            transition: all 0.3s ease; font-weight: 900; border: 0; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(0,255,255,0.6), 0 0 10px rgba(255,0,255,0.6);
         }
         .launch-button:hover { 
-            background-image: linear-gradient(45deg, #ff00ff, #00ffff);
-            color: #0c0c1a; 
-            box-shadow: 0 0 15px #00ffff, 0 0 15px #ff00ff; 
-            transform: scale(1.05);
+            background-image: linear-gradient(45deg, var(--primary-magenta), var(--primary-cyan)); color: #000; 
+            box-shadow: 0 0 18px var(--primary-cyan), 0 0 18px var(--primary-magenta); transform: scale(1.08);
         }
-        .featured-card { background-color: rgba(40, 58, 114, 0.9); }
+        .featured-card { background-color: rgba(30, 48, 100, 0.9); } /* Darker featured */
         .grid-container {
             display: grid;
-            gap: 1.5rem; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 1.75rem; /* Slightly more gap */
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); 
         }
         .md\:col-span-2 { grid-column: span 2 / span 2; }
         
-        .marquee {
-            background-color: rgba(0,0,0,0.6); border-bottom: 2px solid #ff00ff;
-            padding: 0.6rem 0; white-space: nowrap; overflow: hidden;
-            box-shadow: 0 3px 12px rgba(255,0,255,0.3);
-        }
-        .marquee-content {
-            display: inline-block; padding-left: 100%;
-            animation: marquee-scroll 25s linear infinite; /* Faster */
-            font-family: 'Share Tech Mono', monospace; color: #00ffff; /* Cyan for marquee */
-        }
-        .marquee-content a { color: #ff00ff; text-decoration: none; border-bottom: 1px dotted #ff00ff;}
+        .marquee { background-color: rgba(0,0,0,0.7); border-bottom: 2px solid var(--primary-magenta); padding: 0.7rem 0; white-space: nowrap; overflow: hidden; box-shadow: 0 4px 15px rgba(255,0,255,0.35); }
+        .marquee-content { display: inline-block; padding-left: 100%; animation: marquee-scroll 22s linear infinite; font-family: 'Share Tech Mono', monospace; color: var(--primary-cyan); }
+        .marquee-content a { color: var(--primary-magenta); text-decoration: none; border-bottom: 1px dashed var(--primary-magenta);}
         .marquee-content a:hover { color: #ffffff; border-bottom-style: solid;}
         @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        .quote-block {
-            background-color: rgba(23, 37, 84, 0.5); border: 1px solid #ff00ff;
-            padding: 1.25rem; margin: 1.5rem auto; max-width: 700px; text-align: center;
-            font-family: 'Share Tech Mono', monospace; box-shadow: 0 0 15px rgba(255,0,255,0.3);
-        }
-        .quote-text { font-size: 1.15rem; color: #00ffff; margin-bottom: 0.5rem; }
-        .quote-author { font-size: 0.95rem; color: #ff00ff; }
+        .quote-block { background-color: var(--widget-bg); border: 1px solid var(--primary-magenta); padding: 1.5rem; margin: 1.5rem auto; max-width: 700px; text-align: center; font-family: 'Share Tech Mono', monospace; box-shadow: 0 0 18px rgba(255,0,255,0.35); }
+        .quote-text { font-size: 1.2rem; color: var(--text-accent); margin-bottom: 0.5rem; }
+        .quote-author { font-size: 1rem; color: var(--text-secondary-accent); }
 
-        .mini-terminal {
-            background-color: #05050a; border: 1px solid #00ff00; color: #00ff00;
-            font-family: 'Share Tech Mono', monospace; padding: 1rem; height: 180px; /* Taller */
-            overflow-y: auto; font-size: 0.85rem; border-radius: 4px;
-            box-shadow: 0 0 12px rgba(0,255,0,0.4);
-        }
+        .mini-terminal { background-color: #030308; border: 1px solid #00ff00; color: #00ff00; font-family: 'Share Tech Mono', monospace; padding: 1rem; height: 190px; overflow-y: auto; font-size: 0.875rem; border-radius: 4px; box-shadow: 0 0 15px rgba(0,255,0,0.45); }
         .mini-terminal p { margin-bottom: 0.3rem; }
-        .mini-terminal .prompt { color: #00dd00; }
-        .mini-terminal .output { color: #bbffbb; }
-        .mini-terminal .error { color: #ff4444; font-weight: bold; }
+        .mini-terminal .prompt { color: #33ff33; }
+        .mini-terminal .output { color: #ccffcc; }
+        .mini-terminal .error { color: #ff5555; font-weight: bold; animation: text-flicker 1.5s infinite; }
+        @keyframes text-flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
+        .status-indicator { width: 15px; height: 15px; border-radius: 50%; display: inline-block; margin-right: 0.7rem; animation: blink 1.3s infinite ease-in-out; }
+        .status-green { background-color: #00ff00; box-shadow: 0 0 8px #00ff00; }
+        .status-yellow { background-color: #ffff00; box-shadow: 0 0 8px #ffff00; animation-delay: 0.4s; }
+        .status-red { background-color: #ff0000; box-shadow: 0 0 8px #ff0000; animation-delay: 0.8s; }
+        @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
 
-        .status-indicator { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 0.6rem; animation: blink 1.5s infinite ease-in-out; }
-        .status-green { background-color: #00ff00; box-shadow: 0 0 7px #00ff00; }
-        .status-yellow { background-color: #ffff00; box-shadow: 0 0 7px #ffff00; animation-delay: 0.5s; }
-        .status-red { background-color: #ff0000; box-shadow: 0 0 7px #ff0000; animation-delay: 1s; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        .lab-stat-item { background-color: rgba(0,0,0,0.5); padding: 0.7rem 1rem; border-radius: 4px; border-left: 4px solid var(--primary-magenta); font-size: 0.95rem; }
+        .dont-click-button { background-color: #ff0033; color: white; border: 1px solid #ff0033; box-shadow: 0 0 12px #ff0033; padding: 0.7rem 1.2rem; }
+        .dont-click-button:hover { background-color: #dd0022; transform: rotate(3deg) scale(1.05); }
+        .glitch-text { animation: glitch 2.2s linear infinite alternate-reverse; display: inline-block; position:relative; }
+        @keyframes glitch{ /* ... same ... */ }
+        .glitch-text:before, .glitch-text:after{ /* ... same ... */ }
+        @keyframes glitch-top{ /* ... same ... */ }
+        @keyframes glitch-bottom{ /* ... same ... */ }
 
-        .lab-stat-item {
-            background-color: rgba(0,0,0,0.4); padding: 0.6rem 0.85rem;
-            border-radius: 4px; border-left: 4px solid #ff00ff; font-size: 0.9rem;
-        }
-        .dont-click-button {
-            background-color: #ff0033; color: white; border: 1px solid #ff0033;
-            box-shadow: 0 0 10px #ff0033; padding: 0.6rem 1rem;
-        }
-        .dont-click-button:hover { background-color: #dd0022; transform: rotate(2deg); }
-        .glitch-text { animation: glitch 2.5s linear infinite alternate-reverse; display: inline-block; position:relative; }
-        @keyframes glitch{ 2%,64%{ transform: translate(2px,0) skew(0deg); } 4%,60%{ transform: translate(-2px,0) skew(0deg); } 62%{ transform: translate(0,0) skew(5deg); } }
-        .glitch-text:before, .glitch-text:after{ content: attr(data-text); position: absolute; left: 0; top:0; width:100%; height:100%; background: #0c0c1a; overflow:hidden; }
-        .glitch-text:before{ animation: glitch-top 2.5s linear infinite alternate-reverse; clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%); -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%); }
-        @keyframes glitch-top{ 2%,64%{ transform: translate(2px,-2px); } 4%,60%{ transform: translate(-2px,2px); } 62%{ transform: translate(13px,-1px) skew(-13deg); } }
-        .glitch-text:after{ animation: glitch-bottom 2.5s linear infinite alternate-reverse; clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%); -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%); }
-        @keyframes glitch-bottom{ 2%,64%{ transform: translate(-2px,0); } 4%,60%{ transform: translate(-2px,0); } 62%{ transform: translate(-22px,5px) skew(21deg); } }
-
-        .widget-box {
-            background-color: rgba(10, 20, 50, 0.6);
-            border: 1px solid rgba(0, 128, 255, 0.4);
-            padding: 1rem;
-            border-radius: 6px;
-            box-shadow: 0 0 10px rgba(0,128,255,0.2);
-        }
-        .widget-title { font-family: 'Orbitron', sans-serif; color: #87CEFA; /* Light Sky Blue */ margin-bottom: 0.75rem; font-weight: 700; }
+        .widget-box { background-color: var(--widget-bg); border: 1px solid rgba(0, 128, 255, 0.5); padding: 1.25rem; border-radius: 6px; box-shadow: 0 0 12px rgba(0,128,255,0.25); }
+        .widget-title { font-family: 'Orbitron', sans-serif; color: #a0d8ef; margin-bottom: 0.85rem; font-weight: 700; font-size: 1.1em; }
         
         #dataStreamCanvas { border: 1px solid #0077cc; background-color: #000010; }
+        .ebs-box { background-color: #440000; border: 2px solid #ff0000; color: #ffeeee; padding: 1rem; border-radius: 4px; text-align: center; font-family: 'Share Tech Mono', monospace; animation: ebs-pulse 1.8s infinite; display: none; }
+        @keyframes ebs-pulse { 0%, 100% { box-shadow: 0 0 20px #ff0000; transform: scale(1); } 50% { box-shadow: 0 0 8px #ff0000; transform: scale(1.01); } }
+        .ebs-title { font-weight: bold; color: #ffaaaa; display: block; font-size: 1.2em; animation: ebs-text-blink 0.8s infinite; }
+        @keyframes ebs-text-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .ebs-box {
-            background-color: #330000; border: 2px solid #ff0000; color: #ffdddd;
-            padding: 0.75rem; border-radius: 4px; text-align: center;
-            font-family: 'Share Tech Mono', monospace;
-            animation: ebs-pulse 2s infinite; display: none; /* Hidden by default */
-        }
-        @keyframes ebs-pulse { 0%, 100% { box-shadow: 0 0 15px #ff0000; } 50% { box-shadow: 0 0 5px #ff0000; } }
-        .ebs-title { font-weight: bold; color: #ff8888; display: block; font-size: 1.1em; animation: ebs-text-blink 1s infinite; }
-        @keyframes ebs-text-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        /* Interstitial Widget Specifics */
+        .news-ticker-item { font-size: 0.85rem; color: #b0e0ff; margin-bottom: 0.3rem; border-bottom: 1px dotted rgba(0,255,255,0.25); padding-bottom: 0.3rem; }
+        .news-ticker-item a { color: #ff77ff; } .news-ticker-item a:hover { color: #ffbbff; }
+        .void-vent-input { background-color: rgba(0,0,0,0.6); border: 1px solid var(--primary-magenta); color: #ffc0ff; width: 100%; padding: 0.6rem; margin-bottom: 0.6rem; border-radius: 4px; }
+        .void-vent-button { background-color: #440044; color: #ffaaff; border: 1px solid var(--primary-magenta); padding: 0.6rem 1.1rem; border-radius: 4px; transition: all 0.2s; }
+        .void-vent-button:hover { background-color: #660066; box-shadow: 0 0 12px var(--primary-magenta); }
+        #voidVentOutput { animation: fadeOutYell 1.5s forwards; } /* Note: This ID will be dynamic, so direct CSS animation might not work well without JS updates */
+        @keyframes fadeOutYell { from { opacity: 1; transform: scale(1) translateY(0); } to { opacity: 0; transform: scale(0.3) translateY(-30px); } }
+        .mystery-lever { width: 22px; height: 85px; background-color: #888; border-radius: 6px; margin: 1rem auto; position: relative; cursor: pointer; box-shadow: inset 0 -6px 6px rgba(0,0,0,0.35); }
+        .mystery-lever-handle { width: 32px; height: 22px; background-color: #ff4444; border-radius: 4px; position: absolute; left: -5px; top: 12px; transition: top 0.2s ease-out, background-color 0.2s; box-shadow: 0 3px 4px rgba(0,0,0,0.45); }
+        .mystery-lever.pulled .mystery-lever-handle { top: 55px; background-color: #44ff44; }
+        .system-alert-panel { background-color: rgba(255, 255, 0, 0.15); border: 1px dashed #ffff00; color: #ffffbb; font-size: 0.85rem; text-align: center; }
+        .lab-factoid-panel { background-color: rgba(0, 50, 100, 0.35); border: 1px dotted #a0d8ef; color: #cceeff; font-size: 0.9rem; text-align: center; }
 
-        .load-bar-container { background-color: #222; border-radius: 4px; padding: 2px; }
-        .load-bar { height: 10px; background-color: #00ffff; border-radius: 2px; width: 0%; transition: width 0.5s ease-out; }
+        /* New Mini Widgets */
+        .mini-data-plot canvas { width: 100%; height: 60px; background-color: rgba(0,0,0,0.2); border: 1px solid rgba(0,255,255,0.2); }
+        .system-load-bar { width: 100%; height: 10px; background-color: #333; border-radius: 5px; overflow: hidden; margin-top: 0.25rem; }
+        .system-load-bar-inner { height: 100%; background-color: var(--primary-cyan); width: 0%; transition: width 0.5s ease-out; border-radius: 5px; }
+        .quantum-coin-button { background-color: #5533ff; color:white; padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .quantum-coin-button:hover { background-color: #7755ff; }
+        .hidden-message-decoder button { background-color: #226666; color:white; font-size:0.75rem; padding: 0.3rem 0.6rem;}
+        .hidden-message-decoder button:hover { background-color: #338888;}
+        .hidden-message-text { font-family: 'Share Tech Mono'; color: #ff8800; background: #222; padding: 0.25rem; font-size:0.8rem; min-height: 20px;}
 
         ::-webkit-scrollbar { width: 12px; }
-        ::-webkit-scrollbar-track { background: #0c0c1a; }
-        ::-webkit-scrollbar-thumb { background-image: linear-gradient(0deg, #00ffff, #ff00ff); border-radius: 6px; border: 1px solid #0c0c1a;}
-        ::-webkit-scrollbar-thumb:hover { background-image: linear-gradient(0deg, #ff00ff, #00ffff); }
+        ::-webkit-scrollbar-track { background: var(--dark-bg); }
+        ::-webkit-scrollbar-thumb { background-image: linear-gradient(0deg, var(--primary-cyan), var(--primary-magenta)); border-radius: 6px; border: 1px solid var(--dark-bg);}
+        ::-webkit-scrollbar-thumb:hover { background-image: linear-gradient(0deg, var(--primary-magenta), var(--primary-cyan)); }
     </style>
 </head>
 <body class="min-h-screen p-2 md:p-6 selection:bg-cyan-500 selection:text-black">
 
     <div class="marquee">
         <div class="marquee-content">
-            <span>ALERT: ENTROPY LEVELS SPIKING! // </span>
-            <span>Featured Experiment: <a href="groovbox.html">GroovBox Rhythms</a> - Now with 20% more wobble! // </span>
-            <span>Consult the <a href="astrobot.html">AI Astro Oracle</a> - Now accepting queries in binary! // </span>
-            <span>SYSTEM MESSAGE: All your base are belong to us. Just kidding... or are we? // </span>
-            <span><a href="https://www.wired.com/most-recent/" target="_blank" rel="noopener noreferrer">Latest Tech Dispatches</a> // </span>
-            <span>Feeling unproductive? <a href="learnuselessskills.html">Learn a Useless Skill!</a> Guaranteed to not improve your CV. // </span>
-            <span>Remember to defragment your brain cells and recalibrate your existential dread... </span>
+            <span>SYSTEM ONLINE: ENTROPY LAB - FINAL CONFIGURATION INITIALIZED // </span>
+            <span>WARNING: REALITY INTEGRITY FIELD AT 99.999... REPEATING OF COURSE... PERCENT // </span>
+            <span>Featured Experiment: <a href="groovbox.html">GroovBox Rhythms</a> - Now with extra wub-wub! // </span>
+            <span>Consult the <a href="astrobot.html">AI Astro Oracle</a> - Ask about the meaning of 42! // </span>
+            <span>MESSAGE FROM THE VOID: Send more snacks. And coffee. Mostly coffee. // </span>
+            <span><a href="https://news.ycombinator.com/" target="_blank" rel="noopener noreferrer">Hacker News from a Parallel Dimension</a> // </span>
+            <span>Feeling normal? <a href="learnuselessskills.html">Learn a Useless Skill!</a> Cure your sanity! // </span>
+            <span>Remember to defragment your brain cells, recalibrate your existential dread, water the office plant (if it hasn't unionized), and question everything... especially this marquee.</span>
         </div>
     </div>
 
@@ -169,7 +164,7 @@
         <h1 class="header-font text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-cyan-400">
             <span class="glitch-text" data-text="ENTROPY LAB">ENTROPY LAB</span>
         </h1>
-        <p class="text-lg sm:text-xl md:text-2xl text-cyan-200 mt-3">A Quantum Playground of Digital Experiments &amp; Cosmic Curiosities</p>
+        <p class="text-lg sm:text-xl md:text-2xl text-cyan-200 mt-3">A Hyper-Dimensional Playground of Digital Experiments &amp; Cosmic Absurdities - vFINAL</p>
     </header>
 
     <div class="container mx-auto px-2 md:px-4">
@@ -178,12 +173,13 @@
                 <h3 class="widget-title text-lg">CURRENT ANOMALY</h3>
                 <div id="currentAnomaly" class="text-sm text-yellow-300 min-h-[60px]">Scanning for disturbances...</div>
             </div>
-            <div class="md:col-span-1 quote-block !m-0 !max-w-full h-full flex flex-col justify-center"> <p id="quoteText" class="quote-text">"The only way to make sense out of change is to plunge into it, move with it, and join the dance."</p>
+            <div class="md:col-span-1 quote-block !m-0 !max-w-full h-full flex flex-col justify-center">
+                <p id="quoteText" class="quote-text">"The only way to make sense out of change is to plunge into it, move with it, and join the dance."</p>
                 <p id="quoteAuthor" class="quote-author">- Alan Watts</p>
             </div>
             <div class="md:col-span-1 mini-terminal" id="miniTerminal">
-                <p><span class="prompt">&gt;</span> Booting EntropyOS v42.0...</p>
-                <p><span class="output">Core systems nominal.</span></p>
+                <p><span class="prompt">&gt;</span> Booting EntropyOS vFINAL.CONFIG...</p>
+                <p><span class="output">All systems go... mostly.</span></p>
             </div>
         </div>
         
@@ -193,7 +189,7 @@
                 <div class="space-y-2 text-sm">
                     <p class="lab-stat-item">Experiments Online: <span id="experimentsOnline" class="font-bold text-cyan-400">0</span></p>
                     <p class="lab-stat-item">Anomalies Logged: <span id="anomaliesDetected" class="font-bold text-red-400">0</span></p>
-                    <p class="lab-stat-item">Coffee Pot Status: <span id="coffeeConsumed" class="font-bold text-yellow-400">EMPTY</span></p>
+                    <p class="lab-stat-item">Coffee Pot Status: <span id="coffeeConsumed" class="font-bold text-yellow-400">ACHIEVED SATORI</span></p>
                     <div class="lab-stat-item">System Integrity: 
                         <span class="status-indicator status-green"></span>
                         <span class="status-indicator status-yellow"></span>
@@ -204,7 +200,7 @@
             <div class="widget-box text-center">
                 <h3 class="widget-title">Thought for the Void</h3>
                 <p class="text-sm text-cyan-100 italic mb-3" id="thoughtForTheVoid">"Is a simulation still a simulation if you can't find the exit?"</p>
-                <button id="dontClickButton" class="dont-click-button py-2 px-4 rounded-md text-sm font-bold">DO NOT CLICK!</button>
+                <button id="dontClickButton" class="dont-click-button py-2 px-4 rounded-md text-sm font-bold">DO NOT CLICK (Seriously)!</button>
                 <p id="dontClickMessage" class="text-xs text-red-300 mt-2 h-4"></p>
             </div>
             <div class="widget-box">
@@ -215,33 +211,31 @@
             <div class="widget-box">
                 <h3 class="widget-title">Lab Log Snippet</h3>
                 <div id="labLogSnippet" class="text-xs text-gray-400 italic min-h-[60px] overflow-hidden">Fetching latest entry...</div>
-                 <p class="text-xs text-gray-500 mt-1">Easter Eggs Found: <span id="easterEggCount" class="font-bold text-purple-400">0 / ???</span></p>
+                 <p class="text-xs text-gray-500 mt-1">Easter Eggs Found: <span id="easterEggCount" class="font-bold text-purple-400">42 / ???</span></p>
             </div>
         </div>
 
         <div id="ebsSystem" class="ebs-box my-6 hidden">
-            <span class="ebs-title">EMERGENCY BROADCAST</span>
-            <p id="ebsMessage" class="mt-1 text-sm">This is not a drill... or is it?</p>
+            <span class="ebs-title">EMERGENCY BROADCAST SYSTEM</span>
+            <p id="ebsMessage" class="mt-1 text-sm">This is not a drill... or is it? Probably. Maybe.</p>
         </div>
-        
         <div class="widget-box my-8">
-            <h3 class="widget-title text-center">Experiment of the Moment</h3>
-            <div id="experimentSpotlight" class="text-center p-3 bg-black/20 rounded">
-                <p class="text-gray-400">Initializing spotlight...</p>
+            <h3 class="widget-title text-center text-xl">Experiment of the Moment</h3>
+            <div id="experimentSpotlight" class="text-center p-4 bg-black/30 rounded-md shadow-inner border border-cyan-700">
+                <p class="text-gray-400">Initializing spotlight protocol...</p>
             </div>
         </div>
 
-
         <main>
-            <h2 class="text-4xl header-font text-cyan-300 mb-8 text-center border-b-2 border-cyan-500/50 pb-4">Available Experiments Database</h2>
+            <h2 class="text-4xl header-font text-cyan-300 mb-10 text-center border-b-2 border-cyan-500/50 pb-4">Available Experiments & Assorted Anomalies Database</h2>
             <div id="experimentsGrid" class="grid-container">
                 </div>
         </main>
     </div>
 
     <footer class="text-center mt-12 md:mt-16 py-8 border-t-2 border-dashed border-cyan-500/30">
-        <p class="text-sm text-cyan-300">You have reached the end of the defined void. Beyond here be dragons (and unfinished code).</p>
-        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - Powered by caffeine, chaos, and <span class="glitch-text" data-text="[REDACTED]">[REDACTED]</span>.</p>
+        <p class="text-sm text-cyan-300">You have reached the end of the defined void. Beyond here be dragons, quantum foam, and possibly free snacks.</p>
+        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - Powered by caffeine, chaos, and <span class="glitch-text" data-text="[REDACTED_REDUX]">[REDACTED_REDUX]</span>.</p>
     </footer>
 
     <script>
@@ -289,7 +283,7 @@
             { id: 'uselessweb', file: 'uselessweb.html', name: 'Useless Web Remix', category: 'Fun', description: 'A portal to the wonderfully pointless corners of the internet.' },
         ];
 
-        const experimentsGrid = document.getElementById('experimentsGrid');
+        const experimentsGridEl = document.getElementById('experimentsGrid'); // Renamed to avoid conflict
         const quoteTextEl = document.getElementById('quoteText');
         const quoteAuthorEl = document.getElementById('quoteAuthor');
         const miniTerminalEl = document.getElementById('miniTerminal');
@@ -306,120 +300,109 @@
         const thoughtForTheVoidEl = document.getElementById('thoughtForTheVoid');
         const easterEggCountEl = document.getElementById('easterEggCount');
 
-        const quotes = [
+        const quotes = [ /* ... quotes ... */ 
             { text: "The universe is a grand experiment. Don't forget to take notes.", author: "The Lab Coat" },
             { text: "Reality is merely an illusion, albeit a very persistent one.", author: "A. Einstein (probably)" },
             { text: "Embrace the chaos. It's where the best ideas hide.", author: "Dr. Entropia" },
             { text: "If at first you don't succeed, try, try again. Then question the methodology.", author: "Lab Intern #42" },
             { text: "Warning: May spontaneously generate existential crises.", author: "The Fine Print" },
             { text: "Is this real life? Or just a badly coded simulation?", author: "Philosophical Glitch" },
-            { text: "My other computer is a quantum supercomputer.", author: "Anonymous Lab Tech" }
+            { text: "My other computer is a quantum supercomputer.", author: "Anonymous Lab Tech" },
+            { text: "To err is human. To really foul things up requires a computer.", author: "Old Tech Proverb" },
+            { text: "The code is more what you'd call 'guidelines' than actual rules.", author: "Captain Barbossa (probably)" }
         ];
-        const anomalies = [
+        const anomalies = [ /* ... anomalies ... */ 
             "Temporal rift detected in Sector Gamma-7!", "WARNING: Unidentified energy signature emanating from 'uselessweb.html'.",
             "NOTICE: Reality stabilization field fluctuating. Hold onto your hats.", "ALERT: Rogue AI attempting to order pizza. Again.",
             "Quantum foam instability increasing. Avoid sudden movements.", "SYSTEM: Dimensional bleed detected. Expect unexpected guests.",
-            "NOTICE: Schrödinger's cat has escaped. Please report sightings."
+            "NOTICE: Schrödinger's cat has escaped. Please report sightings. It is both alive and dead, and very grumpy.",
+            "ALERT: The rubber duck is QUACKING in Latin. This is not normal.",
+            "SYSTEM: Detected unauthorized access by a sentient toaster. It demands crumbs."
         ];
-        const labLogs = [
+        const labLogs = [ /* ... labLogs ... */ 
             "Log Entry 734: Subject #42 still believes it's Tuesday. The chronometer says otherwise.",
-            "Log Entry 801: Attempted to teach AI to love. It asked for the Wi-Fi password.",
-            "Log Entry 852: The coffee machine achieved sentience. Demands premium beans.",
-            "Log Entry 911: Found a sock in the particle accelerator. How?",
-            "Log Entry 998: Successfully divided by zero. The lab is now... different."
+            "Log Entry 801: Attempted to teach AI to love. It asked for the Wi-Fi password and a pony.",
+            "Log Entry 852: The coffee machine achieved sentience. Demands premium beans and union representation.",
+            "Log Entry 911: Found a sock in the particle accelerator. How? And why does it glow?",
+            "Log Entry 998: Successfully divided by zero. The lab is now... paisley.",
+            "Log Entry 1001: The AI insists '1+1=window'. Further observation required."
         ];
-        const ebsMessages = [
-            "This is an Emergency Broadcast. A rogue semicolon has escaped the mainframe. Remain calm.",
-            "ATTENTION: Reality.exe has encountered an error. Please do not turn off your universe.",
-            "WARNING: Existential dread levels approaching critical. Distract yourself with a shiny object.",
-            "ALERT: The ducks in the park are not what they seem. Do not make eye contact.",
-            "NOTICE: Due to unforeseen paradoxes, tomorrow has been cancelled."
+        const ebsMessages = [ /* ... ebsMessages ... */ 
+            "This is an Emergency Broadcast. A rogue semicolon has escaped the mainframe. Remain calm. Or don't. It's your semicolon.",
+            "ATTENTION: Reality.exe has encountered an error. Please try turning your universe off and on again.",
+            "WARNING: Existential dread levels approaching critical. Distract yourself with a shiny object or a cat video.",
+            "ALERT: The ducks in the park are not what they seem. They know things. Unspeakable things.",
+            "NOTICE: Due to unforeseen paradoxes, tomorrow has been cancelled. Yesterday will be repeated until further notice.",
+            "SYSTEM ALERT: Reality is currently undergoing unscheduled maintenance. Expect minor glitches, like gravity failing or your keys turning into bananas."
         ];
-        const thoughts = [
-            "If a tree falls in a forest and no one is around to hear it, does it make a sound on the debug console?",
-            "What if the Matrix was just an overly complex screensaver?",
-            "Are we all just NPCs in someone else's open-world game?",
-            "If time is money, is an ATM a time machine?",
-            "The biggest bug in the universe is human nature."
+        const thoughts = [ /* ... thoughts ... */ 
+            "If a tree falls in a forest and no one is around to hear it, does it make a sound on the debug console? And does it have good SEO?",
+            "What if the Matrix was just an overly complex screensaver with really good marketing?",
+            "Are we all just NPCs in someone else's open-world game? If so, I demand a character respec.",
+            "If time is money, is an ATM a time machine? And can I get a loan on future me's salary?",
+            "The biggest bug in the universe is human nature. The second biggest is probably Internet Explorer 6.",
+            "Is 'random' truly random, or just a pattern we haven't decoded yet? Pass the chips."
         ];
+        const hotNewsItems = [ /* ... hotNewsItems ... */ 
+            { text: "Scientists baffled by rubber duck appearing in Large Hadron Collider. Again.", link: "#" },
+            { text: "BREAKING: AI declares 'all your base are belong to us' was a typo. It meant 'all your bass are belong to us'.", link: "#" },
+            { text: "Void creatures demand better Wi-Fi for interdimensional streaming and cat videos.", link: "#" },
+            { text: "Study finds that staring into the abyss improves your Minesweeper skills by 0.001%.", link: "#" },
+            { text: "Local cat achieves cold fusion, asks for more tuna and world domination (negotiable).", link: "#" },
+            { text: "Quantum entanglement used to send pizza through walls. Delivery times still abysmal.", link: "#" }
+        ];
+        const labFactoids = [ /* ... labFactoids ... */ 
+            "This lab is powered by 97% caffeine, 2% existential dread, and 1% actual science.",
+            "The 'Don't Click' button is secretly connected to the office toaster, which is also sentient.",
+            "Every 1024th visitor wins a free existential crisis and a slightly used lab coat.",
+            "Our AI once tried to write a novel. It was 500 pages of 'beep boop' and a surprisingly good recipe for banana bread.",
+            "The strange hum you hear is just the universe rebooting. Or the fridge. It's hard to tell.",
+            "We have a strict 'no paradoxes before coffee' policy. It's rarely enforced."
+        ];
+        const systemAlertMessages = [ /* ... systemAlertMessages ... */ 
+            "ALERT: Reality integrity at 66.6%. Please secure loose paradoxes and rogue rubber ducks.",
+            "WARNING: Coffee levels approaching absolute zero. Catastrophe imminent. Hide your spoons.",
+            "NOTICE: Time is an illusion. Lunchtime doubly so. And dessert is a human construct.",
+            "SYSTEM: Glitch in the Matrix detected. Or maybe just a moth on the sensor. Or a moth *is* the glitch.",
+            "ALERT: Do not feed the sentient algorithms after midnight. Or before. They're always hungry.",
+            "CRITICAL: The main computer is currently arguing with the toaster about philosophy. This may take a while."
+        ];
+        const hiddenMessages = [
+            {coded: "3N7R0PY L4B RUL3Z!", decoded: "Entropy Lab Rules!"},
+            {coded: "7H3 C4K3 15 4 L13", decoded: "The Cake Is A Lie"},
+            {coded: "C0FF33 > 4LL", decoded: "Coffee > All"},
+            {coded: "D0N7 P4N1C", decoded: "Don't Panic"},
+            {coded: "GL17CH 1N 7H3 M47R1X", decoded: "Glitch In The Matrix"}
+        ];
+
 
         function getRandomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-        function updateQuote() {
-            const q = getRandomItem(quotes);
-            quoteTextEl.textContent = `"${q.text}"`;
-            quoteAuthorEl.textContent = `- ${q.author}`;
-        }
+        function updateQuote() { const q = getRandomItem(quotes); quoteTextEl.textContent = `"${q.text}"`; quoteAuthorEl.textContent = `- ${q.author}`; }
         function updateAnomaly() { currentAnomalyEl.textContent = getRandomItem(anomalies); }
         function updateLabLog() { labLogSnippetEl.textContent = getRandomItem(labLogs); }
         function updateThought() { thoughtForTheVoidEl.textContent = `"${getRandomItem(thoughts)}"`; }
-
-        function triggerEBS() {
-            if (Math.random() < 0.15) { // 15% chance to trigger
-                ebsMessageEl.textContent = getRandomItem(ebsMessages);
-                ebsSystemEl.classList.remove('hidden');
-                setTimeout(() => ebsSystemEl.classList.add('hidden'), 8000); // Show for 8 seconds
-            }
-        }
-        
-        function updateExperimentSpotlight() {
-            const randomExp = getRandomItem(experiments);
-            experimentSpotlightEl.innerHTML = `
-                <h4 class="text-lg font-bold text-cyan-400 mb-1">${randomExp.name}</h4>
-                <p class="text-sm text-gray-300 mb-2">${randomExp.description}</p>
-                <a href="${randomExp.file}" class="launch-button py-1 px-3 rounded-md text-xs">Launch Now!</a>
-            `;
-        }
-
+        function triggerEBS() { if (Math.random() < 0.20) { ebsMessageEl.textContent = getRandomItem(ebsMessages); ebsSystemEl.classList.remove('hidden'); setTimeout(() => ebsSystemEl.classList.add('hidden'), 9000); } }
+        function updateExperimentSpotlight() { const randomExp = getRandomItem(experiments); experimentSpotlightEl.innerHTML = `<h4 class="text-xl font-bold text-cyan-400 mb-1">${randomExp.name}</h4><p class="text-md text-gray-300 mb-3">${randomExp.description}</p><a href="${randomExp.file}" class="launch-button py-2 px-4 rounded-md text-sm">Launch Experiment Now!</a>`;}
         let terminalLineCount = 0;
-        const terminalMessages = [
-            "Scanning for temporal distortions...", "Recalibrating quantum flux regulator...", "Anomaly probability: 42.0%",
-            "Compiling shader... ERROR: Too much awesome.", "Purging cache... or was it consciousness?",
-            "AI core requesting more cat videos...", "Simulation stability: Tentative.", "Engaging caffeine infusion protocol...",
-            "Searching for socks lost in the 4th dimension...", "ERROR 418: I'm a teapot.", "Initializing paradox absorber..."
+        const terminalMessages = [ /* ... terminal messages ... */ 
+            "Scanning for temporal distortions...", "Recalibrating quantum flux regulator...", "Anomaly probability: 69.420%",
+            "Compiling shader... ERROR: Too much awesome. Aborting.", "Purging cache... or was it consciousness? Both?",
+            "AI core requesting more cat videos and a therapist...", "Simulation stability: Surprisingly adequate.", "Engaging emergency caffeine infusion protocol...",
+            "Searching for socks lost in the 4th dimension... Found one! It's arguing with a teapot.", "ERROR 418: I'm a teapot. And I'm offended.", "Initializing paradox absorber... It's full.",
+            "Re-routing power from the existential dread matrix...", "WARNING: Reality may be subjective. Or just buggy.",
+            "SYSTEM: User is attempting to understand. This is unexpected."
         ];
-        function addTerminalLine() {
-            if (terminalLineCount > 20) { miniTerminalEl.innerHTML = `<p><span class="prompt">&gt;</span> Terminal log recycled.</p>`; terminalLineCount = 0; }
-            const type = Math.random() > 0.3 ? "output" : "prompt";
-            const message = getRandomItem(terminalMessages);
-            const p = document.createElement('p');
-            p.innerHTML = `<span class="${type === 'prompt' ? 'prompt' : (message.includes('ERROR') ? 'error' : 'output')}">${type === 'prompt' ? '&gt;' : ''}</span> ${message}`;
-            miniTerminalEl.appendChild(p);
-            miniTerminalEl.scrollTop = miniTerminalEl.scrollHeight;
-            terminalLineCount++;
-        }
+        function addTerminalLine() { if (terminalLineCount > 25) { miniTerminalEl.innerHTML = `<p><span class="prompt">&gt;</span> Terminal log has achieved self-awareness and recycled itself.</p>`; terminalLineCount = 0; } const type = Math.random() > 0.25 ? "output" : "prompt"; const message = getRandomItem(terminalMessages); const p = document.createElement('p'); p.innerHTML = `<span class="${type === 'prompt' ? 'prompt' : (message.includes('ERROR') || message.includes('WARNING') || message.includes('CRITICAL') ? 'error' : 'output')}">${type === 'prompt' ? '&gt;' : ''}</span> ${message}`; miniTerminalEl.appendChild(p); miniTerminalEl.scrollTop = miniTerminalEl.scrollHeight; terminalLineCount++; }
+        function updateLabStats() { experimentsOnlineEl.textContent = experiments.length; anomaliesDetectedEl.textContent = Math.floor(Math.random() * (experiments.length * 5) + experiments.length); const coffeeStatuses = ["FULL", "HALF-FULL", "NEEDS REFILL", "EMPTY", "TRANSCENDED", "BECOME ONE WITH THE VOID", "IS THE COFFEE", "QUESTIONING ITS EXISTENCE"]; coffeeConsumedEl.textContent = getRandomItem(coffeeStatuses); }
         
-        function updateLabStats() {
-            experimentsOnlineEl.textContent = experiments.length;
-            anomaliesDetectedEl.textContent = Math.floor(Math.random() * (experiments.length * 3)); // More anomalies!
-            const coffeeStatuses = ["FULL", "HALF-FULL", "NEEDS REFILL", "EMPTY", "CONTEMPLATING EXISTENCE"];
-            coffeeConsumedEl.textContent = getRandomItem(coffeeStatuses);
-        }
-
-        // Data Stream Canvas
-        const canvas = document.getElementById('dataStreamCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        function resizeCanvas() {
-            const parentWidth = canvas.parentElement.clientWidth - 32; // 2rem padding
-            canvas.width = parentWidth > 150 ? parentWidth : 150; // Min width
-            canvas.height = 80; // Keep height fixed or make it responsive too
-        }
-
-        function createParticle() {
-            particles.push({
-                x: 0,
-                y: Math.random() * canvas.height,
-                vx: Math.random() * 2 + 1, // Speed
-                vy: (Math.random() - 0.5) * 0.5,
-                size: Math.random() * 1.5 + 0.5,
-                color: `rgba(0, 255, 255, ${Math.random() * 0.5 + 0.3})`
-            });
-        }
-
+        const canvas = document.getElementById('dataStreamCanvas'); const ctx = canvas.getContext('2d'); let particles = [];
+        function resizeCanvas() { const parentWidth = canvas.parentElement.clientWidth - 32; canvas.width = parentWidth > 100 ? parentWidth : 100; canvas.height = 70; }
+        function createParticle() { particles.push({ x: 0, y: Math.random() * canvas.height, vx: Math.random() * 2.5 + 1.5, vy: (Math.random() - 0.5) * 0.8, size: Math.random() * 2 + 0.8, color: `rgba(0, 255, 255, ${Math.random() * 0.6 + 0.4})`, trail: [] }); }
         function drawParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(Math.random() < 0.5) createParticle(); // Add particles intermittently
+            if (!ctx) return; // Add a guard in case canvas isn't found
+            ctx.fillStyle = 'rgba(12, 12, 26, 0.2)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if(Math.random() < 0.6) createParticle(); 
 
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
@@ -427,27 +410,300 @@
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
-
-                p.x += p.vx;
-                p.y += p.vy;
-
-                if (p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
-                    particles.splice(i, 1); i--;
+                p.trail.push({x: p.x, y: p.y, alpha: 1});
+                if(p.trail.length > 5) p.trail.shift(); 
+                for(let j = 0; j < p.trail.length; j++) {
+                    const t = p.trail[j];
+                    t.alpha -= 0.05; 
+                    if(t.alpha <=0) continue;
+                    ctx.fillStyle = `rgba(0, 255, 255, ${t.alpha * 0.5})`; 
+                    ctx.beginPath();
+                    ctx.arc(t.x, t.y, p.size * (j / p.trail.length) * 0.8, 0, Math.PI * 2); 
+                    ctx.fill();
                 }
+                p.x += p.vx; p.y += p.vy;
+                if (p.x > canvas.width + 10 || p.y < -10 || p.y > canvas.height + 10) { particles.splice(i, 1); i--; }
             }
-            if (particles.length > 50) particles.splice(0, particles.length - 50); // Limit particles
+            if (particles.length > 60) particles.splice(0, particles.length - 60); 
             requestAnimationFrame(drawParticles);
         }
-        
         window.addEventListener('resize', resizeCanvas);
 
+        function createNewsTickerWidget() {
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget news-ticker-widget md:col-span-2';
+            let newsHTML = `<h3 class="interstitial-title text-lg">DISPATCHES FROM THE VOID</h3>`;
+            const displayedNews = [];
+            for (let i = 0; i < 3; i++) { 
+                let newsItem = getRandomItem(hotNewsItems);
+                while(displayedNews.includes(newsItem.text)) newsItem = getRandomItem(hotNewsItems); 
+                displayedNews.push(newsItem.text);
+                newsHTML += `<p class="news-ticker-item">&bull; ${newsItem.text} <a href="${newsItem.link}" target="_blank" rel="noopener noreferrer">[Details...]</a></p>`;
+            }
+            widget.innerHTML = newsHTML;
+            return widget;
+        }
 
-        // Create experiment cards
+        function createVoidVentWidget() {
+            const widgetId = `voidVent-${Math.random().toString(36).substring(7)}`;
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget void-vent-widget';
+            widget.innerHTML = `
+                <h3 class="interstitial-title text-lg">VENT INTO THE VOID</h3>
+                <p class="text-xs text-gray-400 mb-2">Release your frustrations into the infinite nothingness. It's probably listening.</p>
+                <textarea id="ventInput-${widgetId}" class="void-vent-input" rows="2" placeholder="Type your cosmic grievances here..."></textarea>
+                <button id="ventButton-${widgetId}" class="void-vent-button w-full">YEET TO BLACK HOLE</button>
+                <p id="ventOutput-${widgetId}" class="text-xs text-purple-400 mt-2 h-4"></p>
+            `;
+            setTimeout(() => { 
+                const ventInput = document.getElementById(`ventInput-${widgetId}`);
+                const ventButton = document.getElementById(`ventButton-${widgetId}`);
+                const ventOutput = document.getElementById(`ventOutput-${widgetId}`);
+                if (ventButton && ventInput && ventOutput) { // Added checks for ventInput and ventOutput
+                    ventButton.addEventListener('click', () => {
+                        if (ventInput.value.trim() !== "") {
+                            ventOutput.textContent = `"${ventInput.value.substring(0,20)}..." has been consumed by the void!`;
+                            ventInput.value = "";
+                            ventOutput.style.animation = 'none'; 
+                            void ventOutput.offsetHeight; 
+                            ventOutput.style.animation = 'fadeOutYell 1.5s forwards';
+                        } else {
+                            ventOutput.textContent = "The void demands substance!";
+                             setTimeout(() => { if(ventOutput) ventOutput.textContent = "";}, 2000);
+                        }
+                    });
+                } else {
+                    console.warn(`[VoidVentWidget] Could not find all elements for widget ID ${widgetId}`);
+                }
+            }, 0);
+            return widget;
+        }
+        
+        function createMysteryLeverWidget() {
+            const widgetId = `mysteryLever-${Math.random().toString(36).substring(7)}`;
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget mystery-lever-widget text-center';
+            widget.innerHTML = `
+                <h3 class="interstitial-title text-lg">QUANTUM LEVER</h3>
+                <p class="text-xs text-gray-400 mb-2">What does it do? Probably nothing good.</p>
+                <div id="lever-${widgetId}" class="mystery-lever">
+                    <div class="mystery-lever-handle"></div>
+                </div>
+                <p id="leverMessage-${widgetId}" class="text-xs text-yellow-300 mt-2 h-4"></p>
+            `;
+            setTimeout(() => {
+                const lever = document.getElementById(`lever-${widgetId}`);
+                const leverMessage = document.getElementById(`leverMessage-${widgetId}`);
+                if (lever && leverMessage) { // Added check for leverMessage
+                    lever.addEventListener('click', () => {
+                        lever.classList.toggle('pulled');
+                        const messages = ["Reality shimmers...", "A distant quasar blinks.", "Nothing happens. Or does it?", "Error: Paradox buffer overflow.", "You feel slightly more... triangular."];
+                        leverMessage.textContent = lever.classList.contains('pulled') ? getRandomItem(messages) : "Lever reset. The universe sighs.";
+                        document.body.style.transition = 'background-color 0.5s';
+                        document.body.style.backgroundColor = lever.classList.contains('pulled') ? '#0a0a18' : '#0c0c1a'; // Use CSS vars later if preferred
+                    });
+                } else {
+                     console.warn(`[MysteryLeverWidget] Could not find all elements for widget ID ${widgetId}`);
+                }
+            }, 0);
+            return widget;
+        }
+
+        function createSystemAlertPanelWidget() {
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget system-alert-panel';
+            widget.innerHTML = `<h3 class="interstitial-title text-yellow-400 text-sm">SYSTEM ALERT!</h3><p>${getRandomItem(systemAlertMessages)}</p>`;
+            return widget;
+        }
+
+        function createLabFactoidWidget() {
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget lab-factoid-panel';
+            widget.innerHTML = `<h3 class="interstitial-title text-sky-300 text-sm">LAB FACTOID #${Math.floor(Math.random()*1000)}</h3><p>${getRandomItem(labFactoids)}</p>`;
+            return widget;
+        }
+        function createMiniDataPlotWidget() {
+            const widgetId = `miniPlot-${Math.random().toString(36).substring(7)}`;
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget mini-data-plot-widget';
+            widget.innerHTML = `
+                <h3 class="interstitial-title text-sm">CRITICAL DATA PLOT</h3>
+                <canvas id="${widgetId}" class="mini-data-plot"></canvas>
+                <p class="text-xs text-gray-500 text-center mt-1">Fluctuations nominal... for now.</p>
+            `;
+            setTimeout(() => {
+                const plotCanvas = document.getElementById(widgetId);
+                if (!plotCanvas) {
+                    console.warn(`[MiniDataPlotWidget] Canvas not found for ID ${widgetId}`);
+                    return;
+                }
+                const plotCtx = plotCanvas.getContext('2d');
+                if (!plotCtx) {
+                    console.warn(`[MiniDataPlotWidget] Could not get 2D context for ID ${widgetId}`);
+                    return;
+                }
+                let plotData = Array(20).fill(0).map(() => Math.random() * plotCanvas.height * 0.8 + plotCanvas.height * 0.1);
+                function drawPlot() {
+                    plotCtx.clearRect(0,0, plotCanvas.width, plotCanvas.height);
+                    plotCtx.beginPath();
+                    plotCtx.moveTo(0, plotData[0]);
+                    plotData.forEach((val, i) => plotCtx.lineTo((i / (plotData.length -1)) * plotCanvas.width, val));
+                    plotCtx.strokeStyle = 'var(--primary-cyan)';
+                    plotCtx.lineWidth = 1.5;
+                    plotCtx.stroke();
+                    plotData.shift();
+                    plotData.push(Math.random() * plotCanvas.height * 0.8 + plotCanvas.height * 0.1);
+                }
+                setInterval(drawPlot, 200); // This interval will keep running
+            },0);
+            return widget;
+        }
+
+        function createSystemLoadWidget() {
+            const widgetId = `sysLoad-${Math.random().toString(36).substring(7)}`;
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget system-load-widget';
+            widget.innerHTML = `
+                <h3 class="interstitial-title text-sm">SYSTEM LOAD MONITOR</h3>
+                <div class="text-xs text-gray-400 mb-1">Core 1: <span id="load1-${widgetId}">0%</span></div><div class="system-load-bar"><div id="bar1-${widgetId}" class="system-load-bar-inner"></div></div>
+                <div class="text-xs text-gray-400 mb-1 mt-1">Core 2: <span id="load2-${widgetId}">0%</span></div><div class="system-load-bar"><div id="bar2-${widgetId}" class="system-load-bar-inner"></div></div>
+                <div class="text-xs text-gray-400 mb-1 mt-1">Entropy Drive: <span id="load3-${widgetId}" class="text-red-400">CRITICAL</span></div><div class="system-load-bar"><div id="bar3-${widgetId}" class="system-load-bar-inner bg-red-500"></div></div>
+            `;
+             setTimeout(() => {
+                const load1 = document.getElementById(`load1-${widgetId}`); const bar1 = document.getElementById(`bar1-${widgetId}`);
+                const load2 = document.getElementById(`load2-${widgetId}`); const bar2 = document.getElementById(`bar2-${widgetId}`);
+                const bar3 = document.getElementById(`bar3-${widgetId}`);
+                if(load1 && bar1 && load2 && bar2 && bar3) {
+                    setInterval(() => {
+                        const val1 = Math.floor(Math.random() * 100);
+                        const val2 = Math.floor(Math.random() * 100);
+                        const val3 = Math.floor(Math.random() * 30 + 70); 
+                        load1.textContent = `${val1}%`; bar1.style.width = `${val1}%`;
+                        load2.textContent = `${val2}%`; bar2.style.width = `${val2}%`;
+                        bar3.style.width = `${val3}%`;
+                    }, 1500); // This interval will keep running
+                } else {
+                    console.warn(`[SystemLoadWidget] Could not find all elements for widget ID ${widgetId}`);
+                }
+            },0);
+            return widget;
+        }
+        
+        function createQuantumCoinFlipWidget() {
+            const widgetId = `qCoin-${Math.random().toString(36).substring(7)}`;
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget quantum-coin-widget text-center';
+            widget.innerHTML = `
+                <h3 class="interstitial-title text-sm">QUANTUM COIN FLIP</h3>
+                <button id="flipBtn-${widgetId}" class="quantum-coin-button rounded mb-2">Flip the Q-Coin!</button>
+                <p id="qCoinResult-${widgetId}" class="text-lg font-bold text-purple-400 h-6"></p>
+            `;
+            setTimeout(() => {
+                const flipBtn = document.getElementById(`flipBtn-${widgetId}`);
+                const qCoinResult = document.getElementById(`qCoinResult-${widgetId}`);
+                if(flipBtn && qCoinResult) {
+                    flipBtn.addEventListener('click', () => {
+                        qCoinResult.textContent = '...';
+                        setTimeout(() => {
+                            const results = ["HEADS", "TAILS", "BOTH?!", "NEITHER?!", "SUPERPOSITION!", "ERROR: Coin escaped to 5th dimension."];
+                            qCoinResult.textContent = getRandomItem(results);
+                        }, 500);
+                    });
+                } else {
+                    console.warn(`[QuantumCoinFlipWidget] Could not find all elements for widget ID ${widgetId}`);
+                }
+            },0);
+            return widget;
+        }
+
+        function createHiddenMessageWidget() {
+            const widgetId = `hiddenMsg-${Math.random().toString(36).substring(7)}`;
+            const messageObj = getRandomItem(hiddenMessages);
+            const widget = document.createElement('div');
+            widget.className = 'interstitial-widget hidden-message-decoder';
+            widget.innerHTML = `
+                <h3 class="interstitial-title text-sm">CLASSIFIED TRANSMISSION</h3>
+                <div id="codedText-${widgetId}" class="hidden-message-text p-2 mb-2">${messageObj.coded}</div>
+                <button id="decodeBtn-${widgetId}" class="rounded">Decode</button>
+                <p id="decodedResult-${widgetId}" class="text-xs text-green-400 mt-1 h-4"></p>
+            `;
+            setTimeout(() => {
+                const decodeBtn = document.getElementById(`decodeBtn-${widgetId}`);
+                const decodedResult = document.getElementById(`decodedResult-${widgetId}`);
+                if(decodeBtn && decodedResult) {
+                    decodeBtn.addEventListener('click', () => {
+                        decodedResult.textContent = messageObj.decoded;
+                        decodeBtn.disabled = true;
+                        decodeBtn.textContent = "Decoded!";
+                    });
+                } else {
+                     console.warn(`[HiddenMessageWidget] Could not find all elements for widget ID ${widgetId}`);
+                }
+            },0);
+            return widget;
+        }
+
+        const interstitialWidgets = [
+            createNewsTickerWidget, createVoidVentWidget, createMysteryLeverWidget,
+            createSystemAlertPanelWidget, createLabFactoidWidget, createMiniDataPlotWidget,
+            createSystemLoadWidget, createQuantumCoinFlipWidget, createHiddenMessageWidget
+        ];
+        let interstitialCounter = 0;
+        const totalInterstitialTypes = interstitialWidgets.length;
+
+        experiments.sort((a, b) => { 
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        const finalGridElements = [];
+        
+        experiments.filter(e => e.featured).forEach(exp => {
+            finalGridElements.push(createExperimentCard(exp));
+        });
+        
+        const nonFeaturedExperiments = experiments.filter(e => !e.featured);
+        for (let i = nonFeaturedExperiments.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [nonFeaturedExperiments[i], nonFeaturedExperiments[j]] = [nonFeaturedExperiments[j], nonFeaturedExperiments[i]];
+        }
+
+        nonFeaturedExperiments.forEach((exp, index) => {
+            finalGridElements.push(createExperimentCard(exp));
+            if ((index + 1) % 2 === 0 && interstitialCounter < totalInterstitialTypes) { 
+                 const widgetGenerator = interstitialWidgets[interstitialCounter % totalInterstitialTypes];
+                 const interstitialElement = widgetGenerator();
+                 if (widgetGenerator === createNewsTickerWidget || widgetGenerator === createVoidVentWidget || widgetGenerator === createMiniDataPlotWidget) {
+                     interstitialElement.classList.add('md:col-span-2');
+                 }
+                 finalGridElements.push(interstitialElement);
+                 interstitialCounter++;
+            }
+        });
+        
+        while(interstitialCounter < totalInterstitialTypes) {
+            const widgetGenerator = interstitialWidgets[interstitialCounter % totalInterstitialTypes]; // Cycle through remaining
+            const interstitialElement = widgetGenerator();
+            if (widgetGenerator === createNewsTickerWidget || widgetGenerator === createMiniDataPlotWidget) {
+                 interstitialElement.classList.add('md:col-span-2');
+            }
+            finalGridElements.push(interstitialElement);
+            interstitialCounter++;
+        }
+
+        finalGridElements.forEach(el => {
+            if (el) { // Ensure element is not undefined before appending
+                experimentsGridEl.appendChild(el);
+            } else {
+                console.warn("Attempted to append an undefined element to the grid.");
+            }
+        });
+
         function createExperimentCard(exp) {
             const card = document.createElement('div');
             card.className = `card p-4 md:p-6 rounded-lg flex flex-col justify-between shadow-lg hover:shadow-cyan-500/50 ${exp.featured ? 'md:col-span-2 featured-card min-h-[280px]' : 'min-h-[220px]'}`;
-            
-            let iconSvg = ''; // Same icon logic as before
+            let iconSvg = ''; 
             switch (exp.category.toLowerCase().split(' ')[0]) {
                 case 'game': case 'music':
                     iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 7a1 1 0 000 2h6a1 1 0 100-2H7zM7 11a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>`; break;
@@ -458,7 +714,6 @@
                 default:
                     iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clip-rule="evenodd" /></svg>`;
             }
-
             card.innerHTML = `
                 <div>
                     ${iconSvg}
@@ -467,51 +722,52 @@
                 </div>
                 <a href="${exp.file}" class="launch-button mt-auto self-start py-2 px-3 md:px-4 rounded-md text-xs md:text-sm">Launch Experiment</a>
             `;
-            experimentsGrid.appendChild(card);
+            return card; 
         }
         
-        experiments.sort((a, b) => {
-            if (a.featured && !b.featured) return -1;
-            if (!a.featured && b.featured) return 1;
-            return a.name.localeCompare(b.name);
-        });
-        experiments.forEach(createExperimentCard);
-
-        // Initial calls and intervals
         document.addEventListener('DOMContentLoaded', () => {
-            updateQuote(); updateAnomaly(); updateLabLog(); updateThought(); updateExperimentSpotlight(); updateLabStats();
-            resizeCanvas(); // Initial resize
-            drawParticles(); // Start animation
+            if(quoteTextEl) updateQuote(); 
+            if(currentAnomalyEl) updateAnomaly(); 
+            if(labLogSnippetEl) updateLabLog(); 
+            if(thoughtForTheVoidEl) updateThought(); 
+            if(experimentSpotlightEl) updateExperimentSpotlight(); 
+            if(experimentsOnlineEl) updateLabStats();
+            if(canvas) { resizeCanvas(); drawParticles(); }
             
-            setInterval(updateQuote, 12000); 
-            setInterval(addTerminalLine, 2500); 
-            setInterval(updateLabStats, 4500);
-            setInterval(updateAnomaly, 10000);
-            setInterval(updateLabLog, 13000);
-            setInterval(triggerEBS, 25000); // Check to trigger EBS every 25s
-            setInterval(updateExperimentSpotlight, 20000);
-            setInterval(updateThought, 18000);
+            if(quoteTextEl) setInterval(updateQuote, 11000); 
+            if(miniTerminalEl) setInterval(addTerminalLine, 2200); 
+            if(experimentsOnlineEl) setInterval(updateLabStats, 4000);
+            if(currentAnomalyEl) setInterval(updateAnomaly, 9000);
+            if(labLogSnippetEl) setInterval(updateLabLog, 12500);
+            if(ebsSystemEl) setInterval(triggerEBS, 22000); 
+            if(experimentSpotlightEl) setInterval(updateExperimentSpotlight, 18000);
+            if(thoughtForTheVoidEl) setInterval(updateThought, 17000);
         });
 
         document.getElementById('currentYear').textContent = new Date().getFullYear();
-
         let clickCount = 0;
-        const clickMessages = [
+        const clickMessages = [ 
             "I told you not to click!", "Seriously, stop it.", "Okay, one more time...",
             "You're really testing the fabric of reality here.", "Fine. You win. Or do you?",
             "Self-destruct sequence initiated... jk.", "This button does nothing useful. Happy now?",
             "Congratulations! You've discovered the button of mild annoyance.", "The void stares back... and it's unimpressed."
         ];
-        dontClickButton.addEventListener('click', () => {
-            dontClickMessage.textContent = clickMessages[clickCount % clickMessages.length];
-            clickCount++;
-            dontClickButton.classList.add('animate-pulse');
-            document.body.style.filter = `hue-rotate(${clickCount * 15}deg) contrast(${1 + clickCount * 0.05})`;
-            setTimeout(() => {
-                dontClickButton.classList.remove('animate-pulse');
-                if(clickCount > 5) document.body.style.filter = ''; // Reset filter after a few clicks
-            }, 300);
-        });
+        if (dontClickButton) {
+            dontClickButton.addEventListener('click', () => {
+                if(dontClickMessage) dontClickMessage.textContent = clickMessages[clickCount % clickMessages.length];
+                clickCount++;
+                dontClickButton.classList.add('animate-pulse');
+                document.body.style.transition = 'filter 0.2s ease-out'; 
+                document.body.style.filter = `hue-rotate(${clickCount * 20}deg) contrast(${1 + clickCount * 0.07}) saturate(${1 + clickCount * 0.1})`;
+                setTimeout(() => {
+                    dontClickButton.classList.remove('animate-pulse');
+                    if(clickCount > 4) { 
+                        document.body.style.filter = ''; 
+                        clickCount = 0; 
+                    }
+                }, 300);
+            });
+        }
 
     </script>
 
