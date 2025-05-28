@@ -6,6 +6,7 @@ Welcome to [**Entropy Lab**](https://maniatrial.github.io/entropy-lab/) – a di
 
 👉 [Visit Entropy Lab](https://maniatrial.github.io/entropy-lab/)
 
+https://maniatrial.github.io/entropy-lab/
 ## 🧪 What is this?
 
 Entropy Lab is a chaotic, fun, and slightly unhinged collection of:
