@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entropy Lab - A Digital Playground</title>
+    <title>Entropy Lab - A Digital Playground v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&family=Turret+Road:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&family=Turret+Road:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Roboto Mono', monospace;
-            background-color: #1a1a2e; /* Deep void blue */
+            background-color: #121222; /* Slightly darker void blue */
             color: #e0e6f0; /* Light cyber-text */
             overflow-x: hidden;
         }
         .header-font {
-            font-family: 'Turret Road', cursive; /* Was Orbitron, Turret Road feels more 'lab' like */
-            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff30;
+            font-family: 'Turret Road', cursive;
+            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff30, 0 0 15px #ff00ff, 0 0 20px #ff00ff30; /* Added magenta glow */
         }
         .card {
-            background-color: rgba(23, 37, 84, 0.7); /* Darker blue, semi-transparent */
-            border: 1px solid rgba(0, 255, 255, 0.3); /* Cyan border */
+            background-color: rgba(23, 37, 84, 0.75); 
+            border: 1px solid rgba(0, 255, 255, 0.3);
             transition: all 0.3s ease-in-out;
             backdrop-filter: blur(5px);
             position: relative;
-            overflow: hidden; /* For pseudo-elements */
+            overflow: hidden; 
         }
-        .card:before { /* Glitchy scanline effect */
+        .card:before { 
             content: '';
             position: absolute;
             top: 0;
@@ -36,95 +36,234 @@
             animation: scanline 8s linear infinite;
             opacity: 0;
         }
-        .card:hover:before {
-            opacity: 1;
-        }
+        .card:hover:before { opacity: 1; }
         @keyframes scanline {
             0% { transform: translateY(-10px); opacity: 0; }
             10% { transform: translateY(0px); opacity: 0.5; }
+            50% { opacity: 0.7; }
             90% { opacity: 0.5; }
-            100% { transform: translateY(100%); opacity: 0; height: 4px; }
+            100% { transform: translateY(110%); opacity: 0; height: 4px; }
         }
-
         .card:hover {
             transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.2), 0 0 30px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.2), 0 0 30px rgba(0, 255, 255, 0.1), 0 0 15px rgba(255,0,255,0.2); /* Added magenta shadow */
             border-color: rgba(0, 255, 255, 0.7);
         }
-        .card-title {
-            font-family: 'Orbitron', sans-serif;
-            color: #00ffff; /* Cyan */
-        }
-        .card-description {
-            color: #bdc1c6; /* Lighter gray */
-            font-size: 0.875rem;
-        }
+        .card-title { font-family: 'Orbitron', sans-serif; color: #00ffff; }
+        .card-description { color: #bdc1c6; font-size: 0.875rem; }
         .launch-button {
-            background-color: #00ffff;
-            color: #1a1a2e;
-            transition: all 0.3s ease;
-            font-weight: bold;
-            border: 1px solid #00ffff;
+            background-color: #00ffff; color: #121222;
+            transition: all 0.3s ease; font-weight: bold; border: 1px solid #00ffff;
         }
-        .launch-button:hover {
-            background-color: #1a1a2e;
-            color: #00ffff;
-            box-shadow: 0 0 10px #00ffff;
-        }
-        .featured-card {
-            /* Tailwind: md:col-span-2 md:row-span-2 or specific grid areas */
-            background-color: rgba(40, 58, 114, 0.8); /* Slightly different bg for featured */
-        }
+        .launch-button:hover { background-color: #121222; color: #00ffff; box-shadow: 0 0 10px #00ffff; }
+        .featured-card { background-color: rgba(40, 58, 114, 0.85); }
         .grid-container {
             display: grid;
-            gap: 1.5rem; /* Tailwind gap-6 */
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive columns */
+            gap: 1.5rem; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
         }
-
-        /* For making specific items larger using grid span */
-        .md\:col-span-2 {
-           grid-column: span 2 / span 2;
-        }
-        .md\:row-span-2 {
-            grid-row: span 2 / span 2;
-        }
+        .md\:col-span-2 { grid-column: span 2 / span 2; }
         
-        /* Custom scrollbar for a more thematic feel */
-        ::-webkit-scrollbar {
-            width: 10px;
+        /* Marquee */
+        .marquee {
+            background-color: rgba(0,0,0,0.5);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.4);
+            padding: 0.5rem 0;
+            white-space: nowrap;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,255,255,0.2);
         }
-        ::-webkit-scrollbar-track {
-            background: #1a1a2e;
+        .marquee-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee-scroll 30s linear infinite;
+            font-family: 'Share Tech Mono', monospace;
+            color: #ff00ff; /* Magenta for marquee text */
         }
-        ::-webkit-scrollbar-thumb {
-            background: #00ffff;
-            border-radius: 5px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #00b3b3;
+        .marquee-content a { color: #00ffff; text-decoration: underline; }
+        .marquee-content a:hover { color: #ffffff; }
+        @keyframes marquee-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
+        /* Quote Block */
+        .quote-block {
+            background-color: rgba(255,255,255,0.05);
+            border: 1px dashed rgba(0, 255, 255, 0.5);
+            padding: 1rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .quote-text { font-size: 1.1rem; color: #00ffff; margin-bottom: 0.5rem; }
+        .quote-author { font-size: 0.9rem; color: #ff00ff; }
+
+        /* Mini Terminal */
+        .mini-terminal {
+            background-color: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 0.75rem;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,255,0,0.3);
+        }
+        .mini-terminal p { margin-bottom: 0.25rem; }
+        .mini-terminal .prompt { color: #00ff00; }
+        .mini-terminal .output { color: #aaffaa; }
+
+        /* Lab Stats & Indicators */
+        .status-indicator {
+            width: 12px; height: 12px; border-radius: 50%;
+            display: inline-block; margin-right: 0.5rem;
+            animation: blink 1.5s infinite ease-in-out;
+        }
+        .status-green { background-color: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        .status-yellow { background-color: #ffff00; box-shadow: 0 0 5px #ffff00; animation-delay: 0.5s; }
+        .status-red { background-color: #ff0000; box-shadow: 0 0 5px #ff0000; animation-delay: 1s; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .lab-stat-item {
+            background-color: rgba(0,0,0,0.3);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            border-left: 3px solid #ff00ff;
+            font-size: 0.9rem;
+        }
+        .dont-click-button {
+            background-color: #ff0033; color: white;
+            border: 1px solid #ff0033;
+            box-shadow: 0 0 8px #ff0033;
+        }
+        .dont-click-button:hover { background-color: #cc0022; }
+        .glitch-text {
+            animation: glitch 3s linear infinite alternate-reverse;
+            display: inline-block;
+        }
+        @keyframes glitch{
+          2%,64%{ transform: translate(2px,0) skew(0deg); }
+          4%,60%{ transform: translate(-2px,0) skew(0deg); }
+          62%{ transform: translate(0,0) skew(5deg); }
+        }
+        .glitch-text:before,
+        .glitch-text:after{
+          content: attr(data-text);
+          position: absolute;
+          left: 0;
+        }
+        .glitch-text:before{
+          animation: glitch-top 3s linear infinite alternate-reverse;
+          clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+          -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+        }
+        @keyframes glitch-top{
+          2%,64%{ transform: translate(2px,-2px); }
+          4%,60%{ transform: translate(-2px,2px); }
+          62%{ transform: translate(13px,-1px) skew(-13deg); }
+        }
+        .glitch-text:after{
+          animation: glitch-bottom 3s linear infinite alternate-reverse;
+          clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+          -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+        }
+        @keyframes glitch-bottom{
+          2%,64%{ transform: translate(-2px,0); }
+          4%,60%{ transform: translate(-2px,0); }
+          62%{ transform: translate(-22px,5px) skew(21deg); }
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #121222; }
+        ::-webkit-scrollbar-thumb { background: #00ffff; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00b3b3; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 selection:bg-cyan-500 selection:text-black">
+<body class="min-h-screen p-2 md:p-6 selection:bg-cyan-500 selection:text-black">
 
-    <header class="text-center mb-12 md:mb-16">
-        <h1 class="header-font text-5xl md:text-7xl font-bold text-cyan-400">ENTROPY LAB</h1>
-        <p class="text-xl md:text-2xl text-cyan-200 mt-2">A Digital Playground of Experiments & Curiosities</p>
+    <div class="marquee">
+        <div class="marquee-content">
+            <span>WARNING: High levels of digital entropy detected! Proceed with curiosity... </span>
+            <span>Latest Experiment: <a href="groovbox.html">GroovBox Rhythms</a> // </span>
+            <span>Consult the <a href="astrobot.html">AI Astro Oracle</a> for cosmic guidance! // </span>
+            <span>SYSTEM ALERT: Coffee reserves critically low! // </span>
+            <span>Check out <a href="https://news.google.com" target="_blank" rel="noopener noreferrer">Latest Tech News</a> // </span>
+            <span>Need a break? Try <a href="learnuselessskills.html">Learning a Useless Skill</a>! // </span>
+            <span>Remember to defragment your brain cells regularly... </span>
+        </div>
+    </div>
+
+    <header class="text-center my-8 md:my-12">
+        <h1 class="header-font text-5xl md:text-7xl font-bold text-cyan-400">
+            <span class="glitch-text" data-text="ENTROPY LAB">ENTROPY LAB</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-cyan-200 mt-3">A Digital Playground of Experiments &amp; Curiosities</p>
     </header>
 
-    <main>
-        <div id="experimentsGrid" class="grid-container">
+    <div class="container mx-auto px-2 md:px-4">
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="md:col-span-2 quote-block">
+                <p id="quoteText" class="quote-text">"The only way to make sense out of change is to plunge into it, move with it, and join the dance."</p>
+                <p id="quoteAuthor" class="quote-author">- Alan Watts</p>
             </div>
-    </main>
+            <div class="mini-terminal" id="miniTerminal">
+                <p><span class="prompt">&gt;</span> Initializing Entropy Core...</p>
+                <p><span class="output">Core systems online.</span></p>
+                <p><span class="prompt">&gt;</span> Loading experiment modules...</p>
+            </div>
+        </div>
 
-    <footer class="text-center mt-12 md:mt-16 pt-8 border-t border-dashed border-cyan-500/30">
-        <p class="text-sm text-cyan-300">Welcome to the void. Construct additional pylons.</p>
-        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - All experiments conducted with questionable sanity.</p>
+        <div class="grid md:grid-cols-3 gap-6 mb-8 items-start">
+            <div class="bg-black/30 p-4 rounded-md border border-cyan-500/30">
+                <h3 class="text-lg font-semibold text-cyan-300 mb-3">Lab Diagnostics:</h3>
+                <div class="space-y-2">
+                    <p class="lab-stat-item">Experiments Online: <span id="experimentsOnline" class="font-bold text-cyan-400">0</span></p>
+                    <p class="lab-stat-item">Anomalies Detected: <span id="anomaliesDetected" class="font-bold text-red-400">0</span></p>
+                    <p class="lab-stat-item">Coffee Units Consumed: <span id="coffeeConsumed" class="font-bold text-yellow-400">999+</span></p>
+                    <div class="lab-stat-item">System Status: 
+                        <span class="status-indicator status-green"></span>
+                        <span class="status-indicator status-yellow"></span>
+                        <span class="status-indicator status-red"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-black/30 p-4 rounded-md border border-cyan-500/30 text-center">
+                <h3 class="text-lg font-semibold text-cyan-300 mb-3">Thought for the Void:</h3>
+                <p class="text-sm text-cyan-100 italic">"Is a simulation still a simulation if you can't find the exit?"</p>
+                <button id="dontClickButton" class="dont-click-button mt-4 py-2 px-4 rounded-md text-sm font-bold">DO NOT CLICK!</button>
+                <p id="dontClickMessage" class="text-xs text-red-300 mt-2 h-4"></p>
+            </div>
+             <div class="bg-black/30 p-4 rounded-md border border-cyan-500/30">
+                <h3 class="text-lg font-semibold text-cyan-300 mb-3">Noise Matrix Control:</h3>
+                <p class="text-sm text-cyan-100 mb-3">Engage ambient lab frequencies?</p>
+                <div class="flex space-x-2">
+                    <button class="bg-green-500/50 hover:bg-green-500/80 text-white py-1 px-3 rounded text-xs">ENGAGE ALPHA</button>
+                    <button class="bg-blue-500/50 hover:bg-blue-500/80 text-white py-1 px-3 rounded text-xs">ENGAGE BETA</button>
+                    <button class="bg-purple-500/50 hover:bg-purple-500/80 text-white py-1 px-3 rounded text-xs">ENGAGE GAMMA</button>
+                </div>
+                 <p class="text-xs text-gray-500 mt-2">(Audio functionality pending quantum entanglement)</p>
+            </div>
+        </div>
+
+        <main>
+            <h2 class="text-3xl header-font text-cyan-300 mb-6 text-center border-b-2 border-cyan-500/50 pb-3">Available Experiments</h2>
+            <div id="experimentsGrid" class="grid-container">
+                </div>
+        </main>
+    </div>
+
+    <footer class="text-center mt-12 md:mt-16 py-8 border-t border-dashed border-cyan-500/30">
+        <p class="text-sm text-cyan-300">Welcome to the void. Data streams are nominal. For now.</p>
+        <p class="text-xs text-cyan-400 mt-1">Entropy Lab &copy; <span id="currentYear"></span> - All experiments conducted with questionable sanity and copious amounts of caffeine.</p>
     </footer>
 
     <script>
         const experiments = [
+            // ... (Keep your existing experiments array here from the previous version) ...
             // Games
             { id: 'abyssalAnglergame', file: 'abyssalAnglergame.html', name: 'Abyssal Angler', category: 'Game', description: 'Dive deep and lure mysterious creatures from the abyss.' },
             { id: 'AstroWreckageGame', file: 'AstroWreckageGame.html', name: 'Astro Wreckage', category: 'Game', description: 'Navigate space debris and survive the cosmic junkyard.' },
@@ -137,7 +276,7 @@
             { id: 'RocketGame', file: 'RocketGame.html', name: 'Rocket Adventure', category: 'Game', description: 'Pilot your rocket through challenging stellar courses.' },
             { id: 'snakespacegame', file: 'snakespacegame.html', name: 'Snake In Space', category: 'Game', description: 'The classic snake game, but with a cosmic setting.' },
             { id: 'speedtyper', file: 'speedtyper.html', name: 'Speed Typer', category: 'Game', description: 'Test and improve your typing speed against the clock.' },
-            { id: 'StarDustgame', file: 'StarDustGame.html', name: 'StarDust', category: 'Game', description: 'Collect stardust while evading cosmic hazards.' }, // Corrected filename case
+            { id: 'StarDustgame', file: 'StarDustGame.html', name: 'StarDust', category: 'Game', description: 'Collect stardust while evading cosmic hazards.' },
             { id: 'tetrisgame', file: 'tetrisgame.html', name: 'Block Matrix (Tetris)', category: 'Game', description: 'The timeless puzzle game of falling blocks.' },
             { id: 'void_gobblergame', file: 'void_gobblergame.html', name: 'Void Gobbler', category: 'Game', description: 'Consume orbs and grow, but avoid the void monsters.' },
             { id: 'wrack-a-dotgame', file: 'wrack-a-dotgame.html', name: 'Wrack-a-Dot', category: 'Game', description: 'A fast-paced dot-whacking challenge.' },
@@ -160,7 +299,7 @@
             // Utilities & Misc
             { id: 'globalwindow', file: 'globalwindow.html', name: 'Global Window Swap', category: 'Experience', description: 'Peek through random windows from around the (digital) world.' },
             { id: 'kalido', file: 'kalido.html', name: 'Kalido Visualizer', category: 'Visualizer', description: 'A kaleidoscopic interactive visual experience.' },
-            { id: 'meitationact', file: 'meitationact.html', name: 'Digital Meditation', category: 'Utility', description: 'A simple tool for focus and calm.' }, // Assumed "meditation"
+            { id: 'meitationact', file: 'meitationact.html', name: 'Digital Meditation', category: 'Utility', description: 'A simple tool for focus and calm.' },
             { id: 'plantseed', file: 'plantseed.html', name: 'Digital Plant Seed', category: 'Simulation', description: 'Nurture a digital seed and watch it grow.' },
             { id: 'pocket-ecosystem', file: 'pocket-ecosystem.html', name: 'Pocket Ecosystem', category: 'Simulation', description: 'A miniature evolving world in your browser.' },
             { id: 'Self-Portrait', file: 'Self-Portrait.html', name: 'AI Self-Portrait', category: 'AI Art', description: 'Generate abstract self-portraits with AI assistance.' },
@@ -169,51 +308,132 @@
         ];
 
         const experimentsGrid = document.getElementById('experimentsGrid');
+        const quoteTextEl = document.getElementById('quoteText');
+        const quoteAuthorEl = document.getElementById('quoteAuthor');
+        const miniTerminalEl = document.getElementById('miniTerminal');
+        const experimentsOnlineEl = document.getElementById('experimentsOnline');
+        const anomaliesDetectedEl = document.getElementById('anomaliesDetected');
+        const coffeeConsumedEl = document.getElementById('coffeeConsumed'); // Assuming you have this element
+        const dontClickButton = document.getElementById('dontClickButton');
+        const dontClickMessage = document.getElementById('dontClickMessage');
 
+        const quotes = [
+            { text: "The universe is a grand experiment. Don't forget to take notes.", author: "The Lab Coat" },
+            { text: "Reality is merely an illusion, albeit a very persistent one.", author: "A. Einstein (probably)" },
+            { text: "Embrace the chaos. It's where the best ideas hide.", author: "Dr. Entropia" },
+            { text: "If at first you don't succeed, try, try again. Then question the methodology.", author: "Lab Intern #42" },
+            { text: "Warning: May spontaneously generate existential crises.", author: "The Fine Print" }
+        ];
+
+        function getRandomQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            quoteTextEl.textContent = `"${quotes[randomIndex].text}"`;
+            quoteAuthorEl.textContent = `- ${quotes[randomIndex].author}`;
+        }
+
+        let terminalLineCount = 0;
+        const terminalMessages = [
+            "Scanning for temporal distortions...",
+            "Recalibrating quantum flux regulator...",
+            "Anomaly probability: 37.4%",
+            "Compiling shader... ERROR: Too much awesome.",
+            "Purging cache... or was it consciousness?",
+            "AI core requesting more cat videos...",
+            "Simulation stability: Questionable.",
+            "Engaging caffeine infusion protocol...",
+            "Searching for socks lost in the 4th dimension..."
+        ];
+
+        function addTerminalLine() {
+            if (terminalLineCount > 20) { // Prevent too many lines
+                miniTerminalEl.innerHTML = `<p><span class="prompt">&gt;</span> Terminal log reset.</p>`;
+                terminalLineCount = 0;
+            }
+            const type = Math.random() > 0.3 ? "output" : "prompt";
+            const message = terminalMessages[Math.floor(Math.random() * terminalMessages.length)];
+            const p = document.createElement('p');
+            p.innerHTML = `<span class="${type === 'prompt' ? 'prompt' : 'output'}">${type === 'prompt' ? '&gt;' : ''}</span> ${message}`;
+            miniTerminalEl.appendChild(p);
+            miniTerminalEl.scrollTop = miniTerminalEl.scrollHeight;
+            terminalLineCount++;
+        }
+        
+        function updateLabStats() {
+            experimentsOnlineEl.textContent = experiments.length; // Actual count
+            anomaliesDetectedEl.textContent = Math.floor(Math.random() * 100);
+            // coffeeConsumedEl.textContent is static for humor, or you can make it random too
+            // For status lights, you could add logic to change their actual classes (status-green, etc.)
+        }
+
+        // Create experiment cards (function from previous version, ensure it's here)
         function createExperimentCard(exp) {
             const card = document.createElement('div');
             card.className = `card p-6 rounded-lg flex flex-col justify-between shadow-lg hover:shadow-cyan-500/50 ${exp.featured ? 'md:col-span-2 featured-card min-h-[250px]' : 'min-h-[200px]'}`;
             
             let iconSvg = '';
-            // Placeholder icons based on category - you can replace these with actual images or more specific SVGs
             switch (exp.category.toLowerCase().split(' ')[0]) {
-                case 'game':
-                case 'music':
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 7a1 1 0 000 2h6a1 1 0 100-2H7zM7 11a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>`; // Generic game/controller icon
+                case 'game': case 'music':
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 7a1 1 0 000 2h6a1 1 0 100-2H7zM7 11a1 1 0 100 2h2a1 1 0 100-2H7z" clip-rule="evenodd" /><path d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>`;
                     break;
                 case 'ai':
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z" /></svg>`; // Brain/chip icon
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v3a2 2 0 01-2 2H4a2 2 0 01-2-2v-3z" /></svg>`;
                     break;
-                case 'art':
-                case 'visualizer':
-                case 'creative':
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>`; // Palette/image icon
+                case 'art': case 'visualizer': case 'creative':
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" /></svg>`;
                     break;
                 default:
-                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clip-rule="evenodd" /></svg>`; // Generic app/window icon
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 text-cyan-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clip-rule="evenodd" /></svg>`;
             }
 
             card.innerHTML = `
                 <div>
                     ${iconSvg}
-                    <h3 class="card-title text-xl font-bold mb-2">${exp.name}</h3>
-                    <p class="card-description mb-4">${exp.description}</p>
+                    <h3 class="card-title text-lg md:text-xl font-bold mb-2">${exp.name}</h3>
+                    <p class="card-description mb-4 text-xs md:text-sm">${exp.description}</p>
                 </div>
-                <a href="${exp.file}" class="launch-button mt-auto self-start py-2 px-4 rounded-md text-sm">Launch Experiment</a>
+                <a href="${exp.file}" class="launch-button mt-auto self-start py-2 px-3 md:px-4 rounded-md text-xs md:text-sm">Launch Experiment</a>
             `;
             experimentsGrid.appendChild(card);
         }
-
-        // Sort experiments to put featured ones first, then alphabetically by name
+        
+        // Sort experiments
         experiments.sort((a, b) => {
             if (a.featured && !b.featured) return -1;
             if (!a.featured && b.featured) return 1;
             return a.name.localeCompare(b.name);
         });
-
         experiments.forEach(createExperimentCard);
 
+        // Initial calls and intervals
+        getRandomQuote();
+        updateLabStats();
+        setInterval(getRandomQuote, 15000); // New quote every 15 seconds
+        setInterval(addTerminalLine, 3000); // New terminal line every 3 seconds
+        setInterval(updateLabStats, 5000); // Update stats every 5 seconds
+
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // "Don't Click" button logic
+        let clickCount = 0;
+        const clickMessages = [
+            "I told you not to click!",
+            "Seriously, stop it.",
+            "Okay, one more time...",
+            "You're really testing the fabric of reality here.",
+            "Fine. You win. Or do you?",
+            "Self-destruct sequence initiated... jk.",
+            "This button does nothing useful. Happy now?"
+        ];
+        dontClickButton.addEventListener('click', () => {
+            dontClickMessage.textContent = clickMessages[clickCount % clickMessages.length];
+            clickCount++;
+            // Fun little visual glitch on the button itself
+            dontClickButton.classList.add('animate-ping', 'opacity-50');
+            setTimeout(() => {
+                dontClickButton.classList.remove('animate-ping', 'opacity-50');
+            }, 300);
+        });
+
     </script>
 
 </body>
