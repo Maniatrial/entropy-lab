@@ -10,22 +10,22 @@
     <style>
         body {
             font-family: 'Comfortaa', cursive;
-            background-color: #e6effc; /* Even softer light sky blue */
-            color: #0369a1; /* Sky 700 */
+            background-color: #e0f2f7; /* Softer light cyan-blue */
+            color: #047857; /* Emerald 700 */
             overscroll-behavior: none;
         }
         .header-font {
             font-family: 'Architects Daughter', cursive;
         }
         .panel {
-            background-color: rgba(255, 255, 255, 0.95); /* More opaque */
+            background-color: rgba(255, 255, 255, 0.96); 
             backdrop-filter: blur(12px);
-            border: 1px solid #dbeafe; /* Blue 100 */
-            box-shadow: 0 8px 24px rgba(30, 136, 229, 0.1); /* Softer blue shadow */
+            border: 1px solid #cceeff; /* Lighter cyan border */
+            box-shadow: 0 8px 24px rgba(20, 150, 200, 0.1); 
         }
         .btn {
-            background-color: #38bdf8; /* Sky 400 */
-            color: white;
+            background-color: #22d3ee; /* Cyan 400 */
+            color: #083344; /* Cyan 900 */
             transition: all 0.2s ease-in-out;
             border: none;
             font-weight: 600;
@@ -33,35 +33,37 @@
             border-radius: 0.375rem;
         }
         .btn:hover {
-            background-color: #0ea5e9; /* Sky 500 */
+            background-color: #06b6d4; /* Cyan 500 */
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(2, 132, 199, 0.2);
+            box-shadow: 0 4px 8px rgba(6, 182, 212, 0.25);
         }
         .btn-secondary {
-            background-color: #a1a1aa; /* Zinc 400 */
+            background-color: #9ca3af; /* Gray 400 */
+            color: #1f2937; /* Gray 800 */
         }
         .btn-secondary:hover {
-            background-color: #71717a; /* Zinc 500 */
+            background-color: #6b7280; /* Gray 500 */
         }
         .btn-danger {
-            background-color: #fb7185; /* Rose 400 */
+            background-color: #f472b6; /* Pink 400 */
+            color: white;
         }
         .btn-danger:hover {
-            background-color: #f43f5e; /* Rose 500 */
+            background-color: #ec4899; /* Pink 500 */
         }
-        .btn-toggle { /* For mute buttons */
-            background-color: #cbd5e1; /* Slate 300 */
-            color: #475569; /* Slate 600 */
+        .btn-toggle { 
+            background-color: #e5e7eb; /* Gray 200 */
+            color: #4b5563; /* Gray 600 */
         }
         .btn-toggle.active {
-            background-color: #22c55e; /* Green 500 */
+            background-color: #10b981; /* Emerald 500 */
             color: white;
         }
         .palette-item {
             border: 2px solid transparent;
             transition: all 0.2s ease;
             cursor: pointer;
-            background-color: #f0f9ff; /* Sky 50 */
+            background-color: #f0f9ff; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -72,13 +74,13 @@
             min-height: 70px;
         }
         .palette-item:hover {
-            border-color: #7dd3fc; /* Sky 300 */
-            background-color: #e0f2fe; /* Sky 100 */
+            border-color: #67e8f9; /* Cyan 300 */
+            background-color: #e0f2fe; 
         }
         .palette-item.selected {
-            border-color: #0ea5e9; /* Sky 500 */
-            background-color: #bae6fd; /* Sky 200 */
-            box-shadow: 0 0 0 2px #0ea5e9;
+            border-color: #06b6d4; /* Cyan 500 */
+            background-color: #cffafe; /* Cyan 100 */
+            box-shadow: 0 0 0 2px #06b6d4;
         }
         .palette-item img, .palette-item .item-emoji {
             width: 32px; height: 32px;
@@ -87,10 +89,10 @@
         }
         .palette-item .item-name {
             font-size: 0.7rem;
-            color: #0c4a6e; /* Sky 800 */
+            color: #0e7490; /* Cyan 700 */
         }
         #ecosystemCanvas {
-            border: 3px solid #b0dfff; /* Sky 200 */
+            border: 3px solid #a5f3fc; /* Cyan 200 */
             background-color: #f0f9ff; 
             cursor: crosshair;
             image-rendering: pixelated; 
@@ -115,24 +117,24 @@
             opacity: 0.3;
         }
         select.styled-select {
-            background-color: #f0f9ff; /* Sky 50 */
-            border: 1px solid #bae6fd; /* Sky 200 */
-            color: #075985;
+            background-color: #f0f9ff; 
+            border: 1px solid #cffafe; 
+            color: #0891b2; /* Cyan 600 */
             padding: 0.5rem;
             border-radius: 0.375rem;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-2 sm:p-4 selection:bg-sky-200 selection:text-sky-800">
+<body class="min-h-screen flex flex-col items-center p-2 sm:p-4 selection:bg-cyan-200 selection:text-cyan-800">
 
     <div id="startAudioOverlay" class="start-overlay">
-        <button id="startAudioButton" class="btn text-white font-bold py-4 px-8 rounded-lg text-2xl header-font bg-sky-500 hover:bg-sky-600">
+        <button id="startAudioButton" class="btn text-white font-bold py-4 px-8 rounded-lg text-2xl header-font bg-cyan-500 hover:bg-cyan-600">
             Create Your Pocket Ecosystem
         </button>
     </div>
 
     <header class="my-4 sm:my-6 text-center">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl text-sky-700 header-font">Pocket Ecosystems</h1>
+        <h1 class="text-3xl sm:text-4xl md:text-5xl text-cyan-700 header-font">Pocket Ecosystems</h1>
     </header>
 
     <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -144,21 +146,21 @@
                     <option value="terrarium">Terrarium</option>
                 </select>
             </div>
-            <div id="itemPalette" class="grid grid-cols-3 gap-2 max-h-96 overflow-y-auto p-1 bg-sky-100 rounded">
+            <div id="itemPalette" class="grid grid-cols-3 gap-2 max-h-96 overflow-y-auto p-1 bg-cyan-50 rounded">
                 </div>
-            <div class="space-y-2 pt-2 border-t border-sky-200">
+            <div class="space-y-2 pt-2 border-t border-cyan-200">
                 <h3 class="text-sm font-semibold mt-2 mb-1">Controls:</h3>
                 <button id="toggleDayNightButton" class="btn w-full">Toggle Day/Night</button>
                 <button id="saveEcosystemButton" class="btn btn-secondary w-full">Save Ecosystem</button>
                 <button id="loadEcosystemButton" class="btn btn-secondary w-full">Load Ecosystem</button>
                 <button id="clearEcosystemButton" class="btn btn-danger w-full">Clear Ecosystem</button>
             </div>
-            <div class="space-y-2 pt-2 border-t border-sky-200">
+            <div class="space-y-2 pt-2 border-t border-cyan-200">
                  <h3 class="text-sm font-semibold mt-2 mb-1">Audio:</h3>
                  <label for="musicSelect" class="block text-xs font-medium mb-0.5">Background Music:</label>
                  <select id="musicSelect" class="w-full p-1.5 rounded-md styled-select text-xs">
+                    <option value="serenePads">Serene Pads (Default)</option>
                     <option value="none">No Music</option>
-                    <option value="serenePads">Serene Pads</option>
                     <option value="gentleFlow">Gentle Flow</option>
                     <option value="mysticCave">Mystic Cave</option>
                     <option value="forestWhispers">Forest Whispers</option>
@@ -178,7 +180,7 @@
         </main>
     </div>
 
-    <footer class="mt-6 sm:mt-8 text-center text-sm text-sky-600">
+    <footer class="mt-6 sm:mt-8 text-center text-sm text-cyan-600">
         <p>&copy; <span id="currentYear"></span> Pocket Ecosystems. Nurture your digital world.</p>
     </footer>
 
@@ -220,10 +222,11 @@
         let sounds = {};
         let musicTracks = {};
         let currentMusicLoop = null;
+        let volcanoSoundLoop = null;
         let isMusicMuted = false;
         let areSfxMuted = false;
 
-        function setCanvasSize() { /* Defined, but canvas is fixed size in this version */ }
+        function setCanvasSize() { /* Canvas size is fixed in this version */ }
 
         async function setupAudio() {
             await Tone.start();
@@ -231,97 +234,100 @@
             startAudioOverlay.classList.add('hidden');
 
             // SFX
-            sounds.placeItem = new Tone.PluckSynth({ attackNoise: 0.4, dampening: 2500, resonance: 0.75, volume: -20 }).toDestination();
-            sounds.bubblePop = new Tone.NoiseSynth({ noise: {type: 'white'}, envelope: {attack:0.001, decay:0.015, sustain:0}, volume: -30}).toDestination();
-            sounds.tapGlass = new Tone.MembraneSynth({pitchDecay: 0.008, octaves:2.5, envelope:{attack:0.001, decay:0.04, sustain:0}, volume: -24}).toDestination();
-            sounds.fishSwim = new Tone.NoiseSynth({noise: {type: 'pink'}, envelope: {attack: 0.05, decay: 0.1, sustain:0}, volume: -45}).toDestination(); // Very subtle whoosh
-            sounds.critterCrawl = new Tone.NoiseSynth({noise: {type: 'brown'}, envelope: {attack: 0.01, decay: 0.03, sustain:0}, volume: -48}).toDestination(); // Very subtle rustle/click
+            sounds.placeItem = new Tone.PluckSynth({ attackNoise: 0.4, dampening: 2500, resonance: 0.75, volume: -22 }).toDestination();
+            sounds.bubblePop = new Tone.NoiseSynth({ noise: {type: 'white'}, envelope: {attack:0.001, decay:0.015, sustain:0}, volume: -33}).toDestination();
+            sounds.tapGlass = new Tone.MembraneSynth({pitchDecay: 0.008, octaves:2.5, envelope:{attack:0.001, decay:0.04, sustain:0}, volume: -26}).toDestination();
+            sounds.fishSwim = new Tone.NoiseSynth({noise: {type: 'pink'}, envelope: {attack: 0.05, decay: 0.1, sustain:0}, volume: -48}).toDestination(); 
+            sounds.critterCrawl = new Tone.NoiseSynth({noise: {type: 'brown'}, envelope: {attack: 0.01, decay: 0.03, sustain:0}, volume: -50}).toDestination(); 
+            sounds.volcanoBubble = new Tone.NoiseSynth({noise: {type: 'pink'}, envelope: {attack:0.05, decay:0.2, sustain:0}, volume: -38}).toDestination();
+            const volcanoFilter = new Tone.Filter(200, "lowpass").connect(sounds.volcanoBubble.output); // Connect filter to synth's output
+            sounds.volcanoBubble.connect(volcanoFilter); // Then connect synth to filter
+            volcanoFilter.toDestination();
 
-            // Background Music Tracks (Synthesized)
-            const musicReverb = new Tone.Reverb(3.5).toDestination();
-            musicReverb.wet.value = 0.3; // Subtle reverb
+
+            // Background Music Tracks
+            const musicReverb = new Tone.Reverb(4.0).toDestination(); // Slightly longer reverb
+            musicReverb.wet.value = 0.25; 
 
             musicTracks.serenePads = () => {
                 const synth = new Tone.PolySynth(Tone.AMSynth, {
-                    harmonicity: 1.2,
-                    envelope: { attack: 4, decay: 1, sustain: 0.8, release: 5 },
-                    modulationEnvelope: { attack: 3, decay: 0.8, sustain: 0.5, release: 4 },
+                    harmonicity: 1.25,
+                    envelope: { attack: 5, decay: 1.5, sustain: 0.7, release: 6 },
+                    modulationEnvelope: { attack: 4, decay: 1, sustain: 0.6, release: 5 },
                 }).connect(musicReverb);
-                synth.volume.value = -30;
-                const notes = [["C3", "G3", "E4"], ["F2", "A3", "C4"], ["G2", "D3", "B3"]];
+                synth.volume.value = -28; // Adjusted volume
+                const notes = [["C3", "G3", "Eb4"], ["F2", "Ab3", "C4"], ["G2", "D3", "Bb3"]]; // Minor feel
                 let i = 0;
                 return new Tone.Loop(time => {
-                    synth.triggerAttackRelease(notes[i % notes.length], "8m", time);
+                    synth.triggerAttackRelease(notes[i % notes.length], "9m", time);
                     i++;
-                }, "10s");
+                }, "12s");
             };
             musicTracks.gentleFlow = () => {
-                const synth = new Tone.PluckSynth({ attackNoise: 0.2, dampening: 3000, resonance: 0.85 }).connect(musicReverb);
-                synth.volume.value = -28;
-                const scale = Tone.Scale.majorPentatonic("C3");
-                let i = 0;
+                const synth = new Tone.PluckSynth({ attackNoise: 0.1, dampening: 3500, resonance: 0.9 }).connect(musicReverb);
+                synth.volume.value = -26;
+                const scale = Tone.Scale.minorPentatonic("D3");
                 return new Tone.Loop(time => {
-                    synth.triggerAttackRelease(scale.get(Math.floor(Math.random()*scale.degrees)), "2n", time + Math.random()*0.5, Math.random()*0.3+0.2);
-                    i++;
-                }, "3s");
+                    synth.triggerAttackRelease(scale.get(Math.floor(Math.random()*scale.degrees)), "1n", time + Math.random()*0.8, Math.random()*0.4+0.3);
+                }, "3.5s");
             };
              musicTracks.mysticCave = () => {
                 const synth = new Tone.MonoSynth({
-                    oscillator: { type: "sine" },
-                    filter: { Q: 3, type: "lowpass", rolloff: -24 },
-                    envelope: { attack: 2, decay: 0.5, sustain: 0.8, release: 3 },
-                    filterEnvelope: { attack: 1, decay: 0.2, sustain: 0.5, baseFrequency: 100, octaves: 3 }
+                    oscillator: { type: "pulse", width: 0.3 }, // Pulse for hollower sound
+                    filter: { Q: 4, type: "lowpass", rolloff: -24 },
+                    envelope: { attack: 3, decay: 1, sustain: 0.7, release: 4 },
+                    filterEnvelope: { attack: 2, decay: 0.5, sustain: 0.6, baseFrequency: 80, octaves: 3.5 }
                 }).connect(musicReverb);
-                synth.volume.value = -25;
-                const notes = ["A2", "D3", "F3", "C3"];
+                synth.volume.value = -27;
+                const notes = ["A2", "E3", "G#2", "C#3"];
                 return new Tone.Loop(time => {
-                    synth.triggerAttackRelease(notes[Math.floor(Math.random()*notes.length)], "6m", time);
-                }, "15s");
+                    synth.triggerAttackRelease(notes[Math.floor(Math.random()*notes.length)], "7m", time);
+                }, "16s");
             };
             musicTracks.forestWhispers = () => {
-                const noise = new Tone.Noise("pink").connect(musicReverb);
-                noise.volume.value = -45;
-                const filter = new Tone.AutoFilter("1m").set({
-                    baseFrequency: 150, octaves: 4, depth: 0.7,
-                    filter: {type: "bandpass", Q: 2}
+                const noise = new Tone.Noise("brown").connect(musicReverb); // Brown noise for deeper whisper
+                noise.volume.value = -42;
+                const filter = new Tone.AutoFilter("45s").set({ // Slower filter sweep
+                    baseFrequency: 100, octaves: 3.5, depth: 0.6,
+                    filter: {type: "bandpass", Q: 1.5}
                 }).connect(musicReverb).start();
                 noise.connect(filter);
                 noise.start();
-                return { stop: () => {noise.stop(); filter.dispose(); noise.dispose();}, dispose: () => {noise.stop(); filter.dispose(); noise.dispose();} }; // Custom loop-like object
+                return { stop: () => {noise.stop(); filter.dispose(); noise.dispose();}, dispose: () => {noise.stop(); filter.dispose(); noise.dispose();} };
             };
             musicTracks.starryNight = () => {
                 const synth = new Tone.FMSynth({
-                    harmonicity: 2.5, modulationIndex: 8,
-                    envelope: { attack: 0.01, decay: 1.5, sustain: 0, release: 1.5 },
-                    modulationEnvelope: { attack: 0.2, decay: 0.8, sustain: 0, release: 0.8 }
+                    harmonicity: 3.0, modulationIndex: 10,
+                    envelope: { attack: 0.005, decay: 2.0, sustain: 0, release: 2.0 },
+                    modulationEnvelope: { attack: 0.1, decay: 1.0, sustain: 0, release: 1.0 }
                 }).connect(musicReverb);
-                synth.volume.value = -32;
+                synth.volume.value = -30;
                 return new Tone.Loop(time => {
-                    const note = Tone.Frequency("A4").transpose(Math.floor(Math.random()*12-6));
-                    if(Math.random() < 0.5) synth.triggerAttackRelease(note, "4n", time);
-                }, "2.5s");
+                    const note = Tone.Frequency("A4").transpose(Math.floor(Math.random()*16-8)); // Wider pitch range
+                    if(Math.random() < 0.6) synth.triggerAttackRelease(note, "3n", time + Math.random()*0.1);
+                }, "2.8s");
             };
             
-            playSelectedMusic(); // Start initial music if not "none"
+            musicSelect.value = 'serenePads'; // Default music
+            playSelectedMusic(); 
         }
         startAudioButton.addEventListener('click', setupAudio);
 
         function playSelectedMusic() {
             if (currentMusicLoop) {
                 currentMusicLoop.stop(0);
-                currentMusicLoop.dispose();
+                if (typeof currentMusicLoop.dispose === 'function') currentMusicLoop.dispose();
                 currentMusicLoop = null;
             }
             if (Tone.context && Tone.context.state === 'running') {
                 const selectedTrackName = musicSelect.value;
                 if (selectedTrackName !== "none" && musicTracks[selectedTrackName]) {
                     currentMusicLoop = musicTracks[selectedTrackName]();
-                    if (currentMusicLoop && typeof currentMusicLoop.start === 'function') { // Check if it's a Tone.Loop
+                    if (currentMusicLoop && typeof currentMusicLoop.start === 'function') { 
                         currentMusicLoop.start(0);
                     }
-                    Tone.Transport.start(); // Ensure transport is running for loops
+                    Tone.Transport.start(); 
                 }
-                // Update master mute for music
                 Tone.Destination.mute = isMusicMuted;
             }
         }
@@ -332,55 +338,56 @@
             isMusicMuted = !isMusicMuted;
             muteMusicButton.classList.toggle('active', isMusicMuted);
             muteMusicButton.textContent = isMusicMuted ? "Unmute Music" : "Mute Music";
-            if (Tone.Destination) Tone.Destination.mute = isMusicMuted; // Mute all output if music is muted.
-                                                                        // More granular control would involve separate busses.
+            if (Tone.Destination) Tone.Destination.mute = isMusicMuted;
         });
 
         muteSfxButton.addEventListener('click', () => {
             areSfxMuted = !areSfxMuted;
             muteSfxButton.classList.toggle('active', areSfxMuted);
             muteSfxButton.textContent = areSfxMuted ? "Unmute SFX" : "Mute SFX";
-            // This requires individual volume control on SFX synths or a separate SFX bus
-            Object.values(sounds).forEach(synth => {
-                if (synth && synth.volume) { // Check if it's a Tone.js instrument with volume
-                    synth.mute = areSfxMuted;
-                }
-            });
+            // SFX muting is handled before triggering them
         });
 
 
         const paletteData = {
             aquarium: [
                 { name: "Light Sand", type: "substrate", emoji: "🏖️", color: "#F5EAAA", hasGravity: true },
-                { name: "River Pebbles", type: "substrate", emoji: "🪨", color: "#C8C8A9", hasGravity: true },
-                { name: "Smooth Rock", type: "hardscape", emoji: "⚪", size: 30, shape: 'rock1', color: "#D1D5DB", hasGravity: true }, // Slate 300
-                { name: "Brain Coral", type: "hardscape", emoji: "🧠", size: 40, shape: 'coral_brain', color: '#FFDAB9', hasGravity: true }, // PeachPuff
-                { name: "Twisted Driftwood", type: "hardscape", emoji: "🪵", size: 80, shape: 'driftwood_twist', color: "#A0522D", hasGravity: true },
-                { name: "Anubias Barteri", type: "plant", emoji: "🌿", size: 35, growthRate: 0.007, color: '#3B5323' },
-                { name: "Amazon Sword", type: "plant", emoji: "🌱", size: 65, growthRate: 0.01, color: '#4F7942', isTall: true },
-                { name: "Duckweed", type: "plant", emoji: "🍃", size: 10, growthRate: 0.015, color: '#90EE90', isFloating: true, fixedY: CANVAS_HEIGHT * 0.1, isGroundCover: true, spreadChance: 0.005 },
-                { name: "Marimo Ball", type: "plant", emoji: "🟢", size: 28, growthRate: 0.004, color: '#224B0C', hasGravity: true },
+                { name: "River Pebbles", type: "substrate", emoji: "🪨", color: "#C0C0C0", hasGravity: true }, // Lighter
+                { name: "Smooth Stone", type: "hardscape", emoji: "⚪", size: 30, shape: 'rock1', color: "#D3D3D3", hasGravity: true }, // Lighter
+                { name: "Brain Coral", type: "hardscape", emoji: "🧠", size: 40, shape: 'coral_brain', color: '#FFC0CB', hasGravity: true }, // Pink
+                { name: "Twisted Driftwood", type: "hardscape", emoji: "🪵", size: 80, shape: 'driftwood_twist', color: "#B8860B", hasGravity: true }, // DarkGoldenRod
+                { name: "Sunken Galleon Bow", type: "hardscape", emoji: "⚓", color: "#8B4513", size: 100, shape: 'ship_bow', hasGravity: true },
+                { name: "Anubias Barteri", type: "plant", emoji: "🌿", size: 35, growthRate: 0.007, color: '#4A7023' }, // Olive Drab
+                { name: "Amazon Sword", type: "plant", emoji: "🌱", size: 65, growthRate: 0.01, color: '#556B2F', isTall: true },
+                { name: "Duckweed", type: "plant", emoji: "🍃", size: 10, growthRate: 0.015, color: '#98FB98', isFloating: true, fixedY: CANVAS_HEIGHT * 0.1, isGroundCover: true, spreadChance: 0.005 },
+                { name: "Marimo Ball", type: "plant", emoji: "🟢", size: 28, growthRate: 0.004, color: '#005500', hasGravity: true },
+                { name: "Sea Anemone", type: "plant", emoji: "🌸", color: "#FF69B4", size: 35, growthRate: 0.003, hasGravity: true, behavior: "sway_gentle" },
                 { name: "Guppy", type: "fauna", emoji: "🐟", size: 12, speed: 0.7, behavior: 'swim_individual' },
+                { name: "Clownfish", type: "fauna", emoji: "🐠", color: "#FFA500", size: 13, speed: 0.6, behavior: "swim_anemone_friend" },
                 { name: "Ramshorn Snail", type: "fauna", emoji: "🐌", size: 10, speed: 0.07, behavior: 'crawl_aq' },
                 { name: "Ghost Shrimp", type: "fauna", emoji: "🦐", size: 12, speed: 0.28, behavior: 'scuttle_aq' },
-                { name: "Treasure Chest", type: "special", emoji: "🎁", size: 25, behavior: 'sparkle', hasGravity: true, color: '#B8860B' }, // DarkGoldenRod
-                { name: "Volcano Bubbler", type: "special", emoji: "🌋", size: 40, behavior: 'bubble_volcano', hasGravity: true, color: '#A52A2A' },
+                { name: "Treasure Chest", type: "special", emoji: "🎁", size: 25, behavior: 'sparkle', hasGravity: true, color: '#DAA520' }, // GoldenRod
+                { name: "Volcano Bubbler", type: "special", emoji: "🌋", size: 40, behavior: 'bubble_volcano', hasGravity: true, color: '#8B0000' }, // DarkRed
             ],
             terrarium: [
-                { name: "Rich Loam", type: "substrate", emoji: "🟫", color: "#6B4F4E", hasGravity: true },
-                { name: "Slate Chips", type: "substrate", emoji: "⚫", color: "#778899", hasGravity: true }, // LightSlateGray
-                { name: "Granite Boulder", type: "hardscape", emoji: "🪨", size: 60, shape: 'rock_large', color: "#A9A9A9", hasGravity: true },
-                { name: "Gnarled Root", type: "hardscape", emoji: "🌳", size: 75, shape: 'root_complex', color: "#8B4513", hasGravity: true },
-                { name: "Maidenhair Fern", type: "plant", emoji: "🌿", size: 32, growthRate: 0.006, color: '#556B2F' },
+                { name: "Rich Loam", type: "substrate", emoji: "🟫", color: "#704214", hasGravity: true }, // Darker Loam
+                { name: "Slate Chips", type: "substrate", emoji: "⚫", color: "#696969", hasGravity: true }, // DimGray
+                { name: "Granite Boulder", type: "hardscape", emoji: "🪨", size: 60, shape: 'rock_large', color: "#808080", hasGravity: true }, // Gray
+                { name: "Gnarled Root", type: "hardscape", emoji: "🌳", size: 75, shape: 'root_complex', color: "#8B5A2B", hasGravity: true },
+                { name: "Leaf Litter", type: "substrate", emoji: "🍂", color: "#A0522D", hasGravity: true, isSurfaceLayer: true }, // Sienna
+                { name: "Maidenhair Fern", type: "plant", emoji: "🌿", size: 32, growthRate: 0.006, color: '#3CB371' }, // MediumSeaGreen
                 { name: "Creeping Thyme", type: "plant", emoji: "🍃", size: 30, growthRate: 0.008, color: '#8FBC8F', isGroundCover: true, spreadChance: 0.003 },
-                { name: "Haworthia", type: "plant", emoji: "🌵", size: 25, growthRate: 0.003, color: '#6B8E23', onHardscape: false }, // OliveDrab
-                { name: "Spanish Moss", type: "plant", emoji: "〰️", size: 40, growthRate: 0.002, color: '#AFEEEE', onHardscape: true, isHanging: true }, // PaleTurquoise
-                { name: "Quartz Crystal", type: "special", emoji: "💎", size: 22, behavior: 'glow_subtle', color: '#F0F8FF', hasGravity: true }, // AliceBlue
-                { name: "Praying Mantis", type: "fauna", emoji: "🦗", size: 15, speed: 0.15, behavior: 'crawl_tr_plant' },
+                { name: "Haworthia", type: "plant", emoji: "🌵", size: 25, growthRate: 0.003, color: '#556B2F', onHardscape: false }, // DarkOliveGreen
+                { name: "Spanish Moss", type: "plant", emoji: "〰️", size: 40, growthRate: 0.002, color: '#B0C4DE', onHardscape: true, isHanging: true }, // LightSteelBlue
+                { name: "Pitcher Plant", type: "plant", emoji: "🌺", color: "#8B4513", size: 30, growthRate: 0.004, shape: 'pitcher' }, // SaddleBrown for pitcher body
+                { name: "Quartz Crystal", type: "special", emoji: "💎", size: 22, behavior: 'glow_subtle', color: '#E6E6FA', hasGravity: true }, // Lavender
+                { name: "Glowing Mushroom Cluster", type: "plant", emoji: "🍄", color: "#40E0D0", size: 25, growthRate: 0.01, behavior: "glow_pulse_shroom" },
+                { name: "Ladybug", type: "fauna", emoji: "🐞", size: 8, speed: 0.25, behavior: 'crawl_tr_plant' },
+                { name: "Gecko", type: "fauna", emoji: "🦎", color: "#9ACD32", size: 18, speed: 0.3, behavior: "crawl_wall_tr" }, // YellowGreen
                 { name: "Isopod (Roly Poly)", type: "fauna", emoji: "⚫", size: 7, speed: 0.1, behavior: 'crawl_tr_soil' },
-                { name: "Morel Mushroom", type: "plant", emoji: "🍄", size: 20, growthRate: 0.012, behavior: 'sprout_shroom', color: '#F5DEB3' }, // Wheat
-                { name: "Venus Flytrap", type: "plant", emoji: " carnivorous_plant ", size: 28, growthRate: 0.005, behavior: 'trap_idle', color: '#DE3163' }, // Cerise
-                { name: "Fallen Leaf", type: "hardscape", emoji: "🍂", size: 15, color: '#D2691E', hasGravity: true, isFlat: true } // Chocolate
+                { name: "Morel Mushroom", type: "plant", emoji: "🍄", size: 20, growthRate: 0.012, behavior: 'sprout_shroom', color: '#D2B48C' }, // Tan
+                { name: "Venus Flytrap", type: "plant", emoji: " carnivorous_plant ", size: 28, growthRate: 0.005, behavior: 'trap_idle', color: '#DC143C' }, // Crimson
+                { name: "Fallen Leaf", type: "hardscape", emoji: "🍂", size: 15, color: '#CD853F', hasGravity: true, isFlat: true } // Peru
             ]
         };
 
@@ -424,24 +431,24 @@
                 lastActionTime: gameTick,
                 vy: 0, 
                 isFalling: !!selectedPaletteItem.hasGravity, 
-                isResting: !selectedPaletteItem.hasGravity, // If no gravity, it's resting
+                isResting: !selectedPaletteItem.hasGravity, 
                 data: {} 
             };
 
             if (newItem.type === 'substrate') { 
-                const substrateVisualHeight = CANVAS_HEIGHT * 0.15;
+                const substrateVisualHeight = CANVAS_HEIGHT * (newItem.isSurfaceLayer ? 0.05 : 0.15); // Thinner for surface layers
                 newItem.y = CANVAS_HEIGHT - substrateVisualHeight / 2; 
                 newItem.x = x; 
                 newItem.isFalling = false; 
                 newItem.isResting = true;
             } else if (newItem.type === 'plant' && newItem.onHardscape) {
                 let placedOnObject = false;
-                for (const existingItem of ecosystemItems.filter(it => it.type === 'hardscape' && it.isResting).sort((a,b) => Math.abs(a.x - x) - Math.abs(b.x - x))) { // Prioritize closer items
+                for (const existingItem of ecosystemItems.filter(it => it.type === 'hardscape' && it.isResting).sort((a,b) => Math.abs(a.x - x) - Math.abs(b.x - x))) { 
                     if (Math.abs(x - existingItem.x) < existingItem.currentSize / 1.5 && y > existingItem.y - existingItem.currentSize*0.6 && y < existingItem.y + existingItem.currentSize*0.2) { 
                         newItem.x = x; 
-                        newItem.y = existingItem.y - existingItem.currentSize / 2 - newItem.currentSize * (newItem.isHanging ? -0.3 : 0.3); // Adjust for hanging
+                        newItem.y = existingItem.y - existingItem.currentSize / 2 - newItem.currentSize * (newItem.isHanging ? -0.3 : 0.3); 
                         newItem.isFalling = false; newItem.isResting = true;
-                        if(newItem.isHanging) newItem.angle = Math.PI; // Hang down
+                        if(newItem.isHanging) newItem.angle = Math.PI; 
                         placedOnObject = true;
                         break;
                     }
@@ -462,20 +469,19 @@
             document.querySelectorAll('.palette-item').forEach(p => p.classList.remove('selected'));
             
             if (Tone.context && Tone.context.state === 'running' && sounds.placeItem && !areSfxMuted) {
-                sounds.placeItem.triggerAttackRelease(newItem.type === 'substrate' ? "C3" : "E4", "8n", Tone.now());
+                sounds.placeItem.triggerAttackRelease(newItem.type === 'substrate' ? "C3" : "E4", "8n", Tone.now() + Math.random()*0.001);
             }
         }
         
         function getSubstrateOrHardscapeLevel(x, currentItemSize, ignoreItemId = null) {
-            let highestSolidY = CANVAS_HEIGHT; // Bottom of canvas
+            let highestSolidY = CANVAS_HEIGHT; 
             ecosystemItems.forEach(item => {
-                if (item.id === ignoreItemId || item.isFloating) return; // Ignore self and floating items for support
+                if (item.id === ignoreItemId || item.isFloating) return; 
 
-                if (item.type === 'substrate' || (item.type === 'hardscape' && item.isResting)) {
-                    const itemHalfWidth = (item.type === 'substrate' ? CANVAS_WIDTH : item.currentSize / 2); // Substrate is full width
+                if ((item.type === 'substrate' && !item.isSurfaceLayer) || (item.type === 'hardscape' && item.isResting)) {
+                    const itemHalfWidth = (item.type === 'substrate' ? CANVAS_WIDTH : item.currentSize / 2); 
                     const currentItemHalfWidth = currentItemSize / 2;
 
-                    // Check for horizontal overlap
                     if (x + currentItemHalfWidth > item.x - itemHalfWidth && x - currentItemHalfWidth < item.x + itemHalfWidth) {
                          const itemTopY = item.y - item.currentSize / 2;
                          if (itemTopY < highestSolidY) {
@@ -491,14 +497,14 @@
         function drawEcosystem() {
             const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
             if (currentEcosystemType === 'aquarium') {
-                grad.addColorStop(0, isDay ? '#b3e0ff' : '#002c5c'); // Softer sky / Darker blue
-                grad.addColorStop(0.12, isDay ? '#87CEFA' : '#004080'); // Lighter water / Mid blue
-                grad.addColorStop(0.75, isDay ? '#70c0e8' : '#002850'); // Mid-deep water
-                grad.addColorStop(1, isDay ? '#48a8d0' : '#001830');   // Deepest water
+                grad.addColorStop(0, isDay ? '#add8e6' : '#001e36'); // Lighter Day Sky / Deeper Night Blue
+                grad.addColorStop(0.12, isDay ? '#87CEEB' : '#003355'); 
+                grad.addColorStop(0.75, isDay ? '#64b5f6' : '#002244'); // Brighter Mid Water / Darker Mid Night
+                grad.addColorStop(1, isDay ? '#42a5f5' : '#001122');   
             } else { 
-                grad.addColorStop(0, isDay ? '#c6f6d5' : '#1A202C'); // Pale mint / Very dark gray-blue sky
-                grad.addColorStop(0.65, isDay ? '#e6fffa' : '#2D3748'); // Light mint ground / Dark gray ground
-                grad.addColorStop(1, isDay ? '#b3f2dd' : '#1A202C');   // Deeper mint ground
+                grad.addColorStop(0, isDay ? '#c1f0c1' : '#0d1b0d'); // Pale Mint Day / Very Dark Forest Night
+                grad.addColorStop(0.65, isDay ? '#d4f5d4' : '#1c2e1c'); 
+                grad.addColorStop(1, isDay ? '#b3e6b3' : '#0d1b0d');   
             }
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -510,20 +516,20 @@
                 ctx.translate(item.x, item.y);
                 ctx.rotate(item.angle || 0);
                 
-                const displaySize = item.currentSize * (1 + item.growth * 0.2); // Less aggressive growth visual
+                const displaySize = item.currentSize * (1 + item.growth * 0.2); 
                 ctx.fillStyle = item.color || '#ccc';
-                ctx.strokeStyle = darkenColor(item.color || '#ccc', 30); 
+                ctx.strokeStyle = darkenColor(item.color || '#ccc', 35); // Slightly more pronounced outline
                 ctx.lineWidth = 1;
 
                 if (item.type === 'substrate') {
                     ctx.fillStyle = item.color;
-                    const substrateVisualHeight = CANVAS_HEIGHT * 0.15; 
+                    const substrateVisualHeight = CANVAS_HEIGHT * (item.isSurfaceLayer ? 0.03 : 0.15); // Thinner for surface layers
                     ctx.fillRect(-CANVAS_WIDTH, -substrateVisualHeight / 2, CANVAS_WIDTH * 2, substrateVisualHeight);
                 } else if (item.type === 'plant') {
                     const stemHeight = displaySize * (item.isTall ? 0.8 : 0.55);
                     const topSize = displaySize * (item.isTall ? 0.35 : 0.45);
                     const stemWidth = Math.max(1.5, displaySize * 0.07);
-                    ctx.fillStyle = darkenColor(item.color, 25); 
+                    ctx.fillStyle = darkenColor(item.color, 30); 
                     ctx.fillRect(-stemWidth/2, 0, stemWidth, -stemHeight); 
                     
                     ctx.fillStyle = item.color;
@@ -531,9 +537,19 @@
                     if (item.isFloating) { 
                         ctx.ellipse(0, 0, topSize * 1.1, topSize * 0.7, 0, 0, Math.PI * 2);
                     } else if (item.isGroundCover) {
-                        for(let i=0; i<3; i++){ // Draw a few blobs for moss
-                            ctx.ellipse((Math.random()-0.5)*topSize*0.5, (Math.random()-0.5)*topSize*0.1 - stemHeight, topSize*0.3, topSize*0.2, Math.random()*Math.PI, 0, Math.PI*2);
+                        for(let i=0; i< (item.name === "Creeping Thyme" ? 5:3) ; i++){ 
+                            ctx.ellipse((Math.random()-0.5)*topSize*0.6, (Math.random()-0.5)*topSize*0.15 - stemHeight, topSize*0.25, topSize*0.18, Math.random()*Math.PI, 0, Math.PI*2);
                         }
+                    } else if (item.shape === 'pitcher') {
+                        // Simple pitcher shape
+                        const pBodyH = topSize * 0.8; const pBodyW = topSize * 0.5;
+                        const pLip = topSize * 0.3;
+                        ctx.ellipse(0, -stemHeight - pBodyH/2, pBodyW/2, pBodyH/2, 0, 0, Math.PI*2); // Body
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse(0, -stemHeight - pBodyH + pLip*0.2, pBodyW/1.8, pLip/1.5, 0, Math.PI*1.2, Math.PI*1.8, true); // Lid part
+                        ctx.fillStyle = darkenColor(item.color, -20); // Lighter lip
+                        ctx.fill();
                     }
                      else {
                         ctx.ellipse(0, -stemHeight - topSize/2, topSize/1.1, topSize, 0, 0, Math.PI * 2); 
@@ -557,9 +573,9 @@
                     if (item.emoji) {
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        if ((item.behavior === 'glow' || item.behavior === 'glow_subtle') && !isDay && gameTick % (item.behavior === 'glow' ? 30:50) < (item.behavior === 'glow' ? 15:25)) { 
+                        if ((item.behavior === 'glow' || item.behavior === 'glow_subtle' || item.behavior === 'glow_pulse_shroom') && !isDay && gameTick % (item.behavior === 'glow' ? 25: (item.behavior === 'glow_pulse_shroom' ? 40:55)) < (item.behavior === 'glow' ? 12: (item.behavior === 'glow_pulse_shroom' ? 20:27))) { 
                             ctx.shadowColor = item.color || '#AFEEEE';
-                            ctx.shadowBlur = displaySize / (item.behavior === 'glow' ? 1.5:2.5);
+                            ctx.shadowBlur = displaySize / (item.behavior === 'glow' ? 1.3: (item.behavior === 'glow_pulse_shroom' ? 1.8:2.8));
                         }
                         ctx.fillText(item.emoji, 0, 0);
                         ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
@@ -581,9 +597,9 @@
                     item.data.bubbles.forEach(bubble => {
                         ctx.beginPath();
                         ctx.arc(bubble.xOffset, bubble.yOffset, bubble.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = isDay ? 'rgba(200, 230, 255, 0.8)' : 'rgba(220, 240, 255, 0.7)';
+                        ctx.fillStyle = isDay ? 'rgba(200, 230, 255, 0.85)' : 'rgba(220, 240, 255, 0.75)';
                         ctx.fill();
-                        ctx.strokeStyle = isDay ? 'rgba(220, 240, 255, 0.6)' : 'rgba(240, 250, 255, 0.5)';
+                        ctx.strokeStyle = isDay ? 'rgba(220, 240, 255, 0.65)' : 'rgba(240, 250, 255, 0.55)';
                         ctx.stroke();
                     });
                 }
@@ -591,7 +607,7 @@
             });
 
             if (!isDay) {
-                ctx.fillStyle = currentEcosystemType === 'aquarium' ? "rgba(0, 20, 80, 0.4)" : "rgba(10, 30, 10, 0.4)";
+                ctx.fillStyle = currentEcosystemType === 'aquarium' ? "rgba(0, 20, 80, 0.45)" : "rgba(10, 30, 10, 0.45)";
                 ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
             }
             drawWaterSurface();
@@ -622,7 +638,7 @@
             }
             waterCtx.clearRect(0,0,waterSurfaceCanvas.width, waterSurfaceCanvas.height);
             const waterLevel = CANVAS_HEIGHT * 0.12; 
-            waterCtx.fillStyle = isDay ? 'rgba(173, 216, 230, 0.28)' : 'rgba(100, 149, 237, 0.33)'; // Cornflower blue for night
+            waterCtx.fillStyle = isDay ? 'rgba(173, 216, 230, 0.3)' : 'rgba(100, 149, 237, 0.35)'; 
             
             waterCtx.beginPath();
             waterCtx.moveTo(0, waterLevel);
@@ -644,7 +660,7 @@
                 item.animationFrame = (item.animationFrame + 1) % 120; 
 
                 if (item.isFalling) {
-                    item.vy += 0.18; // Slightly stronger gravity
+                    item.vy += 0.2; // Slightly increased gravity
                     item.y += item.vy;
                     
                     const groundY = getSubstrateOrHardscapeLevel(item.x, item.currentSize, item.id);
@@ -655,10 +671,10 @@
                         item.isFalling = false;
                         item.isResting = true;
                         item.vy = 0;
-                        if(item.type === 'plant' && !item.onHardscape && !item.isFloating) item.angle = (Math.random()-0.5) * 0.04; 
+                        if(item.type === 'plant' && !item.onHardscape && !item.isFloating) item.angle = (Math.random()-0.5) * 0.03; 
                     }
-                    if (item.y + item.currentSize / 2 > CANVAS_HEIGHT) {
-                        item.y = CANVAS_HEIGHT - item.currentSize / 2;
+                    if (item.y + item.currentSize / 2 > CANVAS_HEIGHT - (item.type === 'substrate' ? (CANVAS_HEIGHT * 0.15)/2 : 0) ) { // Adjust for substrate height
+                        item.y = CANVAS_HEIGHT - item.currentSize / 2 - (item.type === 'substrate' ? (CANVAS_HEIGHT * 0.15)/2 : 0);
                         item.isFalling = false;
                         item.isResting = true;
                         item.vy = 0;
@@ -666,26 +682,20 @@
                 }
 
                 if (item.type === 'plant' && item.growth < 1) {
-                    item.growth += (item.growthRate || 0.01) * 0.04; 
+                    item.growth += (item.growthRate || 0.01) * 0.035; 
                     item.growth = Math.min(1, item.growth);
-                    if (item.isGroundCover && item.growth > 0.3 && Math.random() < (item.spreadChance || 0.001) && ecosystemItems.length < 150) { // Limit total items
-                        // Try to spread
-                        const spreadX = item.x + (Math.random() - 0.5) * item.currentSize * 2;
-                        const spreadY = item.y + (Math.random() - 0.5) * item.currentSize * 0.5;
-                        // Check if space is relatively free
+                    if (item.isGroundCover && item.growth > 0.3 && Math.random() < (item.spreadChance || 0.001) && ecosystemItems.length < 150) {
+                        const spreadX = item.x + (Math.random() - 0.5) * item.currentSize * 2.5;
+                        const spreadY = item.y + (Math.random() - 0.5) * item.currentSize * 0.3;
                         let canSpread = true;
                         for(const other of ecosystemItems) {
-                            if(other.type === 'plant' && Math.hypot(spreadX - other.x, spreadY - other.y) < item.currentSize * 0.8) {
+                            if(other.type === 'plant' && Math.hypot(spreadX - other.x, spreadY - other.y) < item.currentSize * 0.7) {
                                 canSpread = false; break;
                             }
                         }
                         if (canSpread) {
-                             addItemToEcosystem(spreadX, spreadY); // This will use selectedPaletteItem, needs fixing
-                             // To fix, we need to pass the item's own config to addItemToEcosystem or have a dedicated spread function
-                             // For now, this will place the currently selected palette item, which is not ideal for spread.
-                             // A proper fix would be:
-                             // const newItemData = {...item, x: spreadX, y: spreadY, id: `item-${Date.now()}-${Math.random().toString(16).slice(2)}`, growth: 0, isFalling: true};
-                             // ecosystemItems.push(newItemData);
+                             const newItemData = {...item, x: spreadX, y: spreadY, id: `item-${Date.now()}-${Math.random().toString(16).slice(2)}`, growth: 0, isFalling: true, angle: (Math.random()-0.5) * 0.1};
+                             ecosystemItems.push(newItemData);
                         }
                     }
                 }
@@ -694,18 +704,22 @@
                     const numChildren = Math.floor(Math.random() * 2) + 1; 
                     for(let i=0; i<numChildren; i++) {
                         item.data.childShrooms.push({
-                            dx: (Math.random() - 0.5) * item.currentSize * 0.5,
-                            dy: (Math.random() - 0.5) * item.currentSize * 0.15,
-                            size: item.currentSize * (0.35 + Math.random()*0.2)
+                            dx: (Math.random() - 0.5) * item.currentSize * 0.4,
+                            dy: (Math.random() - 0.5) * item.currentSize * 0.1,
+                            size: item.currentSize * (0.3 + Math.random()*0.15)
                         });
                     }
                 }
+                if (item.behavior === 'sway_gentle' && item.isResting) {
+                    item.angle = Math.sin(gameTick * 0.02 + item.x * 0.1) * 0.05; // Gentle sway
+                }
+
 
                 if (item.type === 'fauna') {
-                    const speed = (item.speed || 0.5) * (isDay ? 1 : 0.6); // Slower at night
-                    if (gameTick % (45 + Math.floor(Math.random()*45)) === 0 || Math.hypot(item.x - item.targetX, item.y - item.targetY) < 8) {
-                        item.targetX = item.x + (Math.random() - 0.5) * 180;
-                        item.targetY = item.y + (Math.random() - 0.5) * (currentEcosystemType === 'aquarium' ? 120 : 50); 
+                    const speed = (item.speed || 0.5) * (isDay ? 1.1 : 0.5); 
+                    if (gameTick % (30 + Math.floor(Math.random()*30)) === 0 || Math.hypot(item.x - item.targetX, item.y - item.targetY) < 10) {
+                        item.targetX = item.x + (Math.random() - 0.5) * 200;
+                        item.targetY = item.y + (Math.random() - 0.5) * (currentEcosystemType === 'aquarium' ? 150 : 60); 
                         
                         const faunaSize = item.currentSize / 2;
                         item.targetX = Math.max(faunaSize, Math.min(item.targetX, CANVAS_WIDTH - faunaSize));
@@ -714,10 +728,9 @@
                         const substrateLevel = getSubstrateOrHardscapeLevel(item.x, item.currentSize) - faunaSize;
                         item.targetY = Math.max(minY, Math.min(item.targetY, substrateLevel));
 
-                        // Play subtle sound on new target/direction change
-                         if (Tone.context && Tone.context.state === 'running' && !areSfxMuted) {
-                            if (item.behavior.includes('swim') && sounds.fishSwim) sounds.fishSwim.triggerAttackRelease("16n", Tone.now(), Math.random()*0.2+0.05);
-                            else if (item.behavior.includes('crawl') && sounds.critterCrawl) sounds.critterCrawl.triggerAttackRelease("32n", Tone.now(), Math.random()*0.1+0.02);
+                         if (Tone.context && Tone.context.state === 'running' && !areSfxMuted && Math.random() < 0.3) { // More frequent sounds
+                            if (item.behavior.includes('swim') && sounds.fishSwim) sounds.fishSwim.triggerAttackRelease("24n", Tone.now() + Math.random()*0.002, Math.random()*0.15+0.03);
+                            else if (item.behavior.includes('crawl') && sounds.critterCrawl) sounds.critterCrawl.triggerAttackRelease("48n", Tone.now() + Math.random()*0.002, Math.random()*0.08+0.015);
                          }
                     }
                     const dx = item.targetX - item.x;
@@ -732,30 +745,32 @@
 
                 if (item.behavior === 'bubble' || item.behavior === 'bubble_volcano') {
                     if (!item.data.bubbles) item.data.bubbles = [];
-                    const bubbleRate = item.behavior === 'bubble_volcano' ? (isDay?5:8) : (isDay?8:12);
-                    const maxBubbles = item.behavior === 'bubble_volcano' ? 15:10;
+                    const bubbleRate = item.behavior === 'bubble_volcano' ? (isDay?4:7) : (isDay?7:10);
+                    const maxBubbles = item.behavior === 'bubble_volcano' ? 18:12;
                     if (item.animationFrame % bubbleRate === 0 && item.data.bubbles.length < maxBubbles) { 
                         item.data.bubbles.push({ 
-                            xOffset: (Math.random()-0.5)*item.currentSize*(item.behavior === 'bubble_volcano' ? 0.1 : 0.15), 
+                            xOffset: (Math.random()-0.5)*item.currentSize*(item.behavior === 'bubble_volcano' ? 0.08 : 0.12), 
                             yOffset: -item.currentSize/2, 
-                            radius: Math.random()* (item.behavior === 'bubble_volcano' ? 3 : 2.5)+1.5, 
+                            radius: Math.random()* (item.behavior === 'bubble_volcano' ? 3.5 : 2.8)+1.8, 
                             age:0 
                         });
+                         if (item.behavior === 'bubble_volcano' && Tone.context && Tone.context.state === 'running' && sounds.volcanoBubble && !areSfxMuted && Math.random() < 0.5) {
+                            sounds.volcanoBubble.triggerAttackRelease("16n", Tone.now() + Math.random()*0.001, Math.random()*0.1+0.05);
+                        }
                     }
                     item.data.bubbles = item.data.bubbles.filter(b => {
-                        b.yOffset -= (0.6 + Math.random()*0.4); 
-                        b.xOffset += (Math.random()-0.5)*0.5; 
-                        b.radius *= 1.002; 
+                        b.yOffset -= (0.7 + Math.random()*0.5); 
+                        b.xOffset += (Math.random()-0.5)*0.6; 
+                        b.radius *= 1.0015; 
                         b.age++;
-                        if (b.yOffset < -CANVAS_HEIGHT * 0.9) { 
-                             if (Tone.context && Tone.context.state === 'running' && sounds.bubblePop && !areSfxMuted) sounds.bubblePop.triggerAttackRelease("64n");
+                        if (b.yOffset < -CANVAS_HEIGHT * 0.92) { 
+                             if (Tone.context && Tone.context.state === 'running' && sounds.bubblePop && !areSfxMuted && Math.random() < 0.7) sounds.bubblePop.triggerAttackRelease("64n", Tone.now() + Math.random()*0.001);
                             return false;
                         }
                         return true;
                     });
                 }
-                if (item.behavior === 'sparkle' && gameTick % 20 < 5) { // Sparkle effect
-                    // This would be drawn in drawEcosystem, just toggle a flag here or store sparkle particles
+                if (item.behavior === 'sparkle' && gameTick % 15 < 4) { 
                     item.data.isSparkling = true;
                 } else if (item.behavior === 'sparkle') {
                     item.data.isSparkling = false;
@@ -773,7 +788,7 @@
             currentEcosystemType = e.target.value;
             clearEcosystemButton.click(); 
             populatePalette();
-            playSelectedMusic(); // Update music for new ecosystem type
+            playSelectedMusic(); 
             drawEcosystem(); 
         });
 
@@ -788,7 +803,7 @@
                     if (Math.hypot(x - item.x, y - item.y) < item.currentSize * 1.8) { 
                         item.targetX = item.x + (Math.random() - 0.5) * 150; 
                         item.targetY = item.y + (Math.random() - 0.5) * 150;
-                        if (Tone.context && Tone.context.state === 'running' && sounds.tapGlass && !areSfxMuted) sounds.tapGlass.triggerAttackRelease("C3", "16n");
+                        if (Tone.context && Tone.context.state === 'running' && sounds.tapGlass && !areSfxMuted) sounds.tapGlass.triggerAttackRelease("C3", "16n", Tone.now() + Math.random()*0.001);
                         tappedCreature = true;
                     }
                 }
@@ -802,7 +817,7 @@
 
         toggleDayNightButton.addEventListener('click', () => {
             isDay = !isDay;
-            playSelectedMusic(); // Music might change with day/night
+            playSelectedMusic(); 
         });
 
         clearEcosystemButton.addEventListener('click', () => {
@@ -827,7 +842,7 @@
                 if (parsedData.type === currentEcosystemType) {
                     ecosystemItems = parsedData.items || [];
                     isDay = parsedData.isDay !== undefined ? parsedData.isDay : true;
-                    musicSelect.value = parsedData.music || 'none';
+                    musicSelect.value = parsedData.music || 'serenePads'; // Default to serenePads if not saved
                     playSelectedMusic(); 
                     alert(`${currentEcosystemType.charAt(0).toUpperCase() + currentEcosystemType.slice(1)} loaded!`);
                 } else {

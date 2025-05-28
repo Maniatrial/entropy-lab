@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>KaleidoStream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Satisfy&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a2e; /* Deep indigo */
+            color: #e0e0e0; /* Light gray */
+            overscroll-behavior: none;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .header-font {
+            font-family: 'Satisfy', cursive;
+            text-shadow: 0 0 8px rgba(173, 216, 230, 0.7);
+        }
+        .controls-panel {
+            background-color: rgba(40, 40, 70, 0.85); /* Darker semi-transparent indigo */
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #3a3a5e; /* Indigo border */
+        }
+        .btn {
+            background-color: #8b5cf6; /* Violet 500 */
+            color: white;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        .btn:hover {
+            background-color: #7c3aed; /* Violet 600 */
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #4a5568; /* Slate 600 */
+        }
+        .btn-secondary:hover {
+            background-color: #2d3748; /* Slate 800 */
+        }
+        .btn-toggle.active {
+            background-color: #a78bfa; /* Violet 400 */
+            color: #1e1b4b; /* Indigo 900 */
+        }
+        .input-field, .select-field, input[type="color"].styled-color-input {
+            background-color: #2a2a44; /* Darker indigo */
+            border: 1px solid #4a4a6a; /* Indigo border */
+            color: #e0e0e0;
+            border-radius: 0.375rem; 
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+        input[type="color"].styled-color-input { padding: 0.1rem; height: 2.25rem; width: 100%; }
+
+        #kaleidoCanvas {
+            display: block;
+            cursor: crosshair;
+            background-color: #000000; /* Default black background */
+        }
+        .start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+         input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+            background: #4a4a6a; border-radius: 3px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+            background: #a78bfa; border-radius: 50%; cursor: pointer; border: 2px solid #1a1a2e;
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <div id="startAudioOverlay" class="start-overlay">
+        <button id="startAudioButton" class="btn text-white font-bold py-4 px-8 rounded-lg text-2xl header-font bg-violet-500 hover:bg-violet-600">
+            Enter KaleidoStream
+        </button>
+    </div>
+
+    <header class="controls-panel p-3 sm:p-4 w-full shadow-lg">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-2">
+            <h1 class="text-3xl sm:text-4xl text-violet-300 header-font">KaleidoStream</h1>
+            <div class="flex flex-wrap gap-2 items-center">
+                <div>
+                    <label for="segmentsSelect" class="text-xs block mb-0.5">Segments:</label>
+                    <select id="segmentsSelect" class="select-field">
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                        <option value="8" selected>8</option>
+                        <option value="10">10</option>
+                        <option value="12">12</option>
+                        <option value="16">16</option>
+                        <option value="24">24</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="lineColor" class="text-xs block mb-0.5">Color:</label>
+                    <input type="color" id="lineColor" value="#FFFFFF" class="styled-color-input h-9 w-16">
+                </div>
+                <div>
+                    <label for="lineWidthSlider" class="text-xs block mb-0.5">Size: <span id="lineWidthValue">3</span></label>
+                    <input type="range" id="lineWidthSlider" min="1" max="20" value="3" class="w-24">
+                </div>
+                 <div>
+                    <label for="bgColorSelect" class="text-xs block mb-0.5">BG:</label>
+                    <select id="bgColorSelect" class="select-field">
+                        <option value="#000000">Black</option>
+                        <option value="#111827">Dark Blue</option>
+                        <option value="#252540">Deep Indigo</option>
+                        <option value="#FFFFFF">White</option>
+                    </select>
+                </div>
+                 <div class="flex flex-col items-center">
+                    <label class="text-xs mb-0.5">Tools:</label>
+                    <div class="flex gap-1">
+                        <button id="penToolButton" class="btn btn-toggle active text-xs p-1.5 sm:p-2">Pen</button>
+                        <button id="eraserToolButton" class="btn btn-toggle text-xs p-1.5 sm:p-2">Eraser</button>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <label class="text-xs mb-0.5">Effects:</label>
+                     <button id="glowButton" class="btn btn-toggle text-xs p-1.5 sm:p-2">Glow Off</button>
+                </div>
+                <div class="flex flex-col items-center">
+                    <label class="text-xs mb-0.5">Actions:</label>
+                    <div class="flex gap-1">
+                         <button id="clearButton" class="btn btn-secondary text-xs p-1.5 sm:p-2">Clear</button>
+                         <button id="saveButton" class="btn btn-secondary text-xs p-1.5 sm:p-2">Save</button>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <label class="text-xs mb-0.5">Music:</label>
+                     <button id="muteMusicButton" class="btn btn-toggle text-xs p-1.5 sm:p-2">Music On</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex justify-center items-center p-1 bg-black">
+        <canvas id="kaleidoCanvas"></canvas>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('kaleidoCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const segmentsSelect = document.getElementById('segmentsSelect');
+        const lineColorInput = document.getElementById('lineColor');
+        const lineWidthSlider = document.getElementById('lineWidthSlider');
+        const lineWidthValueDisplay = document.getElementById('lineWidthValue');
+        const bgColorSelect = document.getElementById('bgColorSelect');
+        const penToolButton = document.getElementById('penToolButton');
+        const eraserToolButton = document.getElementById('eraserToolButton');
+        const glowButton = document.getElementById('glowButton');
+        const clearButton = document.getElementById('clearButton');
+        const saveButton = document.getElementById('saveButton');
+        const muteMusicButton = document.getElementById('muteMusicButton');
+        const startAudioOverlay = document.getElementById('startAudioOverlay');
+        const startAudioButton = document.getElementById('startAudioButton');
+
+        let numSegments = 8;
+        let lineColor = '#FFFFFF';
+        let lineWidth = 3;
+        let currentTool = 'pen'; // 'pen' or 'eraser'
+        let isDrawing = false;
+        let lastX, lastY;
+        let paths = []; // To store drawn paths for redraw on segment change
+        let currentPath = null; // Stores points of the current stroke
+        let useGlow = false;
+
+        // --- Tone.js Audio ---
+        let audioReady = false;
+        let ambientSynth = null;
+        let musicLoop = null;
+        let isMusicMuted = false;
+
+        async function initAudio() {
+            if (audioReady) return;
+            try {
+                await Tone.start();
+                // Changed from FatOscillator to Synth for triggerAttackRelease
+                ambientSynth = new Tone.Synth({
+                    oscillator: {
+                        type: "triangle" // A smooth waveform for pads
+                    },
+                    envelope: {
+                        attack: 2,    // Slow attack for pad-like sound
+                        decay: 1,
+                        sustain: 0.8,
+                        release: 4  // Slow release
+                    },
+                    volume: -25 // Adjusted volume
+                }).toDestination(); // Connect directly first
+
+                const reverb = new Tone.Reverb(6).toDestination(); 
+                reverb.wet.value = 0.6;
+                const delay = new Tone.FeedbackDelay("2n", 0.5).connect(reverb); // Adjusted delay params
+                ambientSynth.connect(delay); // Connect synth to effects chain
+
+                const notes = ["C2", "Eb2", "G2", "Bb2", "C3", "G2"];
+                let noteIndex = 0;
+                musicLoop = new Tone.Loop(time => {
+                    if (!isMusicMuted && ambientSynth) { // Check if ambientSynth is initialized
+                        // Use triggerAttackRelease with the note directly
+                        ambientSynth.triggerAttackRelease(notes[noteIndex % notes.length], "6n", time); 
+                        noteIndex++;
+                    }
+                }, "5s").start(0); 
+                
+                if (!isMusicMuted) {
+                    if (Tone.Transport.state !== "started") {
+                        Tone.Transport.start();
+                    }
+                }
+                audioReady = true;
+                console.log("Audio Initialized");
+                startAudioOverlay.classList.add('hidden');
+            } catch (err) { console.error("Audio Init Failed:", err); }
+        }
+        startAudioButton.addEventListener('click', initAudio);
+
+        muteMusicButton.addEventListener('click', () => {
+            isMusicMuted = !isMusicMuted;
+            muteMusicButton.textContent = isMusicMuted ? "Music Off" : "Music On";
+            muteMusicButton.classList.toggle('active', !isMusicMuted);
+            if (isMusicMuted && Tone.Transport.state === "started") {
+                Tone.Transport.pause(); 
+            } else if (!isMusicMuted && Tone.Transport.state !== "started" && audioReady) {
+                Tone.Transport.start(); 
+            }
+        });
+
+
+        function resizeCanvas() {
+            const mainElement = document.querySelector('main');
+            const padding = 2; 
+            const availableWidth = mainElement.clientWidth - padding;
+            const availableHeight = mainElement.clientHeight - padding;
+            const size = Math.min(availableWidth, availableHeight);
+            canvas.width = size;
+            canvas.height = size;
+            redrawAllPaths(); 
+        }
+
+        function drawSegmentGuides() {
+            if (numSegments <= 0) return;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY);
+            const segmentAngle = (2 * Math.PI) / numSegments;
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(100, 100, 120, 0.2)'; 
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < numSegments; i++) {
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + radius * Math.cos(i * segmentAngle), 
+                           centerY + radius * Math.sin(i * segmentAngle));
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        function clearCanvasAndPaths() {
+            ctx.fillStyle = bgColorSelect.value;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // drawSegmentGuides(); 
+            paths = []; 
+        }
+
+        function drawKaleidoLineSegment(p1, p2, color, width, tool, applyGlow) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const segmentAngle = (2 * Math.PI) / numSegments;
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+
+            if (applyGlow && tool === 'pen') {
+                ctx.shadowColor = color;
+                ctx.shadowBlur = width * 2 + 5; 
+            } else {
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+            }
+
+            for (let i = 0; i < numSegments; i++) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(i * segmentAngle);
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x - centerX, p1.y - centerY);
+                ctx.lineTo(p2.x - centerX, p2.y - centerY);
+                ctx.stroke();
+
+                ctx.scale(1, -1); 
+                ctx.beginPath();
+                ctx.moveTo(p1.x - centerX, p1.y - centerY);
+                ctx.lineTo(p2.x - centerX, p2.y - centerY);
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+        }
+
+        function redrawAllPaths() {
+            ctx.fillStyle = bgColorSelect.value;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // drawSegmentGuides();
+
+            paths.forEach(path => {
+                if (path.points.length < 2) return;
+                for (let i = 1; i < path.points.length; i++) {
+                    drawKaleidoLineSegment(path.points[i-1], path.points[i], path.color, path.size, path.tool, path.glow);
+                }
+            });
+        }
+
+
+        function getMousePos(event) {
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+            if (event.touches && event.touches.length > 0) {
+                x = event.touches[0].clientX - rect.left;
+                y = event.touches[0].clientY - rect.top;
+            } else {
+                x = event.clientX - rect.left;
+                y = event.clientY - rect.top;
+            }
+            return { x, y };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getMousePos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            currentPath = { 
+                points: [{ x: lastX, y: lastY }], 
+                color: currentTool === 'eraser' ? bgColorSelect.value : lineColor, 
+                size: lineWidth, 
+                tool: currentTool,
+                glow: useGlow && currentTool === 'pen'
+            };
+            e.preventDefault(); 
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            const currentX = pos.x;
+            const currentY = pos.y;
+
+            if (currentPath) {
+                currentPath.points.push({ x: currentX, y: currentY });
+            }
+            
+            drawKaleidoLineSegment({x: lastX, y: lastY}, {x: currentX, y: currentY}, 
+                                   currentTool === 'eraser' ? bgColorSelect.value : lineColor, 
+                                   lineWidth, currentTool, useGlow && currentTool === 'pen');
+            lastX = currentX;
+            lastY = currentY;
+            e.preventDefault();
+        }
+
+        function stopDrawing() {
+            if (isDrawing && currentPath && currentPath.points.length > 1) {
+                paths.push(currentPath); 
+            }
+            isDrawing = false;
+            currentPath = null;
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+
+
+        segmentsSelect.addEventListener('change', (e) => {
+            numSegments = parseInt(e.target.value);
+            redrawAllPaths();
+        });
+        lineColorInput.addEventListener('input', (e) => lineColor = e.target.value);
+        lineWidthSlider.addEventListener('input', (e) => {
+            lineWidth = parseInt(e.target.value);
+            lineWidthValueDisplay.textContent = lineWidth;
+        });
+        bgColorSelect.addEventListener('change', (e) => {
+            canvas.style.backgroundColor = e.target.value; 
+            redrawAllPaths(); 
+        });
+
+        penToolButton.addEventListener('click', () => {
+            currentTool = 'pen';
+            penToolButton.classList.add('active');
+            eraserToolButton.classList.remove('active');
+        });
+        eraserToolButton.addEventListener('click', () => {
+            currentTool = 'eraser';
+            eraserToolButton.classList.add('active');
+            penToolButton.classList.remove('active');
+        });
+        glowButton.addEventListener('click', () => {
+            useGlow = !useGlow;
+            glowButton.textContent = useGlow ? "Glow On" : "Glow Off";
+            glowButton.classList.toggle('active', useGlow);
+        });
+
+        clearButton.addEventListener('click', clearCanvasAndPaths);
+        saveButton.addEventListener('click', () => {
+            const imageName = `kaleidoStream_${Date.now()}.png`;
+            const link = document.createElement('a');
+            link.download = imageName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            clearCanvasAndPaths(); 
+            lineWidthValueDisplay.textContent = lineWidthSlider.value;
+            canvas.style.backgroundColor = bgColorSelect.value;
+        });
+        window.addEventListener('resize', resizeCanvas);
+
+    </script>
+</body>
+</html>

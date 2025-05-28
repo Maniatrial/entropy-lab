@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pattern Morph: Generative Grid Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Roboto+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #111827; /* Gray 900 */
+            color: #d1d5db; /* Gray 300 */
+            overscroll-behavior: none;
+        }
+        .header-font {
+            font-family: 'Major Mono Display', monospace;
+            letter-spacing: 0.05em;
+        }
+        .panel {
+            background-color: #1f2937; /* Gray 800 */
+            border: 1px solid #374151; /* Gray 700 */
+        }
+        .btn {
+            background-color: #3b82f6; /* Blue 500 */
+            color: white;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        .btn:hover {
+            background-color: #2563eb; /* Blue 600 */
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #4b5563; /* Gray 600 */
+        }
+        .btn-secondary:hover {
+            background-color: #374151; /* Gray 700 */
+        }
+        .btn-toggle.active {
+            background-color: #10b981; /* Emerald 500 */
+            color: white;
+        }
+        .input-field, .select-field {
+            background-color: #374151; /* Gray 700 */
+            border: 1px solid #4b5563; /* Gray 600 */
+            color: #d1d5db;
+            border-radius: 0.375rem; 
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+        #patternCanvas {
+            display: block;
+            cursor: crosshair;
+            background-color: #000000; /* Default black background */
+            border: 2px solid #374151;
+        }
+        .start-overlay, .info-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .info-modal-overlay { z-index: 1001; } /* Ensure info modal is on top */
+        .info-modal-content {
+            background-color: #1f2937; /* Gray 800 */
+            color: #d1d5db; /* Gray 300 */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #374151; /* Gray 700 */
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .info-modal-content h2 {
+            font-family: 'Major Mono Display', monospace;
+            color: #60a5fa; /* Blue 400 */
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .info-modal-content h3 {
+            font-family: 'Major Mono Display', monospace;
+            color: #3b82f6; /* Blue 500 */
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .info-modal-content p, .info-modal-content li {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+        .info-modal-content ul { list-style-type: disc; margin-left: 1.5rem; }
+
+         input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+            background: #4b5563; border-radius: 3px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+            background: #3b82f6; border-radius: 50%; cursor: pointer; border: 2px solid #111827;
+        }
+        .control-group {
+            border-top: 1px solid #374151;
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .control-group h3 {
+            font-family: 'Major Mono Display', monospace;
+            color: #60a5fa; /* Blue 400 */
+            margin-bottom: 0.5rem;
+        }
+        .info-button {
+            background-color: #4b5563; /* Gray 600 */
+            color: #d1d5db; /* Gray 300 */
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .info-button:hover {
+            background-color: #374151; /* Gray 700 */
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="startAudioOverlay" class="start-overlay">
+        <button id="startAudioButton" class="btn text-white font-bold py-4 px-8 rounded-lg text-2xl header-font bg-blue-500 hover:bg-blue-600">
+            Initialize Pattern Morph
+        </button>
+    </div>
+
+    <div id="infoModal" class="info-modal-overlay hidden">
+        <div class="info-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2>Pattern Morph Guide</h2>
+                <button id="closeInfoModalButton" class="text-2xl text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <p>Welcome to Pattern Morph! This is a digital playground for exploring fascinating visual patterns generated by simple rules and algorithms. Experiment, discover, and create unique art!</p>
+            
+            <h3>How to Enjoy:</h3>
+            <ul>
+                <li>Select an <strong>Algorithm</strong> from the dropdown in the header.</li>
+                <li>Use the <strong>Global Controls</strong> on the left to Play/Pause, Step through generations, change Speed, pick a Color Palette, Randomize the current setup, Reset the grid, or Save a snapshot of your creation.</li>
+                <li>Each algorithm has its own <strong>Specific Controls</strong> that appear below the global ones. Play with these to see how they affect the patterns!</li>
+            </ul>
+
+            <h3>Algorithm Explanations:</h3>
+            <div>
+                <h4>Game of Life</h4>
+                <p>A classic cellular automaton. Click cells on the grid to make them 'alive' (white) or 'dead' (black). Press Play to watch them evolve based on a few simple rules about their neighbors. Try the Presets for famous starting patterns!</p>
+            </div>
+            <div>
+                <h4>Truchet Tiles</h4>
+                <p>Generates intricate patterns using simple geometric tiles. Each cell randomly picks one of two tile orientations. Click "Regenerate Tiles" or "Randomize" to see new patterns. Try different Tile Sets!</p>
+            </div>
+            <div>
+                <h4>Reaction-Diffusion</h4>
+                <p>Simulates chemical reactions that create organic, life-like patterns. Click on the grid to "seed" (add) chemical 'B'. Press Play to watch it diffuse and react with chemical 'A'. Experiment with the Pattern Presets or fine-tune the Feed/Kill rates.</p>
+            </div>
+            <div>
+                <h4>Worley Noise</h4>
+                <p>Creates cellular patterns based on distances to a set of random points. Click on the grid to add new points or click near an existing point to remove it. Use the "Num Points" slider or "Randomize" to generate different sets of points. Try different Distance Metrics for varied cell shapes.</p>
+            </div>
+            <p class="mt-4">Have fun exploring the emergent beauty of these systems!</p>
+        </div>
+    </div>
+
+
+    <header class="panel p-3 sm:p-4 w-full shadow-md">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <h1 class="text-3xl sm:text-4xl text-blue-400 header-font">Pattern Morph</h1>
+                <button id="infoButton" class="info-button" title="How to Play">i</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <label for="algorithmSelect" class="text-sm">Algorithm:</label>
+                <select id="algorithmSelect" class="select-field">
+                    <option value="gameOfLife">Game of Life</option>
+                    <option value="truchetTiles">Truchet Tiles</option>
+                    <option value="reactionDiffusion">Reaction-Diffusion</option>
+                    <option value="worleyNoise">Worley Noise</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-grow w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
+        <aside class="lg:col-span-1 panel p-4 rounded-lg space-y-4 h-fit sticky top-4">
+            <div id="commonControls">
+                <h3 class="text-lg font-semibold text-blue-300 header-font mb-2">Global Controls</h3>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <button id="playPauseButton" class="btn">Play</button>
+                    <button id="stepButton" class="btn btn-secondary">Step</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <button id="resetButton" class="btn btn-secondary">Reset Grid</button>
+                    <button id="randomizeButton" class="btn btn-secondary">Randomize</button>
+                </div>
+                <div>
+                    <label for="speedSlider" class="text-xs block mb-0.5">Speed: <span id="speedValue">5</span></label>
+                    <input type="range" id="speedSlider" min="1" max="20" value="5">
+                </div>
+                 <div class="mt-3">
+                    <label for="colorPaletteSelect" class="text-xs block mb-0.5">Color Palette:</label>
+                    <select id="colorPaletteSelect" class="select-field w-full">
+                        <option value="monochrome">Monochrome</option>
+                        <option value="bioluminescent">Bio-luminescent</option>
+                        <option value="earthTones">Earth Tones</option>
+                        <option value="synthwave">Synthwave</option>
+                        <option value="forest">Forest</option>
+                    </select>
+                </div>
+                <button id="saveImageButton" class="btn w-full mt-3">Save Snapshot</button>
+            </div>
+            
+            <div id="algorithmSpecificControls" class="mt-3">
+                <div id="golControls" class="control-group hidden">
+                    <h3>Game of Life</h3>
+                    <p class="text-xs text-gray-400">Click cells to toggle. Press Play.</p>
+                    <label for="golPresetSelect" class="text-xs block mb-0.5 mt-2">Load Preset:</label>
+                    <select id="golPresetSelect" class="select-field w-full text-xs">
+                        <option value="clear">Clear Grid</option>
+                        <option value="glider">Glider</option>
+                        <option value="blinker">Blinker</option>
+                        <option value="pulsar">Pulsar</option>
+                        <option value="gosperGliderGun">Gosper Glider Gun</option>
+                    </select>
+                </div>
+
+                <div id="truchetControls" class="control-group hidden">
+                    <h3>Truchet Tiles</h3>
+                    <p class="text-xs text-gray-400">Press Randomize or Regenerate.</p>
+                     <button id="regenerateTruchetButton" class="btn btn-secondary w-full mt-2">Regenerate Tiles</button>
+                    <label for="truchetTileSetSelect" class="text-xs block mb-0.5 mt-2">Tile Set:</label>
+                    <select id="truchetTileSetSelect" class="select-field w-full text-xs">
+                        <option value="arcs">Arcs (\ /)</option>
+                        <option value="lines">Lines (— |)</option>
+                        </select>
+                </div>
+
+                <div id="rdControls" class="control-group hidden">
+                    <h3>Reaction-Diffusion</h3>
+                    <p class="text-xs text-gray-400">Click to seed 'B' chemical. Press Play.</p>
+                    <label for="rdPresetSelect" class="text-xs block mb-0.5 mt-2">Pattern Preset:</label>
+                    <select id="rdPresetSelect" class="select-field w-full text-xs">
+                        <option value="coral">Coral Growth</option>
+                        <option value="worms">Worms/Labyrinth</option>
+                        <option value="spots">Spots</option>
+                        <option value="waves">Waves</option>
+                    </select>
+                    <p class="text-xs mt-1">Feed (A): <span id="feedRateDisplay">0.055</span></p>
+                    <input type="range" id="feedRateSlider" min="0.01" max="0.1" value="0.055" step="0.001">
+                    <p class="text-xs mt-1">Kill (B): <span id="killRateDisplay">0.062</span></p>
+                    <input type="range" id="killRateSlider" min="0.03" max="0.07" value="0.062" step="0.001">
+                </div>
+
+                <div id="worleyControls" class="control-group hidden">
+                    <h3>Worley Noise</h3>
+                    <p class="text-xs text-gray-400">Click to add/remove points. Press Randomize for new points.</p>
+                    <label for="worleyPointsSlider" class="text-xs block mb-0.5 mt-2">Num Points: <span id="worleyPointsDisplay">15</span></label>
+                    <input type="range" id="worleyPointsSlider" min="3" max="50" value="15" step="1">
+                    <label for="worleyMetricSelect" class="text-xs block mb-0.5 mt-2">Distance Metric:</label>
+                    <select id="worleyMetricSelect" class="select-field w-full text-xs">
+                        <option value="euclidean">Euclidean</option>
+                        <option value="manhattan">Manhattan</option>
+                        <option value="chebyshev">Chebyshev</option>
+                    </select>
+                </div>
+            </div>
+             <div class="mt-4 pt-3 border-t border-slate-600">
+                <button id="muteMusicButton" class="btn btn-toggle text-xs p-1.5 sm:p-2 w-full">Music On</button>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-3 panel rounded-lg flex justify-center items-center p-2 bg-black">
+            <canvas id="patternCanvas"></canvas>
+        </main>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('patternCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // UI Elements
+        const algorithmSelect = document.getElementById('algorithmSelect');
+        const playPauseButton = document.getElementById('playPauseButton');
+        const stepButton = document.getElementById('stepButton');
+        const resetButton = document.getElementById('resetButton');
+        const randomizeButton = document.getElementById('randomizeButton');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValueDisplay = document.getElementById('speedValue');
+        const colorPaletteSelect = document.getElementById('colorPaletteSelect');
+        const saveImageButton = document.getElementById('saveImageButton');
+        const muteMusicButton = document.getElementById('muteMusicButton');
+        const startAudioOverlay = document.getElementById('startAudioOverlay');
+        const startAudioButton = document.getElementById('startAudioButton');
+        const infoButton = document.getElementById('infoButton');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfoModalButton = document.getElementById('closeInfoModalButton');
+
+
+        // Algorithm Specific Controls
+        const golControls = document.getElementById('golControls');
+        const golPresetSelect = document.getElementById('golPresetSelect');
+        const truchetControls = document.getElementById('truchetControls');
+        const regenerateTruchetButton = document.getElementById('regenerateTruchetButton');
+        const truchetTileSetSelect = document.getElementById('truchetTileSetSelect');
+        const rdControls = document.getElementById('rdControls');
+        const rdPresetSelect = document.getElementById('rdPresetSelect');
+        const feedRateSlider = document.getElementById('feedRateSlider');
+        const feedRateDisplay = document.getElementById('feedRateDisplay');
+        const killRateSlider = document.getElementById('killRateSlider');
+        const killRateDisplay = document.getElementById('killRateDisplay');
+        const worleyControls = document.getElementById('worleyControls');
+        const worleyPointsSlider = document.getElementById('worleyPointsSlider');
+        const worleyPointsDisplay = document.getElementById('worleyPointsDisplay');
+        const worleyMetricSelect = document.getElementById('worleyMetricSelect');
+
+
+        let GRID_SIZE = 60; 
+        let CELL_SIZE; 
+        let grid = [];
+        let currentAlgorithm = 'gameOfLife';
+        let animationFrameId = null;
+        let isPlaying = false;
+        let gameSpeed = 5; 
+        let lastUpdateTime = 0;
+
+        const palettes = {
+            monochrome: { bg: '#000000', cell1: '#FFFFFF', cell2: '#AAAAAA', line: '#555555' },
+            bioluminescent: { bg: '#0A192F', cell1: '#64FFDA', cell2: '#72FFFF', line: '#304D6D' },
+            earthTones: { bg: '#E0C9A6', cell1: '#5D4037', cell2: '#A1887F', line: '#8D6E63' },
+            synthwave: { bg: '#2C003E', cell1: '#FF00C1', cell2: '#00F0FF', line: '#711C91' },
+            forest: { bg: '#223D3A', cell1: '#368F8B', cell2: '#94E8B4', line: '#1E555C' }
+        };
+        let currentPalette = palettes.monochrome;
+
+        let audioReady = false;
+        let ambientSynth = null;
+        let musicLoop = null;
+        let isMusicMuted = false;
+        let sfx = {};
+
+        async function initAudio() {
+            if (audioReady) return;
+            try {
+                await Tone.start();
+                ambientSynth = new Tone.PolySynth(Tone.FMSynth, {
+                    harmonicity: 1.1, modulationIndex: 2,
+                    envelope: { attack: 3, decay: 1, sustain: 0.8, release: 5 },
+                    modulationEnvelope: { attack: 2, decay: 0.5, sustain: 0.6, release: 4 },
+                    volume: -30
+                }).toDestination();
+                const reverb = new Tone.Reverb(4).toDestination(); reverb.wet.value = 0.3;
+                ambientSynth.connect(reverb);
+
+                sfx.step = new Tone.MembraneSynth({pitchDecay:0.01, octaves:2, envelope:{attack:0.001,decay:0.05,sustain:0}, volume:-25}).toDestination();
+                sfx.click = new Tone.PluckSynth({attackNoise:0.5, dampening:2000, resonance:0.7, volume:-20}).toDestination();
+                sfx.regenerate = new Tone.NoiseSynth({noise:{type:"pink"}, envelope:{attack:0.01, decay:0.2, sustain:0}, volume:-22}).toDestination();
+                
+                playAmbientMusic();
+                audioReady = true;
+                console.log("Audio Initialized");
+                startAudioOverlay.classList.add('hidden');
+            } catch (err) { console.error("Audio Init Failed:", err); startAudioOverlay.classList.add('hidden');}
+        }
+        startAudioButton.addEventListener('click', initAudio);
+
+        function playAmbientMusic() {
+            if (!ambientSynth || isMusicMuted) return;
+            if (musicLoop) {
+                 musicLoop.stop(0);
+                 musicLoop.dispose();
+            }
+
+            const notes = currentAlgorithm === 'reactionDiffusion' ? ["C2","F2","G#2"] : ["A1","D2","E2","A2"];
+            const interval = currentAlgorithm === 'reactionDiffusion' ? "6s" : "8s";
+            let i=0;
+            musicLoop = new Tone.Loop(time => {
+                if (!isMusicMuted) {
+                    ambientSynth.triggerAttackRelease(notes[i++ % notes.length], "7m", time);
+                }
+            }, interval).start(0);
+            if (Tone.Transport.state !== "started") {
+                 Tone.Transport.start();
+            }
+        }
+        muteMusicButton.addEventListener('click', () => {
+            isMusicMuted = !isMusicMuted;
+            muteMusicButton.textContent = isMusicMuted ? "Music Off" : "Music On";
+            muteMusicButton.classList.toggle('active', !isMusicMuted);
+            if (isMusicMuted && Tone.Transport.state === "started") {
+                 Tone.Transport.pause();
+            } else if (!isMusicMuted && audioReady && Tone.Transport.state !== "started") {
+                 Tone.Transport.start();
+            }
+        });
+
+        function resizeAndInitialize() {
+            const mainElement = document.querySelector('main');
+            const padding = 10;
+            const availableWidth = mainElement.clientWidth - padding;
+            const availableHeight = mainElement.clientHeight - padding;
+            const size = Math.min(availableWidth, availableHeight);
+            canvas.width = size;
+            canvas.height = size;
+            CELL_SIZE = canvas.width / GRID_SIZE;
+            resetGrid(); 
+        }
+
+        function resetGrid() {
+            grid = [];
+            switch (currentAlgorithm) {
+                case 'gameOfLife':
+                    for (let y = 0; y < GRID_SIZE; y++) {
+                        grid[y] = [];
+                        for (let x = 0; x < GRID_SIZE; x++) grid[y][x] = 0; 
+                    }
+                    break;
+                case 'truchetTiles':
+                    grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Math.random() < 0.5 ? 0 : 1)); 
+                    break;
+                case 'reactionDiffusion':
+                    grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => ({ a: 1, b: 0 })));
+                    const center = Math.floor(GRID_SIZE / 2);
+                    for(let i = -2; i <= 2; i++) for(let j = -2; j <= 2; j++) {
+                        if(grid[center+i] && grid[center+i][center+j]) grid[center+i][center+j].b = 1;
+                    }
+                    break;
+                case 'worleyNoise':
+                    const numPoints = parseInt(worleyPointsSlider.value);
+                    grid = Array(numPoints).fill(null).map(() => ({
+                        x: Math.random() * GRID_SIZE,
+                        y: Math.random() * GRID_SIZE,
+                        color: `hsl(${Math.random()*360}, 70%, 60%)`
+                    }));
+                    break;
+            }
+            drawGrid();
+        }
+
+        function drawGrid() {
+            if (!ctx) return;
+            ctx.fillStyle = currentPalette.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            switch (currentAlgorithm) {
+                case 'gameOfLife': drawGameOfLife(); break;
+                case 'truchetTiles': drawTruchetTiles(); break;
+                case 'reactionDiffusion': drawReactionDiffusion(); break;
+                case 'worleyNoise': drawWorleyNoise(); break;
+            }
+        }
+
+        function drawGameOfLife() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    if (grid[y][x] === 1) {
+                        ctx.fillStyle = currentPalette.cell1;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE -1 , CELL_SIZE -1); 
+                    }
+                }
+            }
+        }
+        function drawTruchetTiles() {
+            ctx.strokeStyle = currentPalette.line;
+            ctx.lineWidth = Math.max(1, CELL_SIZE / 10);
+            const tileSet = truchetTileSetSelect.value;
+
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    ctx.save();
+                    ctx.translate(x * CELL_SIZE, y * CELL_SIZE);
+                    ctx.beginPath();
+                    if (tileSet === 'arcs') {
+                        if (grid[y][x] === 0) { 
+                            ctx.arc(0, 0, CELL_SIZE / 2, 0, Math.PI / 2);
+                            ctx.moveTo(CELL_SIZE, CELL_SIZE);
+                            ctx.arc(CELL_SIZE, CELL_SIZE, CELL_SIZE / 2, Math.PI, Math.PI * 1.5);
+                        } else { 
+                            ctx.arc(CELL_SIZE, 0, CELL_SIZE / 2, Math.PI / 2, Math.PI);
+                            ctx.moveTo(0, CELL_SIZE);
+                            ctx.arc(0, CELL_SIZE, CELL_SIZE / 2, Math.PI * 1.5, Math.PI * 2);
+                        }
+                    } else if (tileSet === 'lines') {
+                         if (grid[y][x] === 0) { 
+                            ctx.moveTo(0, CELL_SIZE/2); ctx.lineTo(CELL_SIZE, CELL_SIZE/2);
+                        } else { 
+                            ctx.moveTo(CELL_SIZE/2, 0); ctx.lineTo(CELL_SIZE/2, CELL_SIZE);
+                        }
+                    }
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+        function drawReactionDiffusion() {
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const a = grid[y][x].a;
+                    const b = grid[y][x].b;
+                    if (b > 0.1) { 
+                        const ratio = Math.min(1, b / 0.5); 
+                        const r = parseInt(currentPalette.cell1.slice(1,3),16) * ratio;
+                        const g = parseInt(currentPalette.cell1.slice(3,5),16) * ratio;
+                        const blue = parseInt(currentPalette.cell1.slice(5,7),16) * ratio;
+                        ctx.fillStyle = `rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(blue)})`;
+                    } else {
+                         ctx.fillStyle = currentPalette.bg; 
+                    }
+                    ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+        function drawWorleyNoise() {
+            const metric = worleyMetricSelect.value;
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    let minDist = Infinity;
+                    let closestPoint = null;
+                    grid.forEach(point => { 
+                        let dist;
+                        if (metric === 'manhattan') dist = Math.abs(point.x - x) + Math.abs(point.y - y);
+                        else if (metric === 'chebyshev') dist = Math.max(Math.abs(point.x - x), Math.abs(point.y - y));
+                        else dist = Math.sqrt((point.x - x)**2 + (point.y - y)**2); 
+
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestPoint = point;
+                        }
+                    });
+                    if (closestPoint) {
+                        ctx.fillStyle = closestPoint.color;
+                         ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+            ctx.fillStyle = currentPalette.line;
+            grid.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point.x * CELL_SIZE, point.y * CELL_SIZE, CELL_SIZE/4, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        function updateGameOfLife() {
+            const newGrid = grid.map(arr => [...arr]);
+            let changed = false;
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    let liveNeighbors = 0;
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            if (i === 0 && j === 0) continue;
+                            const newY = y + i;
+                            const newX = x + j;
+                            if (newY >= 0 && newY < GRID_SIZE && newX >= 0 && newX < GRID_SIZE && grid[newY][newX] === 1) {
+                                liveNeighbors++;
+                            }
+                        }
+                    }
+                    if (grid[y][x] === 1) { 
+                        if (liveNeighbors < 2 || liveNeighbors > 3) {
+                            newGrid[y][x] = 0; 
+                            changed = true;
+                        }
+                    } else { 
+                        if (liveNeighbors === 3) {
+                            newGrid[y][x] = 1; 
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            grid = newGrid;
+            if (changed && audioReady && sfx.step && Math.random() < 0.3) sfx.step.triggerAttackRelease("C1", "32n", Tone.now()+Math.random()*0.01);
+        }
+
+
+        let rdParams = { dA: 1.0, dB: 0.5, feed: 0.055, kill: 0.062 };
+        const rdPresets = {
+            coral: { feed: 0.055, kill: 0.062, dA: 1.0, dB: 0.5 },
+            worms: { feed: 0.0367, kill: 0.0649, dA: 1.0, dB: 0.5 },
+            spots: { feed: 0.025, kill: 0.05, dA: 1.0, dB: 0.5 },
+            waves: { feed: 0.04, kill: 0.06, dA: 0.8, dB: 0.4 }
+        };
+        function updateReactionDiffusion() {
+            const newGrid = grid.map(row => row.map(cell => ({ ...cell }))); 
+            for (let iter = 0; iter < 2; iter++) { 
+                for (let y = 1; y < GRID_SIZE - 1; y++) { 
+                    for (let x = 1; x < GRID_SIZE - 1; x++) {
+                        const a = grid[y][x].a;
+                        const b = grid[y][x].b;
+                        const laplaceA = (grid[y+1][x].a + grid[y-1][x].a + grid[y][x+1].a + grid[y][x-1].a - 4*a);
+                        const laplaceB = (grid[y+1][x].b + grid[y-1][x].b + grid[y][x+1].b + grid[y][x-1].b - 4*b);
+                        
+                        const reaction = a * b * b;
+                        newGrid[y][x].a = a + (rdParams.dA * laplaceA - reaction + rdParams.feed * (1 - a)) * 0.5; 
+                        newGrid[y][x].b = b + (rdParams.dB * laplaceB + reaction - (rdParams.kill + rdParams.feed) * b) * 0.5;
+
+                        newGrid[y][x].a = Math.max(0, Math.min(1, newGrid[y][x].a));
+                        newGrid[y][x].b = Math.max(0, Math.min(1, newGrid[y][x].b));
+                    }
+                }
+                grid = newGrid.map(row => row.map(cell => ({ ...cell }))); 
+            }
+        }
+
+
+        function gameLoop(timestamp) {
+            if (!isPlaying) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
+            }
+            const elapsed = timestamp - lastUpdateTime;
+            if (elapsed > 1000 / gameSpeed) {
+                lastUpdateTime = timestamp;
+                switch (currentAlgorithm) {
+                    case 'gameOfLife': updateGameOfLife(); break;
+                    case 'reactionDiffusion': updateReactionDiffusion(); break;
+                }
+                drawGrid();
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function switchAlgorithm(algoName) {
+            currentAlgorithm = algoName;
+            isPlaying = false; playPauseButton.textContent = "Play";
+            
+            [golControls, truchetControls, rdControls, worleyControls].forEach(c => c.classList.add('hidden'));
+            if (algoName === 'gameOfLife') golControls.classList.remove('hidden');
+            else if (algoName === 'truchetTiles') truchetControls.classList.remove('hidden');
+            else if (algoName === 'reactionDiffusion') rdControls.classList.remove('hidden');
+            else if (algoName === 'worleyNoise') worleyControls.classList.remove('hidden');
+            
+            resetGrid();
+            playAmbientMusic(); 
+        }
+        algorithmSelect.addEventListener('change', (e) => switchAlgorithm(e.target.value));
+
+        playPauseButton.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playPauseButton.textContent = isPlaying ? "Pause" : "Play";
+            if (isPlaying && !animationFrameId) { 
+                lastUpdateTime = performance.now();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        });
+        stepButton.addEventListener('click', () => {
+            isPlaying = false; playPauseButton.textContent = "Play";
+            switch (currentAlgorithm) {
+                case 'gameOfLife': updateGameOfLife(); break;
+                case 'reactionDiffusion': updateReactionDiffusion(); break;
+            }
+            drawGrid();
+             if (audioReady && sfx.step) sfx.step.triggerAttackRelease("D1", "32n", Tone.now()+Math.random()*0.01);
+        });
+        resetButton.addEventListener('click', () => { isPlaying = false; playPauseButton.textContent = "Play"; resetGrid();});
+        randomizeButton.addEventListener('click', () => {
+            isPlaying = false; playPauseButton.textContent = "Play";
+            if (currentAlgorithm === 'gameOfLife') {
+                grid = grid.map(row => row.map(() => Math.random() < 0.3 ? 1 : 0));
+            } else if (currentAlgorithm === 'truchetTiles') {
+                grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Math.random() < 0.5 ? 0 : 1));
+                 if (audioReady && sfx.regenerate) sfx.regenerate.triggerAttackRelease("2n", Tone.now()+Math.random()*0.01);
+            } else if (currentAlgorithm === 'reactionDiffusion') {
+                resetGrid(); 
+                 for(let i=0; i<GRID_SIZE*GRID_SIZE*0.05; i++){ 
+                    grid[Math.floor(Math.random()*GRID_SIZE)][Math.floor(Math.random()*GRID_SIZE)].b = Math.random();
+                 }
+            } else if (currentAlgorithm === 'worleyNoise') {
+                const numPoints = parseInt(worleyPointsSlider.value);
+                grid = Array(numPoints).fill(null).map(() => ({
+                    x: Math.random() * GRID_SIZE,
+                    y: Math.random() * GRID_SIZE,
+                    color: `hsl(${Math.random()*360}, 70%, 60%)`
+                }));
+            }
+            drawGrid();
+        });
+        speedSlider.addEventListener('input', (e) => {
+            gameSpeed = parseInt(e.target.value);
+            speedValueDisplay.textContent = gameSpeed;
+        });
+        colorPaletteSelect.addEventListener('change', (e) => {
+            currentPalette = palettes[e.target.value];
+            drawGrid();
+        });
+        saveImageButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `pattern_morph_${currentAlgorithm}_${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+
+            if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return;
+             if (audioReady && sfx.click) sfx.click.triggerAttackRelease("C4", "32n", Tone.now()+Math.random()*0.01);
+
+            if (currentAlgorithm === 'gameOfLife') {
+                grid[y][x] = grid[y][x] === 1 ? 0 : 1;
+            } else if (currentAlgorithm === 'reactionDiffusion') {
+                for(let i = -1; i <= 1; i++) for(let j = -1; j <= 1; j++) {
+                     if(grid[y+i] && grid[y+i][x+j]) grid[y+i][x+j].b = Math.min(1, grid[y+i][x+j].b + 0.5);
+                }
+            } else if (currentAlgorithm === 'worleyNoise') {
+                let removed = false;
+                for(let i=0; i<grid.length; i++) {
+                    if (Math.hypot(grid[i].x - x, grid[i].y - y) < 1.5) { 
+                        grid.splice(i, 1);
+                        removed = true;
+                        break;
+                    }
+                }
+                if (!removed) {
+                    grid.push({x, y, color: `hsl(${Math.random()*360}, 70%, 60%)`});
+                    worleyPointsSlider.value = grid.length;
+                    worleyPointsDisplay.textContent = grid.length;
+                }
+            }
+            drawGrid();
+        });
+
+        golPresetSelect.addEventListener('change', (e) => {
+            resetGrid(); 
+            const preset = e.target.value;
+            const mid = Math.floor(GRID_SIZE/2);
+            if (preset === 'glider' && GRID_SIZE > 5) {
+                grid[mid-1][mid] = 1; grid[mid][mid+1] = 1; grid[mid+1][mid-1] = 1; grid[mid+1][mid] = 1; grid[mid+1][mid+1] = 1;
+            } else if (preset === 'blinker' && GRID_SIZE > 3) {
+                grid[mid][mid-1]=1; grid[mid][mid]=1; grid[mid][mid+1]=1;
+            } else if (preset === 'pulsar' && GRID_SIZE > 17) {
+                grid[mid][mid]=1; grid[mid][mid+1]=1; grid[mid+1][mid]=1; grid[mid+1][mid+1]=1;
+            } else if (preset === 'gosperGliderGun' && GRID_SIZE > 38) {
+                grid[mid-5][mid-18]=1; grid[mid-5][mid-17]=1; grid[mid-4][mid-18]=1; grid[mid-4][mid-17]=1; 
+            }
+            drawGrid();
+        });
+        regenerateTruchetButton.addEventListener('click', () => {
+            grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => Math.random() < 0.5 ? 0 : 1));
+            drawGrid();
+            if (audioReady && sfx.regenerate) sfx.regenerate.triggerAttackRelease("1n", Tone.now()+Math.random()*0.01);
+        });
+        truchetTileSetSelect.addEventListener('change', () => { drawGrid(); }); 
+
+        rdPresetSelect.addEventListener('change', (e) => {
+            const presetName = e.target.value;
+            if (rdPresets[presetName]) {
+                rdParams = {...rdParams, ...rdPresets[presetName]}; 
+                feedRateSlider.value = rdParams.feed; feedRateDisplay.textContent = rdParams.feed.toFixed(3);
+                killRateSlider.value = rdParams.kill; killRateDisplay.textContent = rdParams.kill.toFixed(3);
+                resetGrid(); 
+            }
+        });
+        feedRateSlider.addEventListener('input', (e) => { rdParams.feed = parseFloat(e.target.value); feedRateDisplay.textContent = rdParams.feed.toFixed(3); });
+        killRateSlider.addEventListener('input', (e) => { rdParams.kill = parseFloat(e.target.value); killRateDisplay.textContent = rdParams.kill.toFixed(3); });
+
+        worleyPointsSlider.addEventListener('input', (e) => {
+            worleyPointsDisplay.textContent = e.target.value;
+            const numPoints = parseInt(e.target.value);
+            grid = Array(numPoints).fill(null).map(() => ({
+                x: Math.random() * GRID_SIZE,
+                y: Math.random() * GRID_SIZE,
+                color: `hsl(${Math.random()*360}, 70%, 60%)`
+            }));
+            drawGrid();
+        });
+        worleyMetricSelect.addEventListener('change', () => { drawGrid(); });
+
+        // Info Modal Logic
+        infoButton.addEventListener('click', () => infoModal.classList.remove('hidden'));
+        closeInfoModalButton.addEventListener('click', () => infoModal.classList.add('hidden'));
+        infoModal.addEventListener('click', (e) => { // Close if clicking outside content
+            if (e.target === infoModal) infoModal.classList.add('hidden');
+        });
+
+
+        window.addEventListener('load', () => {
+            resizeAndInitialize();
+            switchAlgorithm(algorithmSelect.value); 
+            speedValueDisplay.textContent = speedSlider.value;
+            currentPalette = palettes[colorPaletteSelect.value];
+            
+            feedRateDisplay.textContent = feedRateSlider.value;
+            killRateDisplay.textContent = killRateSlider.value;
+            worleyPointsDisplay.textContent = worleyPointsSlider.value;
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        });
+        window.addEventListener('resize', resizeAndInitialize);
+
+    </script>
+</body>
+</ht

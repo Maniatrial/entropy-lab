@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarDust Driller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a23; /* Deep space blue */
+            color: #e0e0e0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            touch-action: none; /* Prevent default touch actions like scrolling */
+        }
+        #gameContainer {
+            width: 100%;
+            max-width: 800px; /* Max width for larger screens */
+            height: 100vh; /* Full height on mobile */
+            max-height: 600px; /* Max height for desktop */
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            border-radius: 10px;
+            overflow: hidden; /* Ensure canvas doesn't overflow */
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #000010, #0a0a23, #101030);
+            border-radius: 10px;
+            width: 100%;
+            height: 100%;
+        }
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.3);
+        }
+        .ui-element {
+            background-color: rgba(20, 20, 50, 0.7);
+            padding: 8px 12px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 200, 255, 0.5);
+        }
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 20, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 20;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .screen h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #00ffff; /* Cyan */
+            text-shadow: 0 0 10px #00ffff;
+        }
+        .screen p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        .button {
+            background-color: #0077ff; /* Bright Blue */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px #0055cc; /* 3D effect */
+            margin-top: 10px;
+        }
+        .button:hover {
+            background-color: #0055cc;
+        }
+        .button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #003399;
+        }
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 700px;
+            margin-top: 20px;
+        }
+        .upgrade-item {
+            background-color: rgba(30, 30, 70, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #00ffff;
+            text-align: left;
+        }
+        .upgrade-item h3 {
+            color: #00ffff;
+            margin-bottom: 5px;
+        }
+        .upgrade-item p {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .upgrade-item .cost {
+            font-weight: bold;
+            color: #ffd700; /* Gold */
+        }
+        #messageBox {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #0077ff;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            box-shadow: 0 4px 15px rgba(0, 119, 255, 0.5);
+        }
+        #messageBox.show {
+            opacity: 1;
+        }
+
+        /* Touch controls */
+        .touch-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: none; /* Hidden by default, shown on touch devices */
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 15;
+        }
+        .touch-dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 5px;
+        }
+        .touch-button {
+            background-color: rgba(0, 119, 255, 0.7);
+            border: 2px solid rgba(0, 200, 255, 0.9);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            user-select: none; /* Prevent text selection */
+            width: 50px;
+            height: 50px;
+        }
+        .touch-button.action {
+            width: 70px;
+            height: 70px;
+            font-size: 1.2em;
+            background-color: rgba(255, 69, 0, 0.7); /* Orangey-red for action */
+            border-color: rgba(255, 100, 50, 0.9);
+        }
+        .dpad-center { grid-column: 2; grid-row: 2; }
+        .dpad-up { grid-column: 2; grid-row: 1; }
+        .dpad-down { grid-column: 2; grid-row: 3; }
+        .dpad-left { grid-column: 1; grid-row: 2; }
+        .dpad-right { grid-column: 3; grid-row: 2; }
+
+        @media (max-width: 768px) { /* Mobile styles */
+            .ui-overlay { font-size: 0.9rem; padding: 8px 10px; }
+            .ui-element { padding: 6px 10px; }
+            .screen h1 { font-size: 2em; }
+            .screen p { font-size: 1em; }
+            .button { padding: 10px 20px; font-size: 1em; }
+            .touch-controls { display: flex; }
+            #gameContainer {
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0;
+            }
+            canvas { border-radius: 0; }
+        }
+         @media (hover: none) and (pointer: coarse) { /* Specifically for touch devices */
+            .touch-controls { display: flex; }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="ui-overlay">
+            <div class="ui-element">Score: <span id="scoreDisplay">0</span></div>
+            <div class="ui-element">High Score: <span id="highScoreDisplay">0</span></div>
+            <div class="ui-element">Cargo: <span id="cargoDisplay">0/100</span></div>
+            <div class="ui-element">Shields: <span id="shieldDisplay">100%</span></div>
+            <div class="ui-element">Ore: <span id="oreDisplay">0</span></div>
+            <div class="ui-element">Gems: <span id="gemDisplay">0</span></div>
+        </div>
+        <div class="ui-overlay bottom-0 top-auto">
+             <div class="ui-element">User ID: <span id="userIdDisplay" class="text-xs"></span></div>
+        </div>
+
+
+        <div id="startScreen" class="screen">
+            <h1>StarDust Driller</h1>
+            <p>Pilot your ship, drill asteroids for valuable resources, and upgrade your gear for deeper space expeditions!</p>
+            <p class="text-sm">Controls: WASD/Arrows to move. Mouse to aim drill. Left Click/Space to drill. <br/> Touch: D-Pad to move, Tap screen to aim & drill.</p>
+            <button id="startGameButton" class="button">Start Drilling</button>
+        </div>
+
+        <div id="gameOverScreen" class="screen" style="display: none;">
+            <h1>Game Over</h1>
+            <p>Your final score: <span id="finalScore">0</span></p>
+            <button id="playAgainButton" class="button">Play Again</button>
+            <button id="goToUpgradeScreenButton" class="button">Upgrades</button>
+        </div>
+
+        <div id="upgradeScreen" class="screen" style="display: none;">
+            <h1>Ship Upgrades</h1>
+            <div class="flex justify-around w-full max-w-md mb-4">
+                <div class="ui-element">Ore: <span id="upgradeOreDisplay">0</span></div>
+                <div class="ui-element">Gems: <span id="upgradeGemDisplay">0</span></div>
+            </div>
+            <div id="upgradeGrid" class="upgrade-grid">
+                </div>
+            <button id="backToGameButton" class="button">Back to Game Over</button>
+        </div>
+
+         <div id="messageBox">Sample Message</div>
+
+        <div class="touch-controls">
+            <div class="touch-dpad">
+                <div id="touchUp" class="touch-button dpad-up">▲</div>
+                <div id="touchLeft" class="touch-button dpad-left">◄</div>
+                <div class="dpad-center"></div> <div id="touchRight" class="touch-button dpad-right">►</div>
+                <div id="touchDown" class="touch-button dpad-down">▼</div>
+            </div>
+            <div id="touchDrill" class="touch-button action">DRILL</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Game Configuration ---
+        const FPS = 60;
+        const SHIP_SIZE = 20;
+        const SHIP_THRUST = 0.1;
+        const SHIP_TURN_SPEED = 0.07; // Radians per frame
+        const FRICTION = 0.985;
+        const ASTEROID_NUM_START = 10;
+        const ASTEROID_SIZE_MIN = 20;
+        const ASTEROID_SIZE_MAX = 60;
+        const ASTEROID_SPEED_MAX = 1;
+        const RESOURCE_SIZE = 8;
+        const RESOURCE_LIFESPAN = 300; // 5 seconds at 60 FPS
+        const PARTICLE_LIFESPAN = 60; // 1 second
+        const STAR_COUNT = 200;
+
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const cargoDisplay = document.getElementById('cargoDisplay');
+        const shieldDisplay = document.getElementById('shieldDisplay');
+        const oreDisplay = document.getElementById('oreDisplay');
+        const gemDisplay = document.getElementById('gemDisplay');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const upgradeScreen = document.getElementById('upgradeScreen');
+        const startGameButton = document.getElementById('startGameButton');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const goToUpgradeScreenButton = document.getElementById('goToUpgradeScreenButton');
+        const backToGameButton = document.getElementById('backToGameButton');
+        const finalScore = document.getElementById('finalScore');
+        const upgradeGrid = document.getElementById('upgradeGrid');
+        const upgradeOreDisplay = document.getElementById('upgradeOreDisplay');
+        const upgradeGemDisplay = document.getElementById('upgradeGemDisplay');
+        const messageBox = document.getElementById('messageBox');
+
+        // Touch controls
+        const touchUp = document.getElementById('touchUp');
+        const touchDown = document.getElementById('touchDown');
+        const touchLeft = document.getElementById('touchLeft');
+        const touchRight = document.getElementById('touchRight');
+        const touchDrill = document.getElementById('touchDrill');
+
+
+        // --- Firebase Setup ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT_ID.firebaseapp.com", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_PROJECT_ID.appspot.com", messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID" }; // Fallback for local testing
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'stardust-driller-dev';
+        let db, auth, userId, isAuthReady = false;
+        let highScore = 0;
+        let highScoreListenerUnsubscribe = null;
+
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug'); // Firebase logging
+
+                await setPersistence(auth, browserLocalPersistence); // Persist auth state
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("User authenticated:", userId);
+                        userIdDisplay.textContent = userId;
+                        await loadHighScore();
+                    } else {
+                        console.log("User not authenticated, signing in anonymously...");
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            console.log("Attempting sign in with custom token.");
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            console.log("Attempting anonymous sign in.");
+                            await signInAnonymously(auth);
+                        }
+                        // onAuthStateChanged will be triggered again after sign-in
+                    }
+                    isAuthReady = true;
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                showMessage(`Firebase Error: ${error.message.substring(0,100)}`);
+                userId = crypto.randomUUID(); // Fallback user ID
+                userIdDisplay.textContent = userId.substring(0,8) + "...";
+                isAuthReady = true; // Allow game to proceed without DB for high score
+            }
+        }
+
+
+        // --- Game State ---
+        let ship;
+        let asteroids = [];
+        let resources = [];
+        let particles = [];
+        let stars = [];
+        let score = 0;
+        let gameState = 'start'; // 'start', 'playing', 'gameover', 'upgrade'
+        let mouse = { x: 0, y: 0, down: false };
+        let keys = {};
+
+        // Ship Stats (upgradable)
+        let shipStats = {
+            drillPower: 1,
+            drillSpeed: 1, // Lower is faster (time between drill actions)
+            engineThrust: SHIP_THRUST,
+            cargoCapacity: 100,
+            shields: 100,
+            maxShields: 100,
+            resourceMagnet: 0, // Radius
+            ore: 0,
+            gems: 0,
+            currentLevel: 1,
+        };
+
+        const upgrades = [
+            { id: 'drillPower', name: 'Drill Power', baseCostOre: 50, costGem: 0, levels: 5, description: 'Break tougher rocks faster.', increase: 0.5 },
+            { id: 'drillSpeed', name: 'Drill Cooldown', baseCostOre: 75, costGem: 0, levels: 5, description: 'Reduce time between drill activations.', increase: -0.1, isRate: true }, // Negative increase for speed
+            { id: 'engineThrust', name: 'Engine Thrust', baseCostOre: 100, costGem: 10, levels: 5, description: 'Faster ship movement.', increase: 0.02 },
+            { id: 'cargoCapacity', name: 'Cargo Capacity', baseCostOre: 150, costGem: 0, levels: 5, description: 'Carry more resources.', increase: 50 },
+            { id: 'maxShields', name: 'Shield Strength', baseCostOre: 120, costGem: 20, levels: 5, description: 'Increase maximum shield capacity.', increase: 25 },
+            { id: 'resourceMagnet', name: 'Resource Magnet', baseCostOre: 200, costGem: 50, levels: 3, description: 'Automatically pull in nearby resources.', increase: 25 },
+        ];
+        let currentUpgradeLevels = {}; // Stores current level of each upgrade, e.g., { drillPower: 0, engineThrust: 1 }
+
+
+        // --- Sound Engine (Tone.js) ---
+        const synth = new Tone.Synth().toDestination();
+        const metalSynth = new Tone.MetalSynth({
+            frequency  : 50,
+            envelope  : {
+                attack  : 0.001,
+                decay  : 0.1,
+                release  : 0.01
+            },
+            harmonicity  : 3.1,
+            modulationIndex  : 16,
+            resonance  : 2000,
+            octaves  : 0.5
+        }).toDestination();
+        metalSynth.volume.value = -15;
+
+        const noiseSynth = new Tone.NoiseSynth({
+            noise: { type: 'white' },
+            envelope: { attack: 0.005, decay: 0.05, sustain: 0 }
+        }).toDestination();
+        noiseSynth.volume.value = -20;
+
+        const thrusterSound = new Tone.NoiseSynth({
+            noise: { type: 'pink' },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 },
+            filter: { type: 'lowpass', Q: 2, frequency: 500 },
+        }).toDestination();
+        thrusterSound.volume.value = -25;
+        let isThrusterPlaying = false;
+
+        const drillSound = new Tone.NoiseSynth({
+            noise: { type: 'brown' },
+            envelope: { attack: 0.02, decay: 0.15, sustain: 0.1, release: 0.05 },
+            filter: { type: 'bandpass', Q:1, frequency: 800 },
+        }).toDestination();
+        drillSound.volume.value = -18;
+        let isDrillingSound = false;
+
+        function playSound(type, note = 'C4', duration = '8n') {
+            if (Tone.context.state !== 'running') {
+                Tone.start(); // Ensure audio context is running
+            }
+            try {
+                switch (type) {
+                    case 'pickup':
+                        synth.triggerAttackRelease('E5', '16n');
+                        break;
+                    case 'explosion':
+                        noiseSynth.triggerAttackRelease('4n');
+                        metalSynth.triggerAttackRelease();
+                        break;
+                    case 'drill_hit': // Short metallic hit
+                        metalSynth.frequency.value = Math.random() * 100 + 150;
+                        metalSynth.triggerAttackRelease("32n");
+                        break;
+                    case 'rock_break':
+                        noiseSynth.triggerAttackRelease('8n');
+                        synth.triggerAttackRelease('C3', '8n');
+                        break;
+                    case 'upgrade':
+                        synth.triggerAttackRelease('G5', '8n', Tone.now());
+                        synth.triggerAttackRelease('C6', '8n', Tone.now() + 0.1);
+                        break;
+                    case 'shield_hit':
+                        synth.triggerAttackRelease('A3', '16n');
+                        break;
+                    case 'game_over':
+                        synth.triggerAttackRelease('C3', '2n', Tone.now());
+                        synth.triggerAttackRelease('G2', '2n', Tone.now() + 0.2);
+                        break;
+                }
+            } catch (err) {
+                console.warn("Tone.js sound error:", err);
+            }
+        }
+
+        function startThrusterSound() {
+            if (!isThrusterPlaying && Tone.context.state === 'running') {
+                thrusterSound.triggerAttack();
+                isThrusterPlaying = true;
+            }
+        }
+        function stopThrusterSound() {
+            if (isThrusterPlaying) {
+                thrusterSound.triggerRelease();
+                isThrusterPlaying = false;
+            }
+        }
+        function startDrillSound() {
+            if (!isDrillingSound && Tone.context.state === 'running') {
+                drillSound.triggerAttack();
+                isDrillingSound = true;
+            }
+        }
+        function stopDrillSound() {
+            if (isDrillingSound) {
+                drillSound.triggerRelease();
+                isDrillingSound = false;
+            }
+        }
+
+
+        // --- Game Objects ---
+        class Ship {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = SHIP_SIZE / 2;
+                this.angle = -Math.PI / 2; // Pointing up
+                this.vel = { x: 0, y: 0 };
+                this.rotation = 0; // For turning
+                this.isThrusting = false;
+                this.drillTarget = { x: 0, y: 0 };
+                this.isDrilling = false;
+                this.drillCooldown = 0;
+                this.drillBeamLength = 0;
+            }
+
+            update() {
+                // Apply rotation
+                this.angle += this.rotation;
+
+                // Apply thrust
+                if (this.isThrusting) {
+                    this.vel.x += shipStats.engineThrust * Math.cos(this.angle);
+                    this.vel.y += shipStats.engineThrust * Math.sin(this.angle);
+                    startThrusterSound();
+                    // Thruster particles
+                    if (Math.random() < 0.5) {
+                         particles.push(new Particle(
+                            this.x - this.radius * Math.cos(this.angle),
+                            this.y - this.radius * Math.sin(this.angle),
+                            Math.random() * 2 + 1,
+                            'orange',
+                            { x: -this.vel.x *0.5 + (Math.random()-0.5)*0.5 , y: -this.vel.y*0.5 + (Math.random()-0.5)*0.5 },
+                            20
+                        ));
+                    }
+                } else {
+                    stopThrusterSound();
+                }
+
+
+                // Apply friction
+                this.vel.x *= FRICTION;
+                this.vel.y *= FRICTION;
+
+                // Update position
+                this.x += this.vel.x;
+                this.y += this.vel.y;
+
+                // Screen wrapping
+                if (this.x < -this.radius) this.x = canvas.width + this.radius;
+                if (this.x > canvas.width + this.radius) this.x = -this.radius;
+                if (this.y < -this.radius) this.y = canvas.height + this.radius;
+                if (this.y > canvas.height + this.radius) this.y = -this.radius;
+
+                // Drill
+                if (this.drillCooldown > 0) {
+                    this.drillCooldown--;
+                }
+                if (this.isDrilling && this.drillCooldown <= 0) {
+                    this.fireDrill();
+                    this.drillCooldown = Math.max(10, 30 / shipStats.drillSpeed); // 30 frames base, faster with upgrades
+                    startDrillSound();
+                } else if (!this.isDrilling) {
+                    stopDrillSound();
+                }
+
+
+                if (this.drillBeamLength > 0) this.drillBeamLength -= 5;
+
+
+                // Magnet
+                if (shipStats.resourceMagnet > 0) {
+                    resources.forEach(res => {
+                        const dist = Math.hypot(this.x - res.x, this.y - res.y);
+                        if (dist < shipStats.resourceMagnet && dist > 0.1) { // dist > 0.1 to prevent division by zero or excessive force
+                            const angleToShip = Math.atan2(this.y - res.y, this.x - res.x);
+                            const pullStrength = Math.min(5, shipStats.resourceMagnet / dist); // Cap pull strength
+                            res.x += Math.cos(angleToShip) * pullStrength * 0.1; // Slower pull
+                            res.y += Math.sin(angleToShip) * pullStrength * 0.1;
+                        }
+                    });
+                }
+            }
+
+            fireDrill() {
+                this.drillBeamLength = 50 + shipStats.drillPower * 10; // Visual beam length
+                const drillReach = 30 + shipStats.drillPower * 5;
+
+                asteroids.forEach((asteroid, index) => {
+                    // Check if asteroid is roughly in front of the drill
+                    const angleToAsteroid = Math.atan2(asteroid.y - this.y, asteroid.x - this.x);
+                    const angleDiff = Math.abs(normalizeAngle(this.angle - angleToAsteroid));
+
+                    if (angleDiff < Math.PI / 8) { // Drill in a cone
+                        const dist = Math.hypot(this.x - asteroid.x, this.y - asteroid.y);
+                        if (dist < asteroid.radius + drillReach) {
+                            asteroid.hit(shipStats.drillPower);
+                            playSound('drill_hit');
+                            // Particles at hit point
+                            const hitX = this.x + Math.cos(this.angle) * dist;
+                            const hitY = this.y + Math.sin(this.angle) * dist;
+                             for (let i = 0; i < 3; i++) {
+                                particles.push(new Particle(hitX, hitY, Math.random() * 2, asteroid.color, {x: (Math.random()-0.5)*2, y: (Math.random()-0.5)*2}, 30));
+                            }
+                        }
+                    }
+                });
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.strokeStyle = '#00ffff'; // Cyan
+                ctx.fillStyle = '#336699'; // Darker blue grey
+                ctx.lineWidth = 2;
+
+                // Ship body (triangle)
+                ctx.beginPath();
+                ctx.moveTo(this.radius, 0); // Nose
+                ctx.lineTo(-this.radius / 2, this.radius / 1.5);
+                ctx.lineTo(-this.radius / 2, -this.radius / 1.5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Cockpit
+                ctx.fillStyle = '#aaddff';
+                ctx.beginPath();
+                ctx.arc(this.radius * 0.3, 0, this.radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+
+                // Drill beam visual
+                if (this.drillBeamLength > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.radius, 0); // Tip of ship
+                    ctx.lineTo(this.radius + this.drillBeamLength, 0);
+                    ctx.strokeStyle = `rgba(255, 255, 0, ${Math.random()*0.5 + 0.5})`; // Flickering yellow
+                    ctx.lineWidth = 3 + shipStats.drillPower;
+                    ctx.stroke();
+                }
+
+
+                // Thruster flame
+                if (this.isThrusting) {
+                    ctx.fillStyle = `rgba(255, ${Math.random()*100 + 100}, 0, ${Math.random()*0.5 + 0.5})`;
+                    ctx.beginPath();
+                    ctx.moveTo(-this.radius / 2, 0);
+                    ctx.lineTo(-this.radius * 1.2, this.radius / 3);
+                    ctx.lineTo(-this.radius * 1.2, -this.radius / 3);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                // Shield visual
+                if (shipStats.shields > 0) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${shipStats.shields / shipStats.maxShields * 0.5})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+
+            takeDamage(amount) {
+                if (shipStats.shields > 0) {
+                    shipStats.shields -= amount;
+                    if (shipStats.shields < 0) {
+                        shipStats.shields = 0; // No negative shields
+                    }
+                    playSound('shield_hit');
+                } else {
+                    // For now, game over if shields are down and takes more damage
+                    // This could be expanded to hull damage later
+                    gameOver();
+                }
+                updateUI();
+            }
+        }
+
+        class Asteroid {
+            constructor(x, y, radius, type) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.type = type; // 'common', 'hardened', 'crystal', 'unstable'
+                this.vel = {
+                    x: (Math.random() - 0.5) * ASTEROID_SPEED_MAX * (shipStats.currentLevel * 0.2 + 1),
+                    y: (Math.random() - 0.5) * ASTEROID_SPEED_MAX * (shipStats.currentLevel * 0.2 + 1)
+                };
+                this.angle = Math.random() * Math.PI * 2;
+                this.sides = Math.floor(Math.random() * 5) + 5; // 5 to 9 sides
+                this.offsets = [];
+                for (let i = 0; i < this.sides; i++) {
+                    this.offsets.push(Math.random() * this.radius * 0.4 - this.radius * 0.2);
+                }
+
+                switch (type) {
+                    case 'common':
+                        this.health = radius * 0.5;
+                        this.color = '#8b4513'; // Brown
+                        this.valueOre = Math.ceil(radius / 10);
+                        this.valueGem = 0;
+                        break;
+                    case 'hardened':
+                        this.health = radius * 1.5;
+                        this.color = '#708090'; // Slate Gray
+                        this.valueOre = Math.ceil(radius / 5);
+                        this.valueGem = Math.random() < 0.1 ? 1 : 0; // 10% chance of 1 gem
+                        break;
+                    case 'crystal':
+                        this.health = radius * 0.8; // More fragile but valuable
+                        this.color = '#afeeee'; // Pale Turquoise
+                        this.valueOre = Math.ceil(radius / 15);
+                        this.valueGem = Math.ceil(radius / 10);
+                        break;
+                    case 'unstable':
+                        this.health = radius * 0.3;
+                        this.color = `hsl(${Math.random()*20 + 0}, 100%, 50%)`; // Red-Orange, pulsating
+                        this.valueOre = 0;
+                        this.valueGem = 0;
+                        this.pulseRate = Math.random() * 0.05 + 0.02;
+                        this.pulsePhase = Math.random() * Math.PI * 2;
+                        break;
+                }
+                this.maxHealth = this.health;
+            }
+
+            update() {
+                this.x += this.vel.x;
+                this.y += this.vel.y;
+                this.angle += 0.001; // Slow rotation
+
+                // Screen wrapping
+                if (this.x < -this.radius) this.x = canvas.width + this.radius;
+                if (this.x > canvas.width + this.radius) this.x = -this.radius;
+                if (this.y < -this.radius) this.y = canvas.height + this.radius;
+                if (this.y > canvas.height + this.radius) this.y = -this.radius;
+
+                if (this.type === 'unstable') {
+                    this.pulsePhase += this.pulseRate;
+                    const pulseFactor = (Math.sin(this.pulsePhase) + 1) / 2; // 0 to 1
+                    this.color = `hsl(${pulseFactor * 20 + 0}, 100%, ${pulseFactor * 25 + 50}%)`;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.strokeStyle = this.color;
+                ctx.fillStyle = this.type === 'crystal' ? `rgba(${hexToRgb(this.color).r}, ${hexToRgb(this.color).g}, ${hexToRgb(this.color).b}, 0.5)` : this.color;
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                for (let i = 0; i < this.sides; i++) {
+                    const angle = (i / this.sides) * Math.PI * 2;
+                    const r = this.radius + this.offsets[i];
+                    const xPos = r * Math.cos(angle);
+                    const yPos = r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(xPos, yPos);
+                    else ctx.lineTo(xPos, yPos);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                if (this.type === 'crystal' || this.health < this.maxHealth) ctx.fill(); // Fill crystals or damaged asteroids
+
+                // Health bar (optional, can be too cluttered)
+                if (this.health < this.maxHealth && this.type !== 'unstable') {
+                    const healthPercent = this.health / this.maxHealth;
+                    ctx.fillStyle = healthPercent > 0.5 ? 'lightgreen' : healthPercent > 0.2 ? 'yellow' : 'red';
+                    ctx.fillRect(-this.radius * 0.7, this.radius + 5, this.radius * 1.4 * healthPercent, 5);
+                    ctx.strokeStyle = 'grey';
+                    ctx.strokeRect(-this.radius * 0.7, this.radius + 5, this.radius * 1.4, 5);
+                }
+
+                ctx.restore();
+            }
+
+            hit(damage) {
+                this.health -= damage;
+                if (this.health <= 0) {
+                    this.destroy();
+                }
+            }
+
+            destroy() {
+                playSound('rock_break');
+                // Spawn resources
+                const numOreChunks = this.valueOre * (Math.floor(this.radius / ASTEROID_SIZE_MIN));
+                for (let i = 0; i < numOreChunks; i++) {
+                    resources.push(new Resource(this.x, this.y, 'ore'));
+                }
+                const numGemChunks = this.valueGem * (Math.floor(this.radius / ASTEROID_SIZE_MIN));
+                for (let i = 0; i < numGemChunks; i++) {
+                    resources.push(new Resource(this.x, this.y, 'gem'));
+                }
+
+                // Particles
+                for (let i = 0; i < this.radius / 2; i++) {
+                    particles.push(new Particle(this.x, this.y, Math.random() * 3 + 1, this.color));
+                }
+
+                if (this.type === 'unstable') {
+                    this.explode();
+                }
+
+                // Remove asteroid
+                const index = asteroids.indexOf(this);
+                if (index > -1) asteroids.splice(index, 1);
+
+                // Potentially spawn new asteroid to maintain density
+                if (asteroids.length < ASTEROID_NUM_START + shipStats.currentLevel * 2) {
+                     spawnAsteroid();
+                }
+            }
+
+            explode() {
+                playSound('explosion');
+                const explosionRadius = this.radius * 3;
+                const explosionDamage = this.radius;
+
+                // Damage nearby asteroids
+                asteroids.forEach(otherAsteroid => {
+                    if (otherAsteroid === this) return;
+                    const dist = Math.hypot(this.x - otherAsteroid.x, this.y - otherAsteroid.y);
+                    if (dist < explosionRadius + otherAsteroid.radius) {
+                        otherAsteroid.hit(explosionDamage / (dist / explosionRadius + 1)); // Damage falloff
+                        if (otherAsteroid.type === 'unstable' && otherAsteroid.health > 0) { // Chain reaction
+                           setTimeout(() => { if(otherAsteroid.health > 0) otherAsteroid.destroy(); }, Math.random() * 200 + 50); // Delayed chain
+                        }
+                    }
+                });
+
+                // Damage ship
+                const distToShip = Math.hypot(this.x - ship.x, this.y - ship.y);
+                if (distToShip < explosionRadius + ship.radius) {
+                    ship.takeDamage(explosionDamage / (distToShip / explosionRadius + 1));
+                }
+
+                // Explosion particles
+                for (let i = 0; i < 50; i++) {
+                    particles.push(new Particle(this.x, this.y, Math.random() * 4 + 2, 'orange', null, 90));
+                }
+            }
+        }
+
+        class Resource {
+            constructor(x, y, type) {
+                this.x = x + (Math.random() - 0.5) * 20;
+                this.y = y + (Math.random() - 0.5) * 20;
+                this.radius = RESOURCE_SIZE / 2;
+                this.type = type; // 'ore', 'gem'
+                this.color = type === 'ore' ? '#CD7F32' : '#00FFFF'; // Bronze for ore, Cyan for gem
+                this.vel = { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 };
+                this.lifespan = RESOURCE_LIFESPAN;
+                this.value = type === 'ore' ? 1 : 5; // Score value
+            }
+
+            update() {
+                this.x += this.vel.x;
+                this.y += this.vel.y;
+                this.vel.x *= 0.95; // Slow down
+                this.vel.y *= 0.95;
+                this.lifespan--;
+
+                // Screen wrapping (optional, or just let them float off)
+                if (this.x < -this.radius) this.x = canvas.width + this.radius;
+                if (this.x > canvas.width + this.radius) this.x = -this.radius;
+                if (this.y < -this.radius) this.y = canvas.height + this.radius;
+                if (this.y > canvas.height + this.radius) this.y = -this.radius;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                if (this.type === 'gem') { // Draw gem as a diamond
+                    ctx.moveTo(this.x, this.y - this.radius);
+                    ctx.lineTo(this.x + this.radius, this.y);
+                    ctx.lineTo(this.x, this.y + this.radius);
+                    ctx.lineTo(this.x - this.radius, this.y);
+                } else { // Ore as a circle
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Lifespan shimmer
+                if (this.lifespan < 60) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.lifespan / 120})`;
+                    ctx.beginPath();
+                     if (this.type === 'gem') {
+                        ctx.moveTo(this.x, this.y - this.radius);
+                        ctx.lineTo(this.x + this.radius, this.y);
+                        ctx.lineTo(this.x, this.y + this.radius);
+                        ctx.lineTo(this.x - this.radius, this.y);
+                    } else {
+                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, radius, color, vel, lifespan = PARTICLE_LIFESPAN) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.vel = vel || {
+                    x: (Math.random() - 0.5) * (Math.random() * 3 + 1),
+                    y: (Math.random() - 0.5) * (Math.random() * 3 + 1)
+                };
+                this.lifespan = lifespan;
+                this.initialLifespan = lifespan;
+            }
+
+            update() {
+                this.x += this.vel.x;
+                this.y += this.vel.y;
+                this.vel.x *= 0.98;
+                this.vel.y *= 0.98;
+                this.lifespan--;
+            }
+
+            draw() {
+                const alpha = Math.max(0, this.lifespan / this.initialLifespan);
+                ctx.fillStyle = `rgba(${hexToRgb(this.color).r}, ${hexToRgb(this.color).g}, ${hexToRgb(this.color).b}, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * alpha, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 1.5;
+                this.alpha = Math.random() * 0.5 + 0.5; // Varying brightness
+                this.parallaxFactor = Math.random() * 0.3 + 0.1; // Slower stars are further away
+            }
+
+            draw(shipVelX, shipVelY) {
+                // Parallax effect: move stars opposite to ship's movement, scaled by parallaxFactor
+                this.x -= shipVelX * this.parallaxFactor * 0.1; // Reduced effect for subtlety
+                this.y -= shipVelY * this.parallaxFactor * 0.1;
+
+                // Wrap stars around the screen
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+
+        // --- Utility Functions ---
+        function normalizeAngle(angle) {
+            while (angle > Math.PI) angle -= Math.PI * 2;
+            while (angle < -Math.PI) angle += Math.PI * 2;
+            return angle;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 255, g: 255, b: 255 }; // Default to white if parse fails
+        }
+
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, duration);
+        }
+
+        function spawnAsteroid(specificType = null) {
+            let x, y;
+            const edge = Math.random();
+            if (edge < 0.25) { // Top
+                x = Math.random() * canvas.width; y = -ASTEROID_SIZE_MAX;
+            } else if (edge < 0.5) { // Right
+                x = canvas.width + ASTEROID_SIZE_MAX; y = Math.random() * canvas.height;
+            } else if (edge < 0.75) { // Bottom
+                x = Math.random() * canvas.width; y = canvas.height + ASTEROID_SIZE_MAX;
+            } else { // Left
+                x = -ASTEROID_SIZE_MAX; y = Math.random() * canvas.height;
+            }
+
+            const radius = Math.random() * (ASTEROID_SIZE_MAX - ASTEROID_SIZE_MIN) + ASTEROID_SIZE_MIN;
+            let type = specificType;
+            if (!type) {
+                const typeRoll = Math.random();
+                const levelFactor = Math.min(0.5, shipStats.currentLevel * 0.05); // Max 50% influence from level
+                if (typeRoll < 0.5 - levelFactor * 0.2) type = 'common';
+                else if (typeRoll < 0.8 - levelFactor * 0.1) type = 'hardened';
+                else if (typeRoll < 0.95) type = 'crystal';
+                else type = 'unstable';
+            }
+            asteroids.push(new Asteroid(x, y, radius, type));
+        }
+
+        function populateUpgradeScreen() {
+            upgradeGrid.innerHTML = '';
+            upgrades.forEach(upgrade => {
+                const currentLevel = currentUpgradeLevels[upgrade.id] || 0;
+                const costMultiplier = Math.pow(1.5, currentLevel); // Cost increases with level
+                const costOre = Math.floor(upgrade.baseCostOre * costMultiplier);
+                const costGem = Math.floor(upgrade.costGem * costMultiplier) || (upgrade.costGem > 0 ? upgrade.costGem : 0);
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'upgrade-item';
+                let currentEffect = "";
+                if (upgrade.id === 'drillPower') currentEffect = `Current: ${shipStats.drillPower.toFixed(1)}`;
+                if (upgrade.id === 'drillSpeed') currentEffect = `Current: ${(30 / shipStats.drillSpeed).toFixed(1)}/s`;
+                if (upgrade.id === 'engineThrust') currentEffect = `Current: ${(shipStats.engineThrust * 100).toFixed(1)}`;
+                if (upgrade.id === 'cargoCapacity') currentEffect = `Current: ${shipStats.cargoCapacity}`;
+                if (upgrade.id === 'maxShields') currentEffect = `Current: ${shipStats.maxShields}`;
+                if (upgrade.id === 'resourceMagnet') currentEffect = `Current: ${shipStats.resourceMagnet}px`;
+
+
+                itemDiv.innerHTML = `
+                    <h3>${upgrade.name} (Lvl ${currentLevel})</h3>
+                    <p>${upgrade.description} ${currentEffect}</p>
+                    ${currentLevel < upgrade.levels ? `
+                        <p class="cost">Cost: ${costOre} Ore, ${costGem} Gems</p>
+                        <button class="button upgrade-button" data-id="${upgrade.id}">Upgrade</button>
+                    ` : '<p class="cost">Max Level Reached</p>'}
+                `;
+                upgradeGrid.appendChild(itemDiv);
+            });
+            upgradeOreDisplay.textContent = shipStats.ore;
+            upgradeGemDisplay.textContent = shipStats.gems;
+
+            document.querySelectorAll('.upgrade-button').forEach(button => {
+                button.addEventListener('click', () => purchaseUpgrade(button.dataset.id));
+            });
+        }
+
+        function purchaseUpgrade(upgradeId) {
+            const upgrade = upgrades.find(u => u.id === upgradeId);
+            if (!upgrade) return;
+
+            const currentLevel = currentUpgradeLevels[upgrade.id] || 0;
+            if (currentLevel >= upgrade.levels) {
+                showMessage("Max level reached for this upgrade.");
+                return;
+            }
+
+            const costMultiplier = Math.pow(1.5, currentLevel);
+            const costOre = Math.floor(upgrade.baseCostOre * costMultiplier);
+            const costGem = Math.floor(upgrade.costGem * costMultiplier) || (upgrade.costGem > 0 ? upgrade.costGem : 0);
+
+
+            if (shipStats.ore >= costOre && shipStats.gems >= costGem) {
+                shipStats.ore -= costOre;
+                shipStats.gems -= costGem;
+                currentUpgradeLevels[upgrade.id] = currentLevel + 1;
+
+                // Apply upgrade effect
+                if (upgrade.isRate) { // For things like speed where lower is better
+                     shipStats[upgrade.id] = Math.max(0.1, shipStats[upgrade.id] + upgrade.increase); // Ensure it doesn't go to 0 or negative
+                } else {
+                    shipStats[upgrade.id] += upgrade.increase;
+                }
+
+
+                if (upgrade.id === 'maxShields') { // Also refill shields on shield upgrade
+                    shipStats.shields = shipStats.maxShields;
+                }
+
+                playSound('upgrade');
+                populateUpgradeScreen(); // Refresh screen
+                updateUI();
+                saveGameProgress(); // Save progress after upgrade
+            } else {
+                showMessage("Not enough resources!");
+            }
+        }
+
+
+        // --- Game Logic ---
+        function initGame() {
+            // Reset ship
+            ship = new Ship(canvas.width / 2, canvas.height / 2);
+            shipStats.shields = shipStats.maxShields; // Reset shields to max for the current upgrade level
+
+            // Reset game elements
+            asteroids = [];
+            resources = [];
+            particles = [];
+            for (let i = 0; i < ASTEROID_NUM_START + shipStats.currentLevel * 2; i++) {
+                spawnAsteroid();
+            }
+
+            if (stars.length === 0) { // Only create stars once
+                for (let i = 0; i < STAR_COUNT; i++) {
+                    stars.push(new Star());
+                }
+            }
+
+            score = 0;
+            updateUI();
+            loadGameProgress(); // Load upgrades and resources
+        }
+
+        function updateUI() {
+            scoreDisplay.textContent = score;
+            highScoreDisplay.textContent = highScore;
+            cargoDisplay.textContent = `${(shipStats.ore + shipStats.gems * 5)}/${shipStats.cargoCapacity}`; // Assuming gems take 5 cargo space for simplicity
+            shieldDisplay.textContent = `${Math.max(0, Math.round(shipStats.shields))}%`;
+            oreDisplay.textContent = shipStats.ore;
+            gemDisplay.textContent = shipStats.gems;
+        }
+
+        async function loadHighScore() {
+            if (!db || !userId || !isAuthReady) {
+                console.warn("Firestore not ready for loading high score.");
+                highScoreDisplay.textContent = highScore; // Show local/default
+                return;
+            }
+            try {
+                const scoreDocRef = doc(db, "artifacts", appId, "public", "data", "highscores", userId);
+                 // Setup a listener for real-time updates to the high score if desired
+                if (highScoreListenerUnsubscribe) highScoreListenerUnsubscribe(); // Unsubscribe previous listener
+
+                highScoreListenerUnsubscribe = onSnapshot(scoreDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        highScore = docSnap.data().score || 0;
+                        console.log("High score loaded/updated:", highScore);
+                    } else {
+                        highScore = 0; // No high score saved yet for this user
+                        console.log("No high score document found for user, defaulting to 0.");
+                    }
+                    highScoreDisplay.textContent = highScore;
+                }, (error) => {
+                    console.error("Error listening to high score:", error);
+                    showMessage(`Error loading high score: ${error.message.substring(0,100)}`);
+                });
+
+            } catch (error) {
+                console.error("Error loading high score:", error);
+                showMessage(`Error loading high score: ${error.message.substring(0,100)}`);
+            }
+        }
+
+        async function saveHighScore() {
+            if (!db || !userId || !isAuthReady) {
+                 console.warn("Firestore not ready for saving high score.");
+                 return;
+            }
+            if (score > highScore) {
+                highScore = score;
+                try {
+                    const scoreDocRef = doc(db, "artifacts", appId, "public", "data", "highscores", userId);
+                    await setDoc(scoreDocRef, { score: highScore, lastPlayed: new Date().toISOString() }, { merge: true });
+                    console.log("High score saved:", highScore);
+                } catch (error) {
+                    console.error("Error saving high score:", error);
+                    showMessage(`Error saving high score: ${error.message.substring(0,100)}`);
+                }
+            }
+        }
+
+        async function saveGameProgress() {
+            if (!db || !userId || !isAuthReady) {
+                console.warn("Firestore not ready for saving progress.");
+                // Optionally save to localStorage as a fallback if needed
+                // localStorage.setItem(`stardust_driller_progress_${appId}_${userId || 'local'}`, JSON.stringify({ shipStats, currentUpgradeLevels }));
+                return;
+            }
+            try {
+                const progressDocRef = doc(db, "artifacts", appId, "users", userId, "stardust_driller_progress", "main");
+                await setDoc(progressDocRef, { shipStats, currentUpgradeLevels, savedAt: new Date().toISOString() });
+                console.log("Game progress saved.");
+            } catch (error) {
+                console.error("Error saving game progress:", error);
+                showMessage(`Error saving progress: ${error.message.substring(0,100)}`);
+            }
+        }
+
+        async function loadGameProgress() {
+            if (!db || !userId || !isAuthReady) {
+                console.warn("Firestore not ready for loading progress.");
+                // Fallback to localStorage if needed
+                // const saved = localStorage.getItem(`stardust_driller_progress_${appId}_${userId || 'local'}`);
+                // if (saved) {
+                //     const data = JSON.parse(saved);
+                //     shipStats = data.shipStats;
+                //     currentUpgradeLevels = data.currentUpgradeLevels;
+                // }
+                initializeDefaultUpgrades(); // Ensure defaults if nothing loaded
+                updateShipStatsFromUpgrades();
+                populateUpgradeScreen();
+                updateUI();
+                return;
+            }
+            try {
+                const progressDocRef = doc(db, "artifacts", appId, "users", userId, "stardust_driller_progress", "main");
+                const docSnap = await getDoc(progressDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Merge carefully, only override if data exists
+                    if (data.shipStats) shipStats = { ...shipStats, ...data.shipStats };
+                    if (data.currentUpgradeLevels) currentUpgradeLevels = { ...currentUpgradeLevels, ...data.currentUpgradeLevels };
+                    console.log("Game progress loaded.");
+                } else {
+                    console.log("No saved progress found, using defaults.");
+                    initializeDefaultUpgrades();
+                }
+            } catch (error) {
+                console.error("Error loading game progress:", error);
+                showMessage(`Error loading progress: ${error.message.substring(0,100)}`);
+                 initializeDefaultUpgrades();
+            }
+            updateShipStatsFromUpgrades(); // Apply loaded/default upgrades to actual stats
+            populateUpgradeScreen();
+            updateUI();
+        }
+
+        function initializeDefaultUpgrades() {
+            upgrades.forEach(upg => {
+                if (typeof currentUpgradeLevels[upg.id] === 'undefined') {
+                    currentUpgradeLevels[upg.id] = 0; // Start at level 0
+                }
+            });
+        }
+
+        function updateShipStatsFromUpgrades() {
+            // Reset base stats before applying upgrades to avoid cumulative errors on multiple calls
+            shipStats.drillPower = 1;
+            shipStats.drillSpeed = 1;
+            shipStats.engineThrust = SHIP_THRUST;
+            shipStats.cargoCapacity = 100;
+            shipStats.maxShields = 100;
+            shipStats.resourceMagnet = 0;
+
+            upgrades.forEach(upgradeInfo => {
+                const level = currentUpgradeLevels[upgradeInfo.id] || 0;
+                if (level > 0) {
+                    if (upgradeInfo.isRate) {
+                         shipStats[upgradeInfo.id] = Math.max(0.1, shipStats[upgradeInfo.id] + (upgradeInfo.increase * level));
+                    } else {
+                        shipStats[upgradeInfo.id] += upgradeInfo.increase * level;
+                    }
+                }
+            });
+            shipStats.shields = shipStats.maxShields; // Ensure shields are full after applying upgrades
+        }
+
+
+        function gameOver() {
+            gameState = 'gameover';
+            stopThrusterSound();
+            stopDrillSound();
+            playSound('game_over');
+            finalScore.textContent = score;
+            saveHighScore();
+            saveGameProgress(); // Save resources and current upgrade levels
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function gameLoop() {
+            if (gameState !== 'playing') {
+                if (gameState === 'start') {
+                     // Draw static start screen elements if needed, or just rely on HTML overlay
+                } else if (gameState === 'gameover' || gameState === 'upgrade') {
+                    // Draw static background for these screens
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    stars.forEach(star => star.draw(0,0)); // Static stars
+                }
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
+            // --- Update ---
+            ship.update();
+            asteroids.forEach(asteroid => asteroid.update());
+            resources.forEach(res => res.update());
+            particles.forEach(p => p.update());
+
+            // Collision: Ship vs Asteroids
+            asteroids.forEach(asteroid => {
+                const dist = Math.hypot(ship.x - asteroid.x, ship.y - asteroid.y);
+                if (dist < ship.radius + asteroid.radius) {
+                    ship.takeDamage(asteroid.radius / 5); // Damage based on asteroid size
+                    // Simple bounce effect
+                    const angle = Math.atan2(ship.y - asteroid.y, ship.x - asteroid.x);
+                    ship.vel.x = Math.cos(angle) * 1.5;
+                    ship.vel.y = Math.sin(angle) * 1.5;
+                    asteroid.vel.x = -Math.cos(angle) * 0.5;
+                    asteroid.vel.y = -Math.sin(angle) * 0.5;
+
+                    if (asteroid.type === 'unstable') {
+                        asteroid.destroy(); // Unstable asteroids explode on contact
+                    }
+                }
+            });
+
+            // Collision: Ship vs Resources
+            resources.forEach((res, index) => {
+                const dist = Math.hypot(ship.x - res.x, ship.y - res.y);
+                if (dist < ship.radius + res.radius) {
+                    const currentCargo = shipStats.ore + shipStats.gems * 5; // Simple cargo weight
+                    if (currentCargo < shipStats.cargoCapacity) {
+                        if (res.type === 'ore') shipStats.ore++;
+                        else if (res.type === 'gem') shipStats.gems++;
+                        score += res.value;
+                        playSound('pickup');
+                        resources.splice(index, 1);
+                    } else {
+                        showMessage("Cargo hold full!");
+                    }
+                } else if (res.lifespan <= 0) {
+                    resources.splice(index, 1);
+                }
+            });
+
+            // Remove dead particles
+            particles = particles.filter(p => p.lifespan > 0);
+
+            // --- Draw ---
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Stars (with parallax)
+            stars.forEach(star => star.draw(ship.vel.x, ship.vel.y));
+
+
+            resources.forEach(res => res.draw());
+            ship.draw();
+            asteroids.forEach(asteroid => asteroid.draw());
+            particles.forEach(p => p.draw());
+
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (gameState === 'playing') {
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') ship.isThrusting = true;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') ship.rotation = -SHIP_TURN_SPEED;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') ship.rotation = SHIP_TURN_SPEED;
+                if (e.code === 'Space') {
+                     ship.isDrilling = true;
+                     e.preventDefault(); // Prevent page scroll
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+            if (gameState === 'playing') {
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') ship.isThrusting = false;
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft' || e.code === 'KeyD' || e.code === 'ArrowRight') ship.rotation = 0;
+                 if (e.code === 'Space') ship.isDrilling = false;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+            if (gameState === 'playing' && ship) { // Aim drill with mouse
+                 const dx = mouse.x - ship.x;
+                 const dy = mouse.y - ship.y;
+                 ship.angle = Math.atan2(dy, dx);
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click
+                mouse.down = true;
+                if (gameState === 'playing' && ship) ship.isDrilling = true;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+             if (e.button === 0) {
+                mouse.down = false;
+                if (gameState === 'playing' && ship) ship.isDrilling = false;
+            }
+        });
+
+        // Touch Controls Logic
+        let touchState = { up: false, down: false, left: false, right: false, drill: false };
+
+        function handleTouch(buttonId, isPressed) {
+            if (Tone.context.state !== 'running') Tone.start(); // Ensure audio context for touch interaction
+
+            switch(buttonId) {
+                case 'touchUp': touchState.up = isPressed; break;
+                case 'touchDown': touchState.down = isPressed; break;
+                case 'touchLeft': touchState.left = isPressed; break;
+                case 'touchRight': touchState.right = isPressed; break;
+                case 'touchDrill': touchState.drill = isPressed; break;
+            }
+
+            if (gameState === 'playing' && ship) {
+                ship.isThrusting = touchState.up;
+                if (touchState.left && !touchState.right) ship.rotation = -SHIP_TURN_SPEED;
+                else if (touchState.right && !touchState.left) ship.rotation = SHIP_TURN_SPEED;
+                else ship.rotation = 0;
+                // For down, maybe a brake or reverse later? For now, it does nothing.
+
+                ship.isDrilling = touchState.drill;
+            }
+        }
+
+        ['touchstart', 'touchend', 'touchcancel'].forEach(eventType => {
+            touchUp.addEventListener(eventType, (e) => { e.preventDefault(); handleTouch('touchUp', eventType === 'touchstart'); }, { passive: false });
+            touchDown.addEventListener(eventType, (e) => { e.preventDefault(); handleTouch('touchDown', eventType === 'touchstart'); }, { passive: false });
+            touchLeft.addEventListener(eventType, (e) => { e.preventDefault(); handleTouch('touchLeft', eventType === 'touchstart'); }, { passive: false });
+            touchRight.addEventListener(eventType, (e) => { e.preventDefault(); handleTouch('touchRight', eventType === 'touchstart'); }, { passive: false });
+            touchDrill.addEventListener(eventType, (e) => { e.preventDefault(); handleTouch('touchDrill', eventType === 'touchstart'); }, { passive: false });
+        });
+
+        // Aiming for touch: tap on canvas to set drill direction
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState === 'playing' && ship && e.target === canvas) { // Only if tapping canvas directly, not buttons
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touchX = e.touches[0].clientX - rect.left;
+                const touchY = e.touches[0].clientY - rect.top;
+                const dx = touchX - ship.x;
+                const dy = touchY - ship.y;
+                ship.angle = Math.atan2(dy, dx);
+                // Optionally, could also trigger a single drill action on tap if not using dedicated drill button
+                // ship.isDrilling = true; setTimeout(() => ship.isDrilling = false, 100);
+            }
+        }, { passive: false });
+
+
+        startGameButton.addEventListener('click', () => {
+            if (Tone.context.state !== 'running') Tone.start();
+            gameState = 'playing';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            upgradeScreen.style.display = 'none';
+            initGame();
+        });
+
+        playAgainButton.addEventListener('click', () => {
+            gameState = 'playing';
+            gameOverScreen.style.display = 'none';
+            initGame();
+        });
+
+        goToUpgradeScreenButton.addEventListener('click', () => {
+            gameState = 'upgrade';
+            gameOverScreen.style.display = 'none';
+            upgradeScreen.style.display = 'flex';
+            populateUpgradeScreen();
+        });
+
+        backToGameButton.addEventListener('click', () => {
+            gameState = 'gameover'; // Or 'start' if you want to go back to start screen
+            upgradeScreen.style.display = 'none';
+            gameOverScreen.style.display = 'flex'; // Show game over screen again
+            saveGameProgress(); // Save any changes made in upgrade screen
+        });
+
+        // Resize canvas
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            // Re-initialize stars or adjust positions if needed on resize
+            // For simplicity, current stars will just be redrawn in new bounds
+            // A more robust solution might re-distribute them.
+            if (stars && stars.length > 0) { // If stars exist, update their positions relative to new canvas size
+                stars.forEach(star => {
+                    star.x = Math.random() * canvas.width;
+                    star.y = Math.random() * canvas.height;
+                });
+            }
+             // If game is active, might need to adjust ship/asteroid positions or scale
+            if (ship) { // Center ship if resizing
+                ship.x = canvas.width / 2;
+                ship.y = canvas.height / 2;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+
+        // --- Initialization ---
+        window.onload = async () => {
+            resizeCanvas(); // Initial canvas sizing
+            await initializeFirebase(); // Initialize Firebase and attempt auth
+            // Game progress (upgrades, resources) should be loaded after auth is ready
+            // This is handled by onAuthStateChanged triggering loadGameProgress or loadHighScore
+            // For now, we can call loadGameProgress here, it has checks for isAuthReady.
+            await loadGameProgress();
+            gameLoop(); // Start the game loop (it will initially be in 'start' state)
+        };
+
+    </script>
+</body>
+</html>
